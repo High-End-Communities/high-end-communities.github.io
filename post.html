@@ -51,7 +51,7 @@
       </div>
 
       <div class="photos">
-        <label>Photos <span class="req">*</span> <span class="muted">(1–4 photos, auto-reduced to low resolution)</span></label>
+        <label>Photos <span class="req">*</span> <span class="muted" id="photoRule">(1–4 photos, auto-reduced to low resolution)</span></label>
         <div class="photo-btns">
           <button type="button" class="btn primary" id="camBtn">📷 Take photo</button>
           <button type="button" class="btn ghost" id="galBtn">🖼️ Choose from gallery</button>
@@ -89,6 +89,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="config.js"></script>
 <script src="common.js"></script>
 
@@ -100,7 +101,7 @@ renderFields();
 startBannerRotation();
 loadSponsors().then(startBannerRotation);
 countPage("post");
-$("#submitBtn").textContent = "Send for review";
+$("#submitBtn").textContent = "Publish my listing";
 
 $("#dumpBtn").onclick = ()=>{
   const t = $("#dumpIn").value.trim();
@@ -110,12 +111,13 @@ $("#dumpBtn").onclick = ()=>{
   $("#form").scrollIntoView({behavior:"smooth"});
 };
 
-function showDone(row, code){
-  const L = {type:row.type, f:row.f};
+function showDone(row, code, live){
+  const L = {type:row.type, f:row.f, photos:row.photos, thumb:row.thumb, at:Date.now(), status: live?"live":"pending"};
   const d = $("#done"); d.innerHTML = "";
-  const p = document.createElement("p"); p.textContent = "✅ Sent for review!";
+  const p = document.createElement("p"); p.textContent = live ? "✅ Your listing is live!" : "✅ Sent for review!";
   const t = document.createElement("div"); t.style.cssText="font-size:14px;color:#1d6b3e;margin-bottom:6px";
-  t.textContent = "The admin checks it and puts it live. Keep this seller code — you need it to mark your item as sold:";
+  t.textContent = (live ? "It's in the catalogue now. The admin may still edit or remove it if something is missing. " : "The admin checks it and puts it live. ")
+    + "Keep this seller code — you need it to mark your item as sold:";
   const c = document.createElement("div"); c.className="code"; c.textContent = code;
   const row1 = document.createElement("div"); row1.className="dlrow";
   const cp = document.createElement("button"); cp.type="button"; cp.className="btn ghost small"; cp.textContent="Copy code";
@@ -123,10 +125,20 @@ function showDone(row, code){
   const me = document.createElement("a"); me.className="btn ghost small"; me.target="_blank"; me.rel="noopener"; me.textContent="Save code in my WhatsApp";
   me.href = "https://wa.me/2"+row.phone+"?text="+encodeURIComponent(`${MARKET_NAME} — seller code for "${titleOf(L)}": ${code}`);
   row1.append(cp, me);
-  const al = document.createElement("a"); al.className="btn wa"; al.target="_blank"; al.rel="noopener"; al.style.marginTop="10px";
-  al.textContent = "Tell the admin on WhatsApp (faster review)";
-  al.href = adminHref(`🆕 *New listing waiting for review*\n\n${listingText(L)}\n\nRef: ${row.id}`);
-  d.append(p, t, c, row1, al);
+  d.append(p, t, c, row1);
+  if (live){
+    const sh = document.createElement("a"); sh.className="btn wa"; sh.target="_blank"; sh.rel="noopener"; sh.style.marginTop="10px";
+    sh.textContent = "Share to WhatsApp group"; sh.href = waHref(shareText(L,row.id));
+    const r2 = document.createElement("div"); r2.className="dlrow";
+    const bi = document.createElement("button"); bi.type="button"; bi.className="btn ghost small"; bi.textContent="🖼️ Flyer image"; bi.onclick=()=>exportImage(L,row.id);
+    const bp = document.createElement("button"); bp.type="button"; bp.className="btn ghost small"; bp.textContent="📄 Flyer PDF"; bp.onclick=()=>exportPdf(L,row.id);
+    r2.append(bi,bp); d.append(sh, r2);
+  } else {
+    const al = document.createElement("a"); al.className="btn wa"; al.target="_blank"; al.rel="noopener"; al.style.marginTop="10px";
+    al.textContent = "Tell the admin on WhatsApp (faster review)";
+    al.href = adminHref(`🆕 *New listing waiting for review*\n\n${listingText(L)}\n\nRef: ${row.id}`);
+    d.append(al);
+  }
   d.classList.add("show");
   d.scrollIntoView({behavior:"smooth", block:"center"});
 }
@@ -146,8 +158,11 @@ $("#form").addEventListener("submit", async e=>{
     const row = { id: uuid(), type, f, phone: f.phone, thumb: await makeThumb(pics[0]), photos: pics, terms: true, seller_code: code };
     const {error} = await sb.from("listings").insert(row);
     if (error) throw error;
+    // live straight away (auto-approve) if the public can already read it
+    const chk = await sb.from("listings").select("id,status").eq("id", row.id).maybeSingle();
+    const live = !!(chk && chk.data && chk.data.status === "live");
     showMsg("");
-    showDone(row, code);
+    showDone(row, code, live);
     photos=[]; renderThumbs(); renderFields(); $("#terms").checked=false; $("#dumpIn").value="";
   }catch(err){ showMsg(niceError(err),"err"); }
   finally{ $("#submitBtn").disabled = false; }

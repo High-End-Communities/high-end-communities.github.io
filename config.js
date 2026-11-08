@@ -13,3 +13,4 @@ const SUPABASE_ANON_KEY = "sb_publishable_KGr4x1WSP0izWWae98-wJQ_G2aCUKww";
 const SITE_URL  = "https://high-end-communities.github.io";  // your site address
 const ADMIN_WA  = "01222671668";   // admin WhatsApp: new-listing alerts go here
 const MASAR_URL = "";              // MASAR download link (default sponsor when none is scheduled)
+const USD_RATE  = 52;            // EGP per 1 USD — only used to check dollar prices against the allowed ranges

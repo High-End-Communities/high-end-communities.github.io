@@ -48,7 +48,13 @@
     <div class="toolbar"><span class="muted" id="who"></span><button type="button" class="btn ghost small" id="logout">Log out</button></div>
     <div class="msg" id="listMsg"></div>
 
-    <div data-pane="pending"><div class="list" id="pendingList"></div></div>
+    <div data-pane="pending">
+      <div class="disc" style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap">
+        <label class="showsold" style="color:var(--text);font-weight:600"><input type="checkbox" id="autoApprove"> Publish new listings straight away (auto-approve)</label>
+        <span class="muted" id="autoHint"></span>
+      </div>
+      <div class="list" id="pendingList"></div>
+    </div>
     <div data-pane="live" hidden><div class="list" id="liveList"></div></div>
     <div data-pane="sold" hidden><div class="list" id="soldList"></div></div>
 
@@ -77,7 +83,7 @@
       </div>
 
       <div class="photos">
-        <label>Photos <span class="req">*</span> <span class="muted">(1–4 photos, auto-reduced to low resolution)</span></label>
+        <label>Photos <span class="req">*</span> <span class="muted" id="photoRule">(1–4 photos, auto-reduced to low resolution)</span></label>
         <div class="photo-btns">
           <button type="button" class="btn primary" id="camBtn">📷 Take photo</button>
           <button type="button" class="btn ghost" id="galBtn">🖼️ Choose from gallery</button>
@@ -169,6 +175,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="config.js"></script>
 <script src="common.js"></script>
 
@@ -191,7 +198,7 @@ async function enter(){
   countPage("admin");
   initCategoryPicker(); initPhotoInputs(); renderFields(); $("#terms").checked=true;
   $("#submitBtn").textContent = "Publish now";
-  await Promise.all([loadAll(), loadSponsorsAdmin()]);
+  await Promise.all([loadAll(), loadSponsorsAdmin(), loadSettings()]);
   loadSponsors();
 }
 $("#loginBtn").onclick = async ()=>{
@@ -216,15 +223,28 @@ document.querySelectorAll("#adminView .tabs button").forEach(b=>b.onclick=()=>ta
 /* ---------- listings ---------- */
 async function loadAll(){
   showMsg("Loading…","info",$("#listMsg"));
-  const {data,error} = await sb.from("listings").select(LIST_COLS+",note").neq("status","rejected").order("created_at",{ascending:false}).limit(1000);
+  const {data,error} = await sb.from("listings").select(LIST_COLS+",note,reviewed").neq("status","rejected").order("created_at",{ascending:false}).limit(1000);
   if (error){ showMsg(niceError(error),"err",$("#listMsg")); return; }
   showMsg("","info",$("#listMsg"));
-  items = (data||[]).map(rowToItem);
+  items = (data||[]).map(r=>{ const it=rowToItem(r); it.L.reviewed=!!r.reviewed; return it; });
   renderAll();
 }
+async function loadSettings(){
+  const {data} = await sb.from("settings").select("auto_approve").eq("id",1).maybeSingle();
+  const on = !data || data.auto_approve!==false;
+  $("#autoApprove").checked = on; autoHint(on);
+}
+function autoHint(on){ $("#autoHint").textContent = on ? "New listings go live at once and appear here for you to check." : "New listings wait here until you approve them."; }
+$("#autoApprove").onchange = async e=>{
+  const on=e.target.checked;
+  const {error} = await sb.from("settings").update({auto_approve:on}).eq("id",1);
+  if (error){ e.target.checked=!on; showMsg(niceError(error),"err",$("#listMsg")); return; }
+  autoHint(on);
+};
 async function setStatus(item, patch){
   const {error} = await sb.from("listings").update(patch).eq("id",item.id);
   if (error) throw error;
+  if ("reviewed" in patch) item.L.reviewed = patch.reviewed;
   Object.assign(item.L, {status:patch.status??item.L.status, soldAt:patch.sold_at?Date.parse(patch.sold_at):(patch.status==="live"?null:item.L.soldAt), note:patch.note??item.L.note});
   renderAll();
 }
@@ -252,10 +272,15 @@ function adminTools(item){
   ask.addEventListener("click",()=>{ if (L.status==="pending") sb.from("listings").update({note:"Changes requested: "+sel.value}).eq("id",item.id).then(()=>{ L.note="Changes requested: "+sel.value; renderAll(); }); });
   const edit=btn("✎ Edit","",()=>startEdit(item));
   if (L.status==="pending"){
-    a.append(btn("✓ Approve","ok",()=>setStatus(item,{status:"live", note:null})), edit, sel, ask,
+    a.append(btn("✓ Approve","ok",()=>setStatus(item,{status:"live", note:null, reviewed:true})), edit, sel, ask,
+             btn("✕ Reject","bad",()=>removeItem(item),"Tap again: reject & delete"));
+  } else if (L.status==="live" && !L.reviewed){
+    a.append(btn("✓ Looks good","ok",()=>setStatus(item,{reviewed:true})), edit, sel, ask,
+             btn("⏸ Hide for changes","",()=>setStatus(item,{status:"pending", note:"Hidden for changes: "+sel.value})),
              btn("✕ Reject","bad",()=>removeItem(item),"Tap again: reject & delete"));
   } else if (L.status==="live"){
     a.append(btn("🏷️ Mark sold","",()=>setStatus(item,{status:"sold", sold_at:new Date().toISOString()})), edit, sel, ask,
+             btn("⏸ Hide","",()=>setStatus(item,{status:"pending", note:"Hidden for changes: "+sel.value})),
              btn("🗑 Delete","bad",()=>removeItem(item),"Tap again: delete"));
   } else {
     a.append(btn("↺ Mark available","",()=>setStatus(item,{status:"live", sold_at:null})),
@@ -265,13 +290,17 @@ function adminTools(item){
 }
 function renderAll(){
   const groups = {pending:[], live:[], sold:[]};
-  items.forEach(x=>{ if (groups[x.L.status]) groups[x.L.status].push(x); });
+  items.forEach(x=>{
+    if (x.L.status==="pending" || (x.L.status==="live" && !x.L.reviewed)) groups.pending.push(x);
+    if (x.L.status==="live" || x.L.status==="sold") groups[x.L.status].push(x);
+  });
   for (const [k,list] of Object.entries(groups)){
     const box=$("#"+k+"List"); box.innerHTML="";
     $("#n"+k[0].toUpperCase()+k.slice(1)).textContent = list.length?`(${list.length})`:"";
-    if (!list.length){ box.innerHTML=`<div class="empty">${k==="pending"?"Nothing waiting for review 🎉":"Nothing here."}</div>`; continue; }
+    if (!list.length){ box.innerHTML=`<div class="empty">${k==="pending"?"All new listings checked 🎉":"Nothing here."}</div>`; continue; }
     list.forEach(item=>{
-      const {card, body, meta} = buildCard(item, k==="pending"?"pending":"admin");
+      const {card, body, meta} = buildCard(item, item.L.status==="pending"?"pending":"admin");
+      if (k==="pending" && item.L.status==="live"){ const nb=document.createElement("div"); nb.className="ribbon pend"; nb.style.background="#1f8a4c"; nb.textContent="NEW · LIVE"; card.prepend(nb); }
       if (item.L.note){ const n=document.createElement("div"); n.className="hint"; n.style.color="#b7791f"; n.textContent="📝 "+item.L.note; body.appendChild(n); }
       body.appendChild(adminTools(item)); body.appendChild(meta); box.appendChild(card);
     });
@@ -285,7 +314,8 @@ $("#dumpBtn").onclick = ()=>{
 };
 function setForm(tp, f){
   const mb=document.querySelector(`#mains button[data-m="${GROUP[tp]}"]`); if (mb) mb.click();
-  if (GROUP[tp]==="moto"){ const b=document.querySelector(`#types button[data-t="${tp}"]`); if (b) b.click(); }
+  if (SUBTYPES[GROUP[tp]]){ const b=document.querySelector(`#types button[data-t="${tp}"]`); if (b) b.click(); }
+  for (const k of ["engine","price"]){ const u=$("#u_"+k); if (u && f[k+"_unit"]) u.value=f[k+"_unit"]; }
   for (const s of SCHEMAS[tp]){
     const el=$("#f_"+s.k); let v=f[s.k]; if (!el || v==null) continue;
     if (s.type==="checks"){ const vs=String(v).split(/,\s*/); el.querySelectorAll("input").forEach(c=>c.checked=vs.includes(c.value)); continue; }
@@ -314,7 +344,7 @@ $("#form").addEventListener("submit", async e=>{
   $("#submitBtn").disabled=true; showMsg("Saving…","info");
   try{
     const pics=photos.map(p=>p.url); f._np=pics.length;
-    const payload = {type, f, phone:f.phone, thumb: await makeThumb(pics[0]), photos:pics};
+    const payload = {type, f, phone:f.phone, thumb: await makeThumb(pics[0]), photos:pics, reviewed:true};
     let id;
     if (editing){
       id = editing.id;

@@ -5,6 +5,12 @@ const DISCLAIMER = "High End Communities only lists items and is not responsible
 const PHOTO_MAX_EDGE = 480;      // longest side in pixels (very low resolution)
 const PHOTO_MAX_BYTES = 35000;   // target size per photo (~35 KB)
 const MAX_PHOTOS = 4;
+const SMALL_TYPES = ["gear","acc","carpart","boatpart","equinepart"];   // small items & spare parts: 2 photos, up to 20 per seller
+const BULK_TYPES = ["watch", ...SMALL_TYPES];                          // up to 20 listings per seller
+function maxPhotos(t){ return SMALL_TYPES.includes(t || type) ? 2 : MAX_PHOTOS; }
+function photoRuleText(){ return SMALL_TYPES.includes(type)
+  ? "(1–2 photos for small items & spare parts, auto-reduced)"
+  : "(1–4 photos, auto-reduced to low resolution)"; }
 const BIKE_RANGE = [100000, 2000000];
 const GEAR_RANGES = {            // EGP
   "Helmet":[1500,80000], "Jacket":[2000,60000], "Gloves":[500,20000], "Boots":[2000,40000],
@@ -16,9 +22,16 @@ const ACC_RANGES = {
   "Mirrors":[500,15000], "Phone holder / mount":[300,8000], "Grips / levers / tank pad":[300,15000],
   "Other accessory":[500,100000]
 };
-const WATCH_RANGE = [5000, 20000000];
+const WATCH_RANGE = [4000, 2000000];
 const CAR_RANGE = [300000, 50000000];
-const EQUINE_RANGES = { "Horse":[20000,20000000], "Saddle & tack":[1000,500000], "Other equipment":[500,500000] };
+const HORSE_RANGE = [20000, 20000000];
+const EQUINE_RANGES = { "Saddle":[2000,500000], "Bridle & tack":[300,100000], "Rugs & blankets":[300,50000], "Grooming":[100,30000],
+  "Riding wear & helmets":[300,100000], "Stable & yard equipment":[500,500000], "Horse trailer / box":[30000,3000000], "Other":[100,500000] };
+const CARPART_RANGES = { "Wheels & tyres":[1000,500000], "Body parts":[500,300000], "Engine & mechanical":[500,1000000], "Lights":[300,150000],
+  "Interior":[300,300000], "Electronics & audio":[300,200000], "Performance parts":[1000,1000000], "Accessories":[100,200000], "Other":[100,1000000] };
+const BOATPART_RANGES = { "Engine & outboard":[5000,5000000], "Electronics & navigation":[1000,1000000], "Safety equipment":[200,200000],
+  "Deck hardware":[200,500000], "Water sports gear":[500,500000], "Covers & upholstery":[500,300000], "Trailer":[10000,1500000], "Other":[200,5000000] };
+const USD_TO_EGP = (typeof USD_RATE !== "undefined" && USD_RATE > 0) ? USD_RATE : 52;   // used only to check USD prices against the EGP ranges
 const BOAT_RANGES = { "Yacht":[1000000,300000000], "Speedboat":[300000,30000000], "Sailboat":[300000,50000000],
   "Jet ski":[150000,3000000], "Fishing boat":[100000,20000000], "Other":[50000,300000000] };
 const ESTATE_RANGES = { "Apartment":[500000,200000000], "Villa":[2000000,1000000000], "Townhouse / twin house":[1500000,500000000],
@@ -35,12 +48,12 @@ const SCHEMAS = {
     {k:"model", l:"Model name", req:1, ph:"e.g. Street Glide Special"},
     {k:"brand", l:"Brand", req:1, ph:"e.g. Harley-Davidson"},
     {k:"year", l:"Model year", req:1, type:"number", min:1960, max:thisYear+1, ph:String(thisYear-3)},
-    {k:"engine", l:"Engine size (cc)", req:1, type:"number", min:50, max:3000, ph:"e.g. 1868"},
+    {k:"engine", l:"Engine size", req:1, type:"number", min:50, max:3000, ph:"e.g. 1868 or 114", units:["cc","ci"], unitRange:{cc:[50,3000], ci:[3,200]}},
     {k:"mileage", l:"Mileage (km)", req:1, type:"number", min:0, max:500000, ph:"e.g. 12000"},
     {k:"paint", l:"Original paint", type:"select", opts:["Yes","No"], def:"Yes"},
     {k:"condition", l:"Condition", req:1, type:"select", opts:["New","Used"], def:"Used"},
     {k:"addons", l:"Add-ons", type:"textarea", full:1, ph:"Exhaust, crash bars, luggage…"},
-    {k:"price", l:"Price (EGP)", req:1, type:"price"},
+    {k:"price", l:"Price", req:1, type:"price", units:["EGP","USD"]},
     {k:"phone", l:"Phone number", req:1, type:"phone"}
   ],
   gear: [
@@ -53,7 +66,7 @@ const SCHEMAS = {
     {k:"certs", l:"Certifications", type:"checks", opts:["DOT","ECE","SNELL","None"], full:1},
     {k:"prodDate", l:"Production date", type:"month", hint:"Check the label inside the helmet"},
     {k:"buyDate", l:"Date of purchase", type:"month"},
-    {k:"price", l:"Price (EGP)", req:1, type:"price"},
+    {k:"price", l:"Price", req:1, type:"price", units:["EGP","USD"]},
     {k:"phone", l:"Phone number", req:1, type:"phone"}
   ],
   acc: [
@@ -64,7 +77,7 @@ const SCHEMAS = {
     {k:"condition", l:"Condition", req:1, type:"select", opts:["New","Used"], def:"Used"},
     {k:"color", l:"Color", ph:"e.g. Titanium"},
     {k:"packaging", l:"Original packaging", type:"select", opts:["Yes","No"], def:"No"},
-    {k:"price", l:"Price (EGP)", req:1, type:"price"},
+    {k:"price", l:"Price", req:1, type:"price", units:["EGP","USD"]},
     {k:"phone", l:"Phone number", req:1, type:"phone"}
   ],
   watch: [
@@ -77,7 +90,7 @@ const SCHEMAS = {
     {k:"material", l:"Case material", ph:"e.g. Steel, gold, titanium"},
     {k:"papers", l:"Box & papers", type:"select", opts:["Full set","Box only","Papers only","None"], def:"Full set"},
     {k:"condition", l:"Condition", req:1, type:"select", opts:["New","Used"], def:"Used"},
-    {k:"price", l:"Price (EGP)", req:1, type:"price"},
+    {k:"price", l:"Price", req:1, type:"price", units:["EGP","USD"]},
     {k:"phone", l:"Phone number", req:1, type:"phone"}
   ],
   car: [
@@ -92,14 +105,13 @@ const SCHEMAS = {
     {k:"paint", l:"Original paint", type:"select", opts:["Yes","No"], def:"Yes"},
     {k:"condition", l:"Condition", req:1, type:"select", opts:["New","Used"], def:"Used"},
     {k:"addons", l:"Options & extras", type:"textarea", full:1, ph:"Sport Chrono, ceramic brakes, service history…"},
-    {k:"price", l:"Price (EGP)", req:1, type:"price"},
+    {k:"price", l:"Price", req:1, type:"price", units:["EGP","USD"]},
     {k:"phone", l:"Phone number", req:1, type:"phone"}
   ],
   equine: [
-    {k:"category", l:"Type", req:1, type:"select", opts:Object.keys(EQUINE_RANGES), def:"Horse"},
-    {k:"name", l:"Horse name / item name", req:1, ph:"e.g. Desert Star"},
-    {k:"breed", l:"Breed / brand", req:1, ph:"e.g. Arabian, or saddle brand"},
-    {k:"gender", l:"Gender", type:"select", opts:["Mare","Stallion","Gelding","Filly","Colt","Not a horse"], def:"Mare"},
+    {k:"name", l:"Horse name", req:1, ph:"e.g. Desert Star"},
+    {k:"breed", l:"Breed", req:1, ph:"e.g. Arabian"},
+    {k:"gender", l:"Gender", type:"select", opts:["Mare","Stallion","Gelding","Filly","Colt"], def:"Mare"},
     {k:"age", l:"Age (years)", type:"number", min:0, max:40, ph:"e.g. 7"},
     {k:"height", l:"Height (cm)", type:"number", min:70, max:210, ph:"e.g. 152"},
     {k:"color", l:"Color", ph:"e.g. Grey"},
@@ -107,7 +119,7 @@ const SCHEMAS = {
     {k:"papers", l:"Pedigree / registration papers", type:"select", opts:["Yes","No"], def:"Yes"},
     {k:"vet", l:"Vet check available", type:"select", opts:["Yes","No"], def:"Yes"},
     {k:"condition", l:"Condition", req:1, type:"select", opts:["New","Used"], def:"Used"},
-    {k:"price", l:"Price (EGP)", req:1, type:"price"},
+    {k:"price", l:"Price", req:1, type:"price", units:["EGP","USD"]},
     {k:"phone", l:"Phone number", req:1, type:"phone"}
   ],
   boat: [
@@ -120,7 +132,7 @@ const SCHEMAS = {
     {k:"hours", l:"Engine hours", type:"number", min:0, max:100000, ph:"e.g. 600"},
     {k:"location", l:"Location / marina", ph:"e.g. Marina El Gouna"},
     {k:"condition", l:"Condition", req:1, type:"select", opts:["New","Used"], def:"Used"},
-    {k:"price", l:"Price (EGP)", req:1, type:"price"},
+    {k:"price", l:"Price", req:1, type:"price", units:["EGP","USD"]},
     {k:"phone", l:"Phone number", req:1, type:"phone"}
   ],
   art: [
@@ -134,7 +146,7 @@ const SCHEMAS = {
     {k:"coa", l:"Certificate of authenticity", type:"select", opts:["Yes","No"], def:"No"},
     {k:"condition", l:"Condition", req:1, type:"select", opts:["New","Used"], def:"Used"},
     {k:"state", l:"State", type:"select", opts:["Excellent","Good","Fair","Needs restoration"], def:"Excellent"},
-    {k:"price", l:"Price (EGP)", req:1, type:"price"},
+    {k:"price", l:"Price", req:1, type:"price", units:["EGP","USD"]},
     {k:"phone", l:"Phone number", req:1, type:"phone"}
   ],
   estate: [
@@ -149,15 +161,52 @@ const SCHEMAS = {
     {k:"delivery", l:"Delivery", type:"select", opts:["Ready to move","Under construction"], def:"Ready to move"},
     {k:"payment", l:"Payment", type:"select", opts:["Cash","Installments","Cash or installments"], def:"Cash"},
     {k:"condition", l:"Condition", req:1, type:"select", opts:["New","Used"], def:"Used", hint:"New = first sale from the developer · Used = resale"},
-    {k:"price", l:"Price (EGP)", req:1, type:"price"},
+    {k:"price", l:"Price", req:1, type:"price", units:["EGP","USD"]},
+    {k:"phone", l:"Phone number", req:1, type:"phone"}
+  ],
+  carpart: [
+    {k:"category", l:"Part type", req:1, type:"select", opts:Object.keys(CARPART_RANGES), def:"Wheels & tyres"},
+    {k:"name", l:"Item name", req:1, ph:"e.g. 20-inch alloy wheels"},
+    {k:"brand", l:"Brand", req:1, ph:"e.g. BBS, Bosch, original"},
+    {k:"compat", l:"Compatible with", req:1, ph:"e.g. Mercedes G-Class 2019–2024"},
+    {k:"oem", l:"Original or aftermarket", type:"select", opts:["Original (OEM)","Aftermarket"], def:"Original (OEM)"},
+    {k:"condition", l:"Condition", req:1, type:"select", opts:["New","Used"], def:"Used"},
+    {k:"price", l:"Price", req:1, type:"price", units:["EGP","USD"]},
+    {k:"phone", l:"Phone number", req:1, type:"phone"}
+  ],
+  boatpart: [
+    {k:"category", l:"Part type", req:1, type:"select", opts:Object.keys(BOATPART_RANGES), def:"Engine & outboard"},
+    {k:"name", l:"Item name", req:1, ph:"e.g. 150 HP outboard engine"},
+    {k:"brand", l:"Brand", req:1, ph:"e.g. Yamaha, Garmin"},
+    {k:"compat", l:"Fits / compatible with", ph:"e.g. boats 18–24 ft"},
+    {k:"hours", l:"Engine hours", type:"number", min:0, max:100000, ph:"if it's an engine"},
+    {k:"condition", l:"Condition", req:1, type:"select", opts:["New","Used"], def:"Used"},
+    {k:"price", l:"Price", req:1, type:"price", units:["EGP","USD"]},
+    {k:"phone", l:"Phone number", req:1, type:"phone"}
+  ],
+  equinepart: [
+    {k:"category", l:"Item type", req:1, type:"select", opts:Object.keys(EQUINE_RANGES), def:"Saddle"},
+    {k:"name", l:"Item name", req:1, ph:"e.g. Dressage saddle 17.5\""},
+    {k:"brand", l:"Brand", req:1, ph:"e.g. Stübben, Kentucky"},
+    {k:"size", l:"Size", ph:"e.g. 17.5\", Full, M"},
+    {k:"color", l:"Color", ph:"e.g. Brown"},
+    {k:"condition", l:"Condition", req:1, type:"select", opts:["New","Used"], def:"Used"},
+    {k:"price", l:"Price", req:1, type:"price", units:["EGP","USD"]},
     {k:"phone", l:"Phone number", req:1, type:"phone"}
   ]
 };
-const LABELS = {bike:"Motorcycle", gear:"Safety gear", acc:"Moto accessory", watch:"Watch", car:"Car", equine:"Equine", boat:"Yacht & boat", art:"Modern & art", estate:"Real estate"};
-const ICONS = {bike:"🏍️", gear:"🪖", acc:"🔧", watch:"⌚", car:"🚗", equine:"🐎", boat:"🛥️", art:"🎨", estate:"🏠"};
-const GROUP = {bike:"moto", gear:"moto", acc:"moto", watch:"watch", car:"car", equine:"equine", boat:"boat", art:"art", estate:"estate"};
-const RANGES = {bike:BIKE_RANGE, gear:GEAR_RANGES, acc:ACC_RANGES, watch:WATCH_RANGE, car:CAR_RANGE, equine:EQUINE_RANGES, boat:BOAT_RANGES, art:ART_RANGES, estate:ESTATE_RANGES};
-const UNITS = {mileage:" km", engine:" cc", size:" mm", length:" ft", hours:" h", height:" cm", age:" yrs", area:" m²"};
+const LABELS = {bike:"Motorcycle", gear:"Safety gear", acc:"Moto accessory", watch:"Watch", car:"Car", carpart:"Car part / accessory", equine:"Horse", equinepart:"Equine accessory", boatpart:"Marine part / accessory", boat:"Yacht & boat", art:"Modern & art", estate:"Real estate"};
+const ICONS = {bike:"🏍️", gear:"🪖", acc:"🔧", watch:"⌚", car:"🚗", carpart:"🔩", equinepart:"🏇", boatpart:"⚓", equine:"🐎", boat:"🛥️", art:"🎨", estate:"🏠"};
+const GROUP = {bike:"moto", gear:"moto", acc:"moto", watch:"watch", car:"car", carpart:"car", equinepart:"equine", boatpart:"boat", equine:"equine", boat:"boat", art:"art", estate:"estate"};
+const RANGES = {bike:BIKE_RANGE, gear:GEAR_RANGES, acc:ACC_RANGES, watch:WATCH_RANGE, car:CAR_RANGE, carpart:CARPART_RANGES, equine:HORSE_RANGE, equinepart:EQUINE_RANGES, boatpart:BOATPART_RANGES, boat:BOAT_RANGES, art:ART_RANGES, estate:ESTATE_RANGES};
+const SUBTYPES = {
+  moto:  [["bike","🏍️","Motorcycle"],["gear","🪖","Safety gear"],["acc","🔧","Accessory"]],
+  car:   [["car","🚗","Car"],["carpart","🔩","Parts & accessories"]],
+  boat:  [["boat","🛥️","Yacht / boat"],["boatpart","⚓","Parts & accessories"]],
+  equine:[["equine","🐎","Horse"],["equinepart","🏇","Saddles, tack & accessories"]]
+};
+const CI_TO_CC = 16.387;
+const UNITS = {mileage:" km", size:" mm", length:" ft", hours:" h", height:" cm", age:" yrs", area:" m²"};
 
 let type = "bike";
 let photos = []; // {url, bytes, w, h}
@@ -172,6 +221,11 @@ function priceRange(){
 }
 
 function renderFields(){
+  const pr = $("#photoRule"); if (pr) pr.textContent = photoRuleText();
+  if (typeof photos!=="undefined" && photos.length > maxPhotos()){
+    photos = photos.slice(0, maxPhotos()); renderThumbs();
+    const h=$("#photoHint"); if (h) h.textContent = `Small items and spare parts take up to ${maxPhotos()} photos, so the extra ones were removed.`;
+  }
   const box = $("#fields"); box.innerHTML = "";
   for (const f of SCHEMAS[type]){
     const wrap = document.createElement("div");
@@ -198,7 +252,14 @@ function renderFields(){
     }
     el.id = "f_"+f.k;
     if (f.ph) el.placeholder = f.ph;
-    wrap.appendChild(el);
+    if (f.units){
+      const row=document.createElement("div"); row.className="unitrow";
+      const us=document.createElement("select"); us.id="u_"+f.k; us.className="unit";
+      f.units.forEach(u=>{ const o=document.createElement("option"); o.value=u; o.textContent=u.toUpperCase(); us.appendChild(o); });
+      try{ const last = f.k==="price" ? localStorage.getItem("mm_cur") : null; if (last && f.units.includes(last)) us.value=last; }catch(e){}
+      us.addEventListener("change", ()=>{ if (f.k==="price"){ updatePriceHint(); try{ localStorage.setItem("mm_cur", us.value); }catch(e){} } else updateUnitHint(f); });
+      row.append(el, us); wrap.appendChild(row);
+    } else wrap.appendChild(el);
     const h = document.createElement("div"); h.className="hint"; h.id="h_"+f.k;
     h.textContent = f.hint || "";
     wrap.appendChild(h);
@@ -215,29 +276,57 @@ function renderFields(){
 }
 function updatePriceHint(){
   const [lo,hi] = priceRange();
-  const h = $("#h_price"); if (h) h.textContent = `Allowed range: ${fmt(lo)} – ${fmt(hi)} EGP`;
+  const cur = ($("#u_price")||{}).value || "EGP";
+  const h = $("#h_price"); if (!h) return;
+  h.textContent = cur==="USD"
+    ? `Allowed range: about $${fmt(Math.ceil(lo/USD_TO_EGP))} – $${fmt(Math.floor(hi/USD_TO_EGP))} (${fmt(lo)} – ${fmt(hi)} EGP)`
+    : `Allowed range: ${fmt(lo)} – ${fmt(hi)} EGP`;
+}
+function updateUnitHint(f){
+  const u = ($("#u_"+f.k)||{}).value; const h=$("#h_"+f.k); if (!h || !f.unitRange) return;
+  const [a,b] = f.unitRange[u]; h.textContent = u==="ci" ? `Cubic inches (${a}–${b}). Harley 107 ci ≈ 1,753 cc, 114 ci ≈ 1,868 cc` : `Cubic centimetres (${fmt(a)}–${fmt(b)})`;
+}
+function priceStr(f){ return (f.price_unit==="USD" ? "$"+fmt(f.price) : fmt(f.price)+" EGP"); }
+function unitStr(f, k, v){
+  const u = f[k+"_unit"];
+  if (k==="engine"){
+    if (u==="ci") return `${fmt(v)} ci (${fmt(Math.round(v*CI_TO_CC))} cc)`;
+    return `${fmt(v)} cc` + (v>=600 ? ` (${fmt(Math.round(v/CI_TO_CC))} ci)` : "");
+  }
+  return null;
 }
 
 function initCategoryPicker(){
-let motoSub = "bike";
-document.querySelectorAll("#mains button").forEach(b=>b.onclick=()=>{
-  const ph = ($("#f_phone")||{}).value;
-  document.querySelectorAll("#mains button").forEach(x=>x.classList.toggle("on",x===b));
-  const m = b.dataset.m;
-  $("#types").hidden = (m!=="moto");
-  type = m==="moto" ? motoSub : m;
-  renderFields();
-  if (ph) $("#f_phone").value = ph;
-  showMsg(""); $("#done").classList.remove("show");
-});
-document.querySelectorAll("#types button").forEach(b=>b.onclick=()=>{
-  const keep = {}; ["phone","price","brand"].forEach(k=>{const e=$("#f_"+k); if(e) keep[k]=e.value;});
-  document.querySelectorAll("#types button").forEach(x=>x.classList.toggle("on",x===b));
-  type = b.dataset.t; motoSub = type; renderFields();
-  if (keep.phone) $("#f_phone").value = keep.phone;
-  showMsg("");
-});
-
+  const lastSub = {moto:"bike", car:"car", boat:"boat", equine:"equine"};
+  const box = $("#types");
+  function drawSubs(group){
+    const subs = SUBTYPES[group];
+    box.hidden = !subs;
+    if (!subs) return;
+    box.innerHTML = "";
+    subs.forEach(([t,ic,label])=>{
+      const b=document.createElement("button"); b.type="button"; b.dataset.t=t; b.className = t===type?"on":"";
+      b.innerHTML = `<span class="ic">${ic}</span>`; b.appendChild(document.createTextNode(label));
+      b.onclick = ()=>{
+        const ph = ($("#f_phone")||{}).value;
+        type = t; lastSub[group] = t;
+        box.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));
+        renderFields(); if (ph) $("#f_phone").value = ph; showMsg("");
+      };
+      box.appendChild(b);
+    });
+  }
+  document.querySelectorAll("#mains button").forEach(b=>b.onclick=()=>{
+    const ph = ($("#f_phone")||{}).value;
+    document.querySelectorAll("#mains button").forEach(x=>x.classList.toggle("on",x===b));
+    const m = b.dataset.m;
+    type = SUBTYPES[m] ? lastSub[m] : m;
+    drawSubs(m);
+    renderFields();
+    if (ph) $("#f_phone").value = ph;
+    showMsg(""); const d=$("#done"); if (d) d.classList.remove("show");
+  });
+  drawSubs(GROUP[type] || "moto");
 }
 /* ---- Photos: shrink to very low resolution ---- */
 function initPhotoInputs(){
@@ -274,7 +363,7 @@ async function addFiles(list, input){
   const files = [...list].filter(f=>f.type.startsWith("image/"));
   input.value = "";
   for (const f of files){
-    if (photos.length >= MAX_PHOTOS){ $("#photoHint").textContent = `Maximum ${MAX_PHOTOS} photos.`; break; }
+    if (photos.length >= maxPhotos()){ $("#photoHint").textContent = `Maximum ${maxPhotos()} photos for this category.`; break; }
     try{ photos.push(await shrink(f)); }catch(e){ $("#photoHint").textContent = e.message; }
   }
   renderThumbs();
@@ -290,7 +379,7 @@ function renderThumbs(){
   });
   if (photos.length){
     const saved = photos.reduce((a,p)=>a+p.orig,0), now = photos.reduce((a,p)=>a+p.bytes,0);
-    $("#photoHint").textContent = `${photos.length}/${MAX_PHOTOS} photos · reduced from ${(saved/1048576).toFixed(1)} MB to ${Math.round(now/1024)} KB`;
+    $("#photoHint").textContent = `${photos.length}/${maxPhotos()} photos · reduced from ${(saved/1048576).toFixed(1)} MB to ${Math.round(now/1024)} KB`;
   } else $("#photoHint").textContent = "";
   $(".photos").classList.remove("bad");
 }
@@ -309,13 +398,19 @@ function collect(){
     if (f.req && !v){ fail(f.k, "Required"); continue; }
     if (f.type==="number" && v){
       const n = Number(v.replace(/[^\d]/g,""));
-      if (isNaN(n) || n<f.min || n>f.max){ fail(f.k, `Enter a number between ${f.min} and ${f.max}`); continue; }
-      v = n;
+      const u = f.units ? ($("#u_"+f.k)||{}).value : null;
+      const [mn,mx] = (f.unitRange && u) ? f.unitRange[u] : [f.min, f.max];
+      if (isNaN(n) || n<mn || n>mx){ fail(f.k, `Enter a number between ${fmt(mn)} and ${fmt(mx)}${u?" "+u:""}`); continue; }
+      v = n; if (u) data[f.k+"_unit"] = u;
     }
     if (f.type==="price"){
       const n = Number(v.replace(/[^\d]/g,"")); const [lo,hi] = priceRange();
-      if (!n || n<lo || n>hi){ fail(f.k, `Price must be between ${fmt(lo)} and ${fmt(hi)} EGP for this item`); continue; }
-      updatePriceHint(); v = n;
+      const cur = ($("#u_price")||{}).value || "EGP";
+      const egp = cur==="USD" ? n*USD_TO_EGP : n;
+      if (!n || egp<lo || egp>hi){ fail(f.k, cur==="USD"
+          ? `Price must be about $${fmt(Math.ceil(lo/USD_TO_EGP))} – $${fmt(Math.floor(hi/USD_TO_EGP))} for this item`
+          : `Price must be between ${fmt(lo)} and ${fmt(hi)} EGP for this item`); continue; }
+      updatePriceHint(); v = n; data.price_unit = cur;
     }
     if (f.type==="phone"){
       let p = v.replace(/[\s-]/g,"").replace(/^\+?20/,"0");
@@ -343,7 +438,8 @@ function rows(L){
   for (const f of SCHEMAS[L.type]){
     if (["price","phone","model","name"].includes(f.k)) continue;
     let v = L.f[f.k]; if (v===undefined||v==="") continue;
-    if (UNITS[f.k]) v = (f.k==="year"?v:fmt(v)) + UNITS[f.k];
+    const us = unitStr(L.f, f.k, v);
+    if (us) v = us; else if (UNITS[f.k]) v = (f.k==="year"?v:fmt(v)) + UNITS[f.k];
     out.push([f.l.replace(/ \(.*\)/,""), String(v)]);
   }
   return out;
@@ -352,7 +448,7 @@ function listingText(L){
   const tf = SCHEMAS[L.type].find(f=>f.k==="model"||f.k==="name");
   let t = `${LABELS[L.type]} for sale\n${tf.l}: ${L.f[tf.k]}\n`;
   for (const [k,v] of rows(L)) t += `${k}: ${v}\n`;
-  t += `Price: ${fmt(L.f.price)} EGP\nPhone number: ${L.f.phone}`;
+  t += `Price: ${priceStr(L.f)}\nPhone number: ${L.f.phone}`;
   return t;
 }
 
@@ -366,14 +462,14 @@ function shareText(L,id){
   return `${icon} *${MARKET_NAME}*\n\n${listingText(L)}` + (INCLUDE_LINK ? `\n\n📸 Photos & details: ${linkFor(id)}` : "") + `\n\n_⚠️ ${DISCLAIMER}_`;
 }
 function catalogueText(items){
-  const groups = {bike:"🏍️ *Motorcycles*", gear:"🪖 *Safety gear*", acc:"🔧 *Moto accessories*", watch:"⌚ *Watches*", car:"🚗 *Cars*", equine:"🐎 *Equine*", boat:"🛥️ *Yachts & boats*", art:"🎨 *Modern & art*", estate:"🏠 *Real estate*"};
+  const groups = {bike:"🏍️ *Motorcycles*", gear:"🪖 *Safety gear*", acc:"🔧 *Moto accessories*", watch:"⌚ *Watches*", car:"🚗 *Cars*", carpart:"🔩 *Car parts & accessories*", equinepart:"🏇 *Equine accessories*", boatpart:"⚓ *Marine parts & accessories*", equine:"🐎 *Equine*", boat:"🛥️ *Yachts & boats*", art:"🎨 *Modern & art*", estate:"🏠 *Real estate*"};
   let t = `📒 *${MARKET_NAME} — Catalogue*\n`;
   let n = 0;
   for (const g of Object.keys(groups)){
     const xs = items.filter(x=>x.L.type===g).slice(0,40);
     if (!xs.length) continue;
     t += `\n${groups[g]}\n`;
-    for (const {L} of xs){ n++; t += `${n}. ${titleOf(L)} — ${fmt(L.f.price)} EGP — 📞 ${L.f.phone}\n`; }
+    for (const {L} of xs){ n++; t += `${n}. ${titleOf(L)} — ${priceStr(L.f)} — 📞 ${L.f.phone}\n`; }
   }
   if (INCLUDE_LINK) t += `\n📸 Photos & full details: ${baseUrl()}`;
   t += `\n\n_⚠️ ${DISCLAIMER}_`;
@@ -451,6 +547,17 @@ function masarStrip(P,img,x,y,w,h,sp){
   if (sp.link && /^https:\/\//.test(sp.link)) P.link(x,y,w,h,sp.link);
 }
 
+function drawQR(P, text, x, y, size){
+  if (typeof window.qrcode !== "function") return false;
+  try{
+    const qr = window.qrcode(0, "M"); qr.addData(text); qr.make();
+    const n = qr.getModuleCount(), q = 2, cell = size/(n+2*q);
+    P.rect(x, y, size, size, "#ffffff", 1);
+    for (let r=0;r<n;r++){ let c=0; while(c<n){ if (qr.isDark(r,c)){ let e=c; while(e+1<n && qr.isDark(r,e+1)) e++; P.rect(x+(c+q)*cell, y+(r+q)*cell, (e-c+1)*cell+0.01, cell+0.01, "#111111"); c=e+1; } else c++; } }
+    P.link(x, y, size, size, text);
+    return true;
+  }catch(e){ return false; }
+}
 const FW = 150, FH = 228; // flyer size in mm (portrait, phone friendly)
 async function drawFlyer(P, L, id){
   const SP = flyerSponsor(); const logo = await loadSrc(logoFor(L.type)), masar = await loadSrc(SP.image);
@@ -460,19 +567,20 @@ async function drawFlyer(P, L, id){
   checker(P,0,0,FW,2);
   const lr = Math.min(52/logo.naturalWidth, 38/logo.naturalHeight);
   const lw = logo.naturalWidth*lr, lh = logo.naturalHeight*lr; P.img(logo,(FW-lw)/2,6,lw,lh);
+  if (drawQR(P, linkFor(id), FW-8-21, 6, 21)) P.text("Scan for photos", FW-8-10.5, 6+21+3, {size:5.2, color:"#77736b", align:"center"});
   let y = 6+lh+3;
   if (ph.length){ fitImg(P,ph[0],M,y,W,76); y+=76; }
   if (ph.length>1){ const tw=(W-2*3)/3, th=16; y+=2; ph.slice(1,4).forEach((im,i)=>fitImg(P,im,M+i*(tw+3),y,tw,th)); y+=th; }
   y += 6;
   const badge = (LABELS[L.type] + (L.f.category?" - "+L.f.category:"")).toUpperCase();
   P.text(badge,M,y,{size:7,bold:1,color:"#77736b"}); y+=6.5;
-  const priceTxt = fmt(L.f.price)+" EGP", po={size:19,bold:1,serif:1};
+  const priceTxt = priceStr(L.f), po={size:19,bold:1,serif:1};
   const pw = P.width(priceTxt,po);
   const tl = wrapText(P,titleOf(L),{size:15,bold:1,serif:1},W-pw-6,2);
   P.text(priceTxt,FW-M,y,{...po,align:"right"});
   tl.forEach((l,i)=>P.text(l,M,y+i*6,{size:15,bold:1,serif:1})); y += (tl.length-1)*6 + 4;
   P.rect(M,y,W,0.3,"#dedad2"); y+=5;
-  const SKIP = ["Add-ons","Options & extras","Item type","Accessory type","Type"];
+  const SKIP = ["Add-ons","Options & extras","Item type","Accessory type","Type","Part type","Property type"];
   const det = rows(L).filter(([k])=>!SKIP.includes(k));
   const cw = W/2;
   det.slice(0,8).forEach(([k,v],i)=>{
@@ -488,8 +596,8 @@ async function drawFlyer(P, L, id){
   P.rect(M,by,W,11,"#2b2b2b",2);
   P.text("Call / WhatsApp   "+L.f.phone,FW/2,by+7.3,{size:12,bold:1,color:"#ffffff",align:"center"});
   P.link(M,by,W,11,"https://wa.me/2"+String(L.f.phone).replace(/\D/g,""));
-  P.text("Photos & more listings: "+linkFor(id).replace(/^https?:\/\//,""),FW/2,by+15,{size:6,color:"#77736b",align:"center"});
-  P.link(M,by+12,W,4,linkFor(id));
+  P.text("More listings: "+baseUrl().replace(/^https?:\/\//,""),FW/2,by+15.3,{size:7.5,bold:1,color:"#2b2b2b",align:"center"});
+  P.link(M,by+12,W,4.5,linkFor(id));
   wrapText(P,DISCLAIMER,{size:5.6},W,2).forEach((l,i)=>P.text(l,FW/2,by+18.5+i*2.6,{size:5.6,color:"#9a958c",align:"center"}));
   masarStrip(P,masar,M,FH-14,W,11,SP);
   checker(P,0,FH-2,FW,1);
@@ -539,7 +647,10 @@ const KEYWORDS = {
   gear:["helmet","jacket","gloves","boots","intercom","sena","cardo","shoei","arai","agv","hjc","alpinestars","dainese","rev'it","revit","klim","خوذة","خوذه","جاكيت"],
   acc:["exhaust","akrapovic","akrapovič","vance","led","fog light","crash bar","slider","top box","pannier","windscreen","windshield","mirror","grips","شكمان"],
   boat:["yacht","boat","jet ski","jetski","sea-doo","seadoo","azimut","ferretti","sunseeker","princess","riva","sailboat","speedboat","marina","يخت","مركب","لانش"],
-  equine:["horse","mare","stallion","gelding","filly","colt","saddle","bridle","arabian","حصان","فرس","مهر","سرج"],
+  equine:["horse","mare","stallion","gelding","filly","colt","arabian","حصان","فرس","مهر"],
+  equinepart:["saddle","bridle","girth","stirrup","horse rug","numnah","saddle pad","riding boots","riding helmet","horse trailer","horse box","سرج","لجام","ركاب"],
+  carpart:["tyre","tyres","tire","tires","rim","rims","wheels","bumper","headlight","tail light","spare part","spare parts","car part","brake","exhaust system","قطع غيار","كاوتش","جنط","كشاف"],
+  boatpart:["outboard","propeller","fishfinder","fish finder","chartplotter","life jacket","anchor","boat trailer","marine","bimini","wakeboard","water ski","موتور بحري","رفاص"],
   art:["painting","sculpture","canvas","artist","oil on","acrylic","bronze","print","lithograph","antique","collectible","لوحة","لوحه","تمثال"],
   estate:["apartment","villa","chalet","flat","duplex","penthouse","townhouse","twin house","compound","sqm","m2","m²","bedroom","land","office","شقة","شقه","فيلا","شاليه","أرض","متر"]
 };
@@ -547,7 +658,9 @@ const BRANDS = ["Harley-Davidson","Ducati","Triumph","KTM","Kawasaki","Yamaha","
   "Rolex","Omega","Patek Philippe","Audemars Piguet","Cartier","TAG Heuer","Breitling","Tudor","Hublot","IWC","Panerai","Longines","Seiko","Richard Mille",
   "Mercedes-Benz","Mercedes","Porsche","Audi","Toyota","Lexus","Range Rover","Land Rover","Jeep","Ferrari","Lamborghini","Bentley","Maserati","Nissan","Hyundai","Kia","Volvo",
   "Shoei","Arai","AGV","HJC","Sena","Cardo","Alpinestars","Dainese","Klim","Akrapovic","Vance & Hines","SW-Motech","Givi",
-  "Azimut","Ferretti","Sunseeker","Princess","Riva","Sea-Doo","Yamaha WaveRunner"];
+  "Azimut","Ferretti","Sunseeker","Princess","Riva","Sea-Doo","Yamaha WaveRunner","Mercury","Evinrude","Garmin","Raymarine","Lowrance","Simrad",
+  "BBS","Vossen","Brembo","Bosch","Michelin","Pirelli","Bridgestone","Continental","Recaro","Akrapovic","Bilstein","KW","Eibach","Hella","Bose",
+  "Stübben","Stubben","Kentucky","Prestige","Passier","Kieffer","Pessoa","Equiline","Samshield","Cavallo"];
 function toLatinDigits(t){ return t.replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d)); }
 function parseDump(raw){
   const t0 = toLatinDigits(String(raw||"")).replace(/[*_~]/g,"");
@@ -579,17 +692,28 @@ function parseDump(raw){
   const phone = t0.replace(/[\s-]/g,"").match(/(?:\+?20|0)1[0125]\d{8}/);
   if (phone && !out.vals.phone) out.vals.phone = phone[0].replace(/^\+?20/,"0");
   if (!out.vals.price){
-    let m = low.match(/(\d+(?:[.,]\d+)?)\s*(m|mil|million|مليون)\b/) ;
-    let p = null;
-    if (m) p = Math.round(parseFloat(m[1].replace(",","."))*1e6);
-    else if ((m = low.match(/(\d+(?:[.,]\d+)?)\s*(k|الف|ألف|آلاف)/))) p = Math.round(parseFloat(m[1].replace(",","."))*1e3);
-    else if ((m = low.match(/(?:price|السعر|سعر|egp|le|l\.e|جنيه|ج\.م)[^\d]{0,12}([\d.,]{4,})/) || low.match(/([\d.,]{4,})\s*(?:egp|le|l\.e|جنيه|ج)/)))
+    const noPhone = low.replace(/(?:\+?20|0)1[0125][\d\s-]{8,11}/g," ");
+    let m, p = null;
+    if ((m = noPhone.match(/\$\s*([\d][\d.,]*)\s*(m|k)?\b/) || noPhone.match(/\b([\d][\d.,]*)\s*(m|k)?\s*(?:\$|usd\b|dollars?\b|دولار)/))){
+      p = parseFloat(m[1].replace(/,/g,"")); if (m[2]==="k") p*=1e3; if (m[2]==="m") p*=1e6;
+    }
+    else if ((m = noPhone.match(/\b(\d+(?:[.,]\d+)?)\s*(?:m|mil|million|مليون)(?![a-z])/))) p = parseFloat(m[1].replace(",","."))*1e6;
+    else if ((m = noPhone.match(/\b(\d+(?:[.,]\d+)?)\s*(?:k\b|الف|ألف|آلاف)/))) p = parseFloat(m[1].replace(",","."))*1e3;
+    else if ((m = noPhone.match(/(?:\bprice\b|السعر|سعر|\begp\b|\ble\b|\bl\.e\b|جنيه|ج\.م)[^\d]{0,12}([\d][\d.,]{2,})/) || noPhone.match(/\b([\d][\d.,]{2,})\s*(?:egp\b|le\b|l\.e\b|جنيه|ج\b)/)))
       p = parseInt(m[1].replace(/[.,]/g,""),10);
-    if (p) out.vals.price = String(p);
+    else {
+      // last resort: the biggest "12,345"-style number that isn't km, cc, a year or a size
+      const nums = [...noPhone.matchAll(/\b(\d{1,3}(?:,\d{3})+|\d{4,})\b(?!\s*(?:km|cc|ci|mm|kg|m2|sqm|ft|hp|h\b|inch|"))/g)]
+        .map(x=>parseInt(x[1].replace(/,/g,""),10)).filter(n=>!(n>=1950 && n<=2035));
+      if (nums.length) p = Math.max(...nums);
+    }
+    if (p) out.vals.price = String(Math.round(p));
   }
   const yr = t0.match(/\b(19[5-9]\d|20[0-3]\d)\b/); if (yr && !out.vals.year) out.vals.year = yr[1];
   const km = low.match(/([\d.,]+)\s*(?:km|kilo|كم|كيلو)/); if (km && !out.vals.mileage) out.vals.mileage = km[1].replace(/[.,]/g,"");
-  const cc = low.match(/(\d{2,4})\s*cc\b/); if (cc && !out.vals.engine) out.vals.engine = cc[1];
+  const cc = low.match(/(\d{2,4})\s*cc\b/); if (cc && !out.vals.engine){ out.vals.engine = cc[1]; out.vals.engine_unit = "cc"; }
+  const ci = low.match(/(\d{2,3})\s*(?:ci|cu\.?\s*in|cubic inch(?:es)?)\b/); if (ci && !out.vals.engine){ out.vals.engine = ci[1]; out.vals.engine_unit = "ci"; }
+  if (/\$|\busd\b|dollars?\b|دولار/.test(low)) out.vals.price_unit = "USD";
   const mm = low.match(/(\d{2})\s*mm\b/); if (mm && !out.vals.size) out.vals.size = mm[1];
   const ar = low.match(/(\d{2,6})\s*(?:m2|m²|sqm|متر)/); if (ar && !out.vals.area) out.vals.area = ar[1];
   const bd = low.match(/(\d{1,2})\s*(?:bed|bedroom|rooms|غرف|غرفة)/); if (bd && !out.vals.bedrooms) out.vals.bedrooms = bd[1];
@@ -598,7 +722,12 @@ function parseDump(raw){
   const norm = x=>x.toLowerCase().replace(/[-_]/g," ").replace(/\s+/g," ");
   const lowN = norm(t0);
   if (!out.vals.brand){
-    const b = BRANDS.slice().sort((x,y)=>y.length-x.length).find(b=>lowN.includes(norm(b)) || (b==="Harley-Davidson" && /\bharley\b/.test(lowN)));
+    let b=null, at=1e9;
+    for (const c of BRANDS.slice().sort((x,y)=>y.length-x.length)){
+      let i = lowN.search(new RegExp("\\b"+norm(c).replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\b"));
+      if (i<0 && c==="Harley-Davidson") i = lowN.search(/\bharley\b/);
+      if (i>=0 && i<at){ at=i; b=c; }
+    }
     if (b) out.vals.brand = b==="Mercedes"?"Mercedes-Benz":b;
   }
   // Title/model: first meaningful line when not given
@@ -606,15 +735,20 @@ function parseDump(raw){
   if (!out.vals[nameKey]){
     const first = lines.find(l=>!/for sale|^📞|^\+?\d[\d\s]{8,}$/i.test(l) && !/:\s/.test(l));
     if (first){
-      let n = first.replace(/[^\p{L}\p{N}\s&.'\-\/]/gu," ").replace(/\s+/g," ").trim();
+      let n = first.replace(/(?:\+?20|0)1[0125][\d\s-]{8,11}/g," ").replace(/\$\s*[\d.,]+\s*[km]?/gi," ")
+        .replace(/\b\d+(?:[.,]\d+)*\s*(mm|cc|ci|km|kg|hp|ft|inch|in|k|m|egp|le|usd)\b/ig," ").replace(/\b\d{1,3}(?:,\d{3})+\b/g," ")
+        .replace(/[^\p{L}\p{N}\s&.'\-\/]/gu," ").replace(/\s+/g," ").trim();
       if (out.vals.brand){
         const parts = [out.vals.brand, ...out.vals.brand.split(/[-\s]+/)].filter(w=>w.length>1);
         for (const w of parts) n = n.replace(new RegExp("\\b"+w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\b","ig"),"").trim();
         n = n.replace(/\s+/g," ").trim();
       }
-      n = n.replace(/\b(19|20)\d\d\b/,"").replace(/\b\d+(?:[.,]\d+)?\s*(mm|cc|km|k|m)\b/ig,"")
+      n = n.replace(/(?:\+?20|0)1[0125][\d\s-]{8,11}/g," ").replace(/\$\s*[\d.,]+\s*[km]?/gi," ")
+           .replace(/\b(19|20)\d\d\b/,"").replace(/\b\d+(?:[.,]\d+)?\s*(mm|cc|ci|km|kg|hp|ft|inch|in|k|m|egp|le|usd|\$)\b/ig,"")
+           .replace(/\b\d{1,3}(?:[.,]\d{3})+\b/g,"").replace(/\b\d{3,}\b/g,"")
            .replace(/\b(full set|box (and|&) papers|brand new|new|used|original paint|for sale)\b/ig,"").replace(/(زيرو|جديد|مستعمل|للبيع)/g,"")
            .replace(/\s+/g," ").trim();
+      n = n.replace(/\s+/g," ").trim().split(" ").slice(0,7).join(" ");
       if (n) out.vals[nameKey] = n.slice(0,50);
     }
   }
@@ -623,8 +757,9 @@ function parseDump(raw){
 function applyDump(raw){
   const {type:tp, vals} = parseDump(raw);
   const mainBtn = document.querySelector(`#mains button[data-m="${GROUP[tp]}"]`); if (mainBtn) mainBtn.click();
-  if (GROUP[tp]==="moto"){ const b=document.querySelector(`#types button[data-t="${tp}"]`); if (b) b.click(); }
+  if (SUBTYPES[GROUP[tp]]){ const b=document.querySelector(`#types button[data-t="${tp}"]`); if (b) b.click(); }
   let n=0;
+  for (const k of ["engine","price"]){ const u=$("#u_"+k); if (u && vals[k+"_unit"] && [...u.options].some(o=>o.value===vals[k+"_unit"])){ u.value=vals[k+"_unit"]; u.dispatchEvent(new Event("change")); } }
   const order = SCHEMAS[tp].slice().sort((a,b)=>(a.k==="category"?-1:0)-(b.k==="category"?-1:0));
   for (const f of order){
     let v = vals[f.k]; if (v==null || v==="") continue;
@@ -772,7 +907,7 @@ function buildCard(item, mode){
   const badge=document.createElement("div"); badge.className="badge";
   badge.textContent = LABELS[L.type] + (L.f.category?" · "+L.f.category:"") + (L.f.condition?" · "+L.f.condition:"");
   const h=document.createElement("h3"); h.textContent=titleOf(L);
-  const pr=document.createElement("div"); pr.className="price"; pr.textContent = sold?"SOLD":fmt(L.f.price)+" EGP";
+  const pr=document.createElement("div"); pr.className="price"; pr.textContent = sold?"SOLD":priceStr(L.f);
   const dl=document.createElement("dl");
   for (const [k,v] of rows(L)){ const dt=document.createElement("dt"); dt.textContent=k; const dd=document.createElement("dd"); dd.textContent=v; dl.append(dt,dd); }
   const c=document.createElement("div"); c.className="contact";
@@ -830,7 +965,11 @@ async function exportCatalogue(){
       const lw=46, lh=lw*logo.naturalHeight/logo.naturalWidth; P.img(logo,(PW-lw)/2,7,lw,lh);
       y = 7+lh+5;
       P.text("CATALOGUE",PW/2,y,{size:13,bold:1,serif:1,align:"center"});
-      P.text(items.length+" listings - "+new Date().toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"}),PW/2,y+5,{size:8,color:"#77736b",align:"center"});
+      const site = baseUrl().replace(/^https?:\/\//,"");
+      P.text("Live catalogue: "+site,PW/2,y+5.5,{size:9,bold:1,color:"#2b2b2b",align:"center"});
+      P.link(PW/2-45,y+1.5,90,5.5,baseUrl()+"/");
+      P.text(items.length+(items.length===1?" listing - ":" listings - ")+new Date().toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"}),PW/2,y+9.5,{size:7,color:"#77736b",align:"center"});
+      if (drawQR(P, baseUrl()+"/", PW-M-26, 7, 26)) P.text("Scan to open the site", PW-M-13, 7+26+3, {size:5.5, color:"#77736b", align:"center"});
       y += 10;
     } else y = 8;
   };
@@ -844,11 +983,11 @@ async function exportCatalogue(){
     let ty = y+46.5;
     P.text((LABELS[L.type]+(L.f.category?" - "+L.f.category:"")).toUpperCase(),x+3,ty,{size:6.5,bold:1,color:"#77736b"});
     ty+=5.5;
-    const pt=fmt(L.f.price)+" EGP", pw=P.width(pt,{size:12,bold:1,serif:1});
+    const pt=priceStr(L.f), pw=P.width(pt,{size:12,bold:1,serif:1});
     P.text(clip(P,titleOf(L),{size:11,bold:1,serif:1},CW-pw-9),x+3,ty,{size:11,bold:1,serif:1});
     P.text(pt,x+CW-3,ty,{size:12,bold:1,serif:1,align:"right"});
     ty+=5;
-    const facts = rows(L).filter(([k])=>!["Brand","Builder / brand","Item type","Accessory type","Type","Add-ons","Options & extras"].includes(k)).map(([k,v])=>v).join("  |  ");
+    const facts = rows(L).filter(([k])=>!["Brand","Builder / brand","Item type","Accessory type","Type","Part type","Add-ons","Options & extras"].includes(k)).map(([k,v])=>v).join("  |  ");
     P.text(clip(P,facts,{size:7.5},CW-6),x+3,ty,{size:7.5,color:"#4a463f"});
     ty+=6.5;
     P.rect(x+3,ty-4.2,CW-6,6,"#2b2b2b",1.5);

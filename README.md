@@ -10,15 +10,15 @@ High End Communities is a members' marketplace where people list items for sale 
 
 ## Categories
 
-Every listing is marked **New** or **Used**.
+Every listing is marked **New** or **Used**. Prices can be entered in **EGP or US dollars**; motorcycle engines in **cc or ci** (cubic inches).
 
 | | Category | What you can list |
 |---|---|---|
 | 🏍️ | **Motorcycles** | Motorcycles, safety gear (helmets, jackets, gloves, boots, intercoms) and accessories (exhausts, LED lights, luggage, crash bars…) |
-| ⌚ | **Watches** | Luxury and collectible watches |
-| 🚗 | **Cars** | Cars of every type |
-| 🐎 | **Equine** | Horses, saddles, tack and equipment |
-| 🛥️ | **Yachts & boats** | Yachts, speedboats, sailboats, jet skis, fishing boats |
+| ⌚ | **Watches** | Luxury and collectible watches (4,000 – 2,000,000 EGP) |
+| 🚗 | **Cars** | Cars of every type, plus car parts & accessories (wheels, body, engine, lights, interior, electronics, performance) |
+| 🐎 | **Equine** | Horses, plus saddles, tack, rugs, riding wear, stable equipment and horse trailers |
+| 🛥️ | **Yachts & boats** | Yachts, speedboats, sailboats, jet skis, fishing boats, plus marine parts & accessories (engines, electronics, safety, trailers) |
 | 🎨 | **Modern & art** | Paintings, sculpture, photography, prints, furniture & design, collectibles |
 | 🏠 | **Real estate** | Apartments, villas, townhouses, chalets, penthouses, land, commercial |
 
