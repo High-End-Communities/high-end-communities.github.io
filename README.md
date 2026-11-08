@@ -4,7 +4,9 @@
 
 High End Communities is a members' marketplace where people list items for sale and share them in the community WhatsApp group.
 
-🌐 **Catalogue:** https://high-end-communities.github.io
+🌐 **Catalogue (everyone, read-only):** https://high-end-communities.github.io
+➕ **Post a listing (sellers):** https://high-end-communities.github.io/post.html
+🔐 **Admin portal (login):** https://high-end-communities.github.io/admin.html
 
 ## Categories
 
@@ -22,11 +24,12 @@ Every listing is marked **New** or **Used**.
 
 ## How to list an item
 
-1. Open the catalogue and tap **Post a listing**.
+1. Open the **Post a listing** link. Tip: paste your WhatsApp message in **Quick fill** and the form fills itself.
 2. Choose the category and take or choose 1–4 photos. Photos are reduced to a small size automatically.
 3. Fill in the required details: name, brand or type, condition (New / Used), price and phone number. Prices must be within the range set for that category.
 4. Tick **I accept the terms** (below).
-5. Post, then share it to the WhatsApp group as a message, a flyer image or a PDF.
+5. Send it for review. You get a **6-digit seller code**: keep it, you need it to mark your item as sold.
+6. Once the admin approves it, it appears in the catalogue and can be shared to WhatsApp as a message, flyer image or PDF.
 
 ## Terms of use and disclaimer
 

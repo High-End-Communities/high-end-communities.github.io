@@ -4,7 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>High End Communities</title>
-<meta name="description" content="Buy and sell motorcycles, watches, cars, horses, yachts, art and real estate — new and used. Browse the catalogue with photos, prices and seller numbers.">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2b2b2b">
+<link rel="icon" href="favicon.ico">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="High End">
+<meta name="description" content="Buy and sell motorcycles, watches, cars, horses, yachts, art and real estate — new and used.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="High End Communities">
 <meta property="og:title" content="High End Communities — Catalogue">
@@ -16,22 +24,153 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta http-equiv="refresh" content="3; url=https://claude.ai/artifact/UEBS9KYGWe7DqUvmdha1YF">
-<style>
-  body{margin:0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:#fff;color:#2b2b2b;font:16px system-ui,sans-serif;text-align:center;padding:20px}
-  img{max-width:min(520px,90vw);height:auto}
-  .d{max-width:520px;font-size:12px;color:#77736b;line-height:1.5}
-  a{color:#fff;background:#2b2b2b;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:600}
-</style>
-<script>
-  // Keep any "#l-..." listing link when forwarding to the catalogue
-  setTimeout(function(){ location.replace("https://claude.ai/artifact/UEBS9KYGWe7DqUvmdha1YF" + location.hash); }, 2500);
-</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
 </head>
 <body>
-  <img src="logo.jpeg" alt="High End Communities">
-  <p>Opening the catalogue…</p>
-  <a href="https://claude.ai/artifact/UEBS9KYGWe7DqUvmdha1YF">Open catalogue</a>
-  <p class="d">⚠️ High End Communities only lists items and is not responsible for any product promoted. Buyers must do their own due diligence and check ownership papers with a lawyer before buying.</p>
+<div class="checker"></div>
+<header>
+  <img id="mainLogo" alt="High End Communities" style="width:min(260px,70vw);height:auto;display:block;margin:0 auto">
+  <div class="brands" id="brands"></div>
+  <p class="sub">Buy and sell motorcycles, watches, cars, horses, yachts &amp; boats, modern &amp; art, and real estate — new and used.</p>
+</header>
+<div class="checker"></div>
+<main>
+  <div class="topnav">
+    <a class="btn primary" href="post.html">➕ Sell something — post a listing</a>
+  </div>
+  <aside class="masar sponsor-banner"></aside>
+  <div class="toolbar">
+    <div class="filters" id="filters">
+      <button class="chip on" data-f="all">All</button>
+      <button class="chip" data-f="moto">🏍️ Motorcycles</button>
+      <button class="chip" data-f="watch">⌚ Watches</button>
+      <button class="chip" data-f="car">🚗 Cars</button>
+      <button class="chip" data-f="equine">🐎 Equine</button>
+      <button class="chip" data-f="boat">🛥️ Yachts & boats</button>
+      <button class="chip" data-f="art">🎨 Modern & art</button>
+      <button class="chip" data-f="estate">🏠 Real estate</button>
+    </div>
+  </div>
+  <div class="toolbar">
+    <label class="showsold"><input type="checkbox" id="showSold" checked> Show sold</label>
+    <span>
+      <button type="button" class="btn ghost small" id="catPdf" hidden>📄 Catalogue PDF</button>
+      <a class="btn wa small" id="catShare" href="#" target="_blank" rel="noopener" hidden>Share catalogue on WhatsApp</a>
+    </span>
+  </div>
+  <div class="disc">⚠️ High End Communities only lists items and is not responsible for any product promoted. Buyers must do their own due diligence and check ownership papers with a lawyer.<details class="tx"><summary>Read the full terms</summary>
+        <ol>
+          <li><b>Listing platform only.</b> High End Communities is a place where members advertise items. We do not own, inspect, verify, value or guarantee any item, and we are not a party to any sale.</li>
+          <li><b>No responsibility.</b> High End Communities, its admins and sponsors are not responsible for any product promoted here, its condition, legality, ownership, description or price, or for any loss or dispute arising from a sale.</li>
+          <li><b>Due diligence is yours.</b> Buyers must inspect the item, verify the seller's identity, and confirm the seller owns it and can legally sell it.</li>
+          <li><b>Check the papers with a lawyer.</b> Before paying, consult a lawyer or the relevant authority for the ownership and transfer papers the item needs, for example: vehicle or motorcycle licence and traffic records; boat registration and marina papers; property title deed, registration and contract; horse passport, pedigree and vet certificate; watch box &amp; papers, or a certificate of authenticity for art.</li>
+          <li><b>Seller's responsibility.</b> Sellers confirm they own the item or are authorised to sell it, that the description and photos are true, and that the item is legal to sell.</li>
+          <li><b>Payments and meetings</b> are arranged directly between buyer and seller at their own risk. Meet in safe places and never pay before checking the item and its papers.</li>
+          <li>Admins may remove any listing at any time.</li>
+        </ol>
+      </details></div>
+  <div class="msg" id="listMsg"></div>
+  <div class="list" id="list"></div>
+</main>
+
+<div class="modal" id="soldModal" hidden>
+  <div class="card">
+    <h3>Mark as sold</h3>
+    <p class="muted" id="soldTitle" style="font-size:14px"></p>
+    <label for="soldCode">Your 6-digit seller code</label>
+    <input id="soldCode" inputmode="numeric" maxlength="12" placeholder="e.g. 482913">
+    <div class="hint">You got it when you posted. Lost it? Ask the admin on WhatsApp.</div>
+    <div class="actions">
+      <button type="button" class="btn primary" id="soldGo">Mark as sold</button>
+      <a class="btn ghost" id="soldAsk" target="_blank" rel="noopener">Ask the admin</a>
+      <button type="button" class="btn ghost" id="soldClose">Close</button>
+    </div>
+    <div class="msg" id="soldMsg"></div>
+  </div>
+</div>
+<footer>High End Communities · Estd 2024</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="config.js"></script>
+<script src="common.js"></script>
+
+<script>
+let all = [], filter = "all";
+initHeader();
+startBannerRotation();
+loadSponsors().then(startBannerRotation);
+countPage("catalogue");
+
+function openSold(item){
+  $("#soldTitle").textContent = titleOf(item.L);
+  $("#soldCode").value = ""; showMsg("","info",$("#soldMsg"));
+  $("#soldAsk").href = adminHref(`✅ *Please mark as SOLD*\n\n${titleOf(item.L)}\nRef: ${item.id}\n\nI'm the seller (listed number ${item.L.f.phone}). I lost my seller code.`);
+  $("#soldGo").onclick = async ()=>{
+    const code = $("#soldCode").value.replace(/\D/g,"");
+    if (code.length<4){ showMsg("Enter your seller code.","err",$("#soldMsg")); return; }
+    $("#soldGo").disabled = true;
+    try{
+      const {data, error} = await sb.rpc("seller_mark_sold",{p_id:item.id, p_code:code});
+      if (error) throw error;
+      const m = {ok:"Done — your listing is marked as sold. Thank you!", wrong:"That code is not right. Please check it.", locked:"Too many wrong tries. Ask the admin to mark it sold.", no_code:"This listing has no seller code. Ask the admin.", not_found:"This listing can't be changed any more."}[data] || "Something went wrong.";
+      showMsg(m, data==="ok"?"ok":"err", $("#soldMsg"));
+      if (data==="ok"){ item.L.status="sold"; item.L.soldAt=Date.now(); render(); setTimeout(()=>$("#soldModal").hidden=true, 1500); }
+    }catch(e){ showMsg(niceError(e),"err",$("#soldMsg")); }
+    finally{ $("#soldGo").disabled = false; }
+  };
+  $("#soldModal").hidden = false;
+}
+$("#soldClose").onclick = ()=>{ $("#soldModal").hidden = true; };
+
+function render(){
+  const box = $("#list"); box.innerHTML = "";
+  const showSold = $("#showSold").checked;
+  const inCat = all.filter(x=>x.L.f && SCHEMAS[x.L.type] && (filter==="all" || GROUP[x.L.type]===filter));
+  const live = inCat.filter(x=>x.L.status!=="sold"), sold = inCat.filter(x=>x.L.status==="sold");
+  const items = showSold ? live.concat(sold) : live;
+  shownItems = live;
+  $("#catShare").hidden = !live.length; $("#catPdf").hidden = !live.length;
+  $("#catShare").href = waHref(catalogueText(live));
+  if (!items.length){ box.innerHTML = `<div class="empty">No listings here yet.</div>`; return; }
+  items.forEach((item,i)=>{
+    const {card, body, meta} = buildCard(item, "public");
+    if (item.L.status!=="sold"){
+      const s=document.createElement("button"); s.type="button"; s.className="seller"; s.textContent="Are you the seller? Mark as sold";
+      s.onclick = ()=>openSold(item); body.appendChild(s);
+    }
+    body.appendChild(meta);
+    box.appendChild(card);
+    if (viewObserver) viewObserver.observe(card);
+    if ((i+1) % 6 === 0 && i < items.length-1) box.appendChild(feedSponsorCard(Math.floor(i/6)));
+  });
+}
+document.querySelectorAll("#filters .chip").forEach(b=>b.onclick=()=>{
+  filter=b.dataset.f; document.querySelectorAll("#filters .chip").forEach(x=>x.classList.toggle("on",x===b)); render();
+});
+$("#showSold").onchange = render;
+$("#catPdf").onclick = ()=>exportCatalogue();
+
+function goToHash(){
+  const h=(location.hash||"").slice(1); if (!h.startsWith("l-")) return;
+  const el=document.getElementById(h);
+  if (el){ el.scrollIntoView({behavior:"smooth",block:"start"}); el.classList.add("hl"); setTimeout(()=>el.classList.remove("hl"),2500); }
+}
+window.addEventListener("hashchange", goToHash);
+
+(async ()=>{
+  if (!sb){ showMsg("The catalogue isn't connected to its database yet (config.js).","err",$("#listMsg")); return; }
+  showMsg("Loading listings…","info",$("#listMsg"));
+  const t = setTimeout(()=>showMsg("Still loading… if this takes long, check your connection.","info",$("#listMsg")), 8000);
+  const {data, error} = await sb.from("listings").select(LIST_COLS).in("status",["live","sold"]).order("created_at",{ascending:false}).limit(500);
+  clearTimeout(t);
+  if (error){ showMsg(niceError(error),"err",$("#listMsg")); return; }
+  showMsg("","info",$("#listMsg"));
+  all = (data||[]).map(rowToItem);
+  render(); goToHash();
+})();
+</script>
 </body>
 </html>

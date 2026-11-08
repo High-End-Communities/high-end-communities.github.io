@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin — High End Communities</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2b2b2b">
+<link rel="icon" href="favicon.ico">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="High End">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+</head>
+<body>
+<div class="checker"></div>
+<header>
+  <img id="mainLogo" alt="High End Communities" style="width:min(260px,70vw);height:auto;display:block;margin:0 auto">
+  <div class="brands" id="brands"></div>
+  <p class="sub">Buy and sell motorcycles, watches, cars, horses, yachts &amp; boats, modern &amp; art, and real estate — new and used.</p>
+</header>
+<div class="checker"></div>
+<main>
+  <section id="loginView">
+    <div class="card" style="max-width:420px;margin:18px auto">
+      <h2 class="slab" style="margin:0 0 10px">Admin login</h2>
+      <label for="email">Email</label><input id="email" type="email" autocomplete="username">
+      <label for="pass" style="margin-top:10px">Password</label><input id="pass" type="password" autocomplete="current-password">
+      <div class="actions"><button class="btn primary" id="loginBtn" type="button">Log in</button></div>
+      <div class="msg" id="loginMsg"></div>
+    </div>
+  </section>
+
+  <section id="adminView" hidden>
+    <div class="tabs" role="tablist" style="flex-wrap:wrap;width:auto;border-radius:16px">
+      <button type="button" data-tab="pending" class="on">Review <span id="nPending"></span></button>
+      <button type="button" data-tab="live">Live <span id="nLive"></span></button>
+      <button type="button" data-tab="sold">Sold <span id="nSold"></span></button>
+      <button type="button" data-tab="add">➕ Add / edit</button>
+      <button type="button" data-tab="sponsors">Sponsors</button>
+      <button type="button" data-tab="stats">Stats</button>
+    </div>
+    <div class="toolbar"><span class="muted" id="who"></span><button type="button" class="btn ghost small" id="logout">Log out</button></div>
+    <div class="msg" id="listMsg"></div>
+
+    <div data-pane="pending"><div class="list" id="pendingList"></div></div>
+    <div data-pane="live" hidden><div class="list" id="liveList"></div></div>
+    <div data-pane="sold" hidden><div class="list" id="soldList"></div></div>
+
+    <div data-pane="add" hidden>
+      <div class="disc" id="editBanner" hidden></div>
+      <div class="card dump" style="margin-bottom:12px">
+      <label for="dumpIn"><b>⚡ Quick fill</b> — paste your WhatsApp message</label>
+      <textarea id="dumpIn" placeholder="Paste or type it any way you like, e.g.&#10;Harley Fat Bob 2018, 9,000 km, 1745cc, stage 1, original paint, 1.2M, 01012345678"></textarea>
+      <div class="actions" style="margin-top:8px"><button type="button" class="btn primary small" id="dumpBtn">Fill the form for me</button></div>
+      <div class="hint" id="dumpHint">The form below fills itself. Check it, add your photos, tick the terms and send.</div>
+    </div>
+      <form id="form" class="card" novalidate>
+      <div class="types" id="mains">
+        <button type="button" data-m="moto" class="on"><img class="lg" alt="" data-brand="moto">Motorcycles</button>
+        <button type="button" data-m="watch"><img class="lg" alt="" data-brand="watch">Watches</button>
+        <button type="button" data-m="car"><img class="lg" alt="" data-brand="car">Cars</button>
+        <button type="button" data-m="equine"><span class="ic">🐎</span>Equine</button>
+        <button type="button" data-m="boat"><img class="lg" alt="" data-brand="boat">Yachts & boats</button>
+        <button type="button" data-m="art"><span class="ic">🎨</span>Modern & art</button>
+        <button type="button" data-m="estate"><span class="ic">🏠</span>Real estate</button>
+      </div>
+      <div class="types sub" id="types">
+        <button type="button" data-t="bike" class="on"><span class="ic">🏍️</span>Motorcycle</button>
+        <button type="button" data-t="gear"><span class="ic">🪖</span>Safety gear</button>
+        <button type="button" data-t="acc"><span class="ic">🔧</span>Accessory</button>
+      </div>
+
+      <div class="photos">
+        <label>Photos <span class="req">*</span> <span class="muted">(1–4 photos, auto-reduced to low resolution)</span></label>
+        <div class="photo-btns">
+          <button type="button" class="btn primary" id="camBtn">📷 Take photo</button>
+          <button type="button" class="btn ghost" id="galBtn">🖼️ Choose from gallery</button>
+        </div>
+        <input type="file" id="camInput" accept="image/*" capture="environment" hidden>
+        <input type="file" id="galInput" accept="image/*" multiple hidden>
+        <div class="thumbs" id="thumbs"></div>
+        <div class="hint" id="photoHint"></div>
+      </div>
+
+      <div class="grid" id="fields"></div>
+
+      <label class="terms" id="termsWrap"><input type="checkbox" id="terms"> <span>I accept the terms: High End Communities is <b>not responsible for any product</b> listed. Buyers and sellers do their own due diligence and check ownership papers with a lawyer. I confirm I own this item or am authorised to sell it.</span></label>
+      <details class="tx"><summary>Read the full terms</summary>
+        <ol>
+          <li><b>Listing platform only.</b> High End Communities is a place where members advertise items. We do not own, inspect, verify, value or guarantee any item, and we are not a party to any sale.</li>
+          <li><b>No responsibility.</b> High End Communities, its admins and sponsors are not responsible for any product promoted here, its condition, legality, ownership, description or price, or for any loss or dispute arising from a sale.</li>
+          <li><b>Due diligence is yours.</b> Buyers must inspect the item, verify the seller's identity, and confirm the seller owns it and can legally sell it.</li>
+          <li><b>Check the papers with a lawyer.</b> Before paying, consult a lawyer or the relevant authority for the ownership and transfer papers the item needs, for example: vehicle or motorcycle licence and traffic records; boat registration and marina papers; property title deed, registration and contract; horse passport, pedigree and vet certificate; watch box &amp; papers, or a certificate of authenticity for art.</li>
+          <li><b>Seller's responsibility.</b> Sellers confirm they own the item or are authorised to sell it, that the description and photos are true, and that the item is legal to sell.</li>
+          <li><b>Payments and meetings</b> are arranged directly between buyer and seller at their own risk. Meet in safe places and never pay before checking the item and its papers.</li>
+          <li>Admins may remove any listing at any time.</li>
+        </ol>
+      </details>
+      <div class="actions">
+        <button type="submit" class="btn primary" id="submitBtn">Post listing</button>
+        
+        <button type="button" class="btn ghost" id="resetBtn">Clear</button>
+      </div>
+      <div class="msg" id="msg"></div>
+      <div class="done" id="done"></div>
+    </form>
+    </div>
+
+    <div data-pane="sponsors" hidden>
+      <div class="card" style="margin-bottom:12px">
+        <h3 class="slab" style="margin:0 0 8px" id="spTitle">Add a sponsor</h3>
+        <div class="grid">
+          <div><label for="spName">Name *</label><input id="spName" maxlength="60" placeholder="e.g. MASAR"></div>
+          <div><label for="spLink">Link (https://…)</label><input id="spLink" type="url" placeholder="https://"></div>
+          <div class="full"><label for="spTag">Short line</label><input id="spTag" maxlength="140" placeholder="e.g. The riders' app — plan rides and ride together"></div>
+          <div class="full"><label>Logo or banner image *</label>
+            <div class="photo-btns"><button type="button" class="btn ghost small" id="spImgBtn">🖼️ Choose image</button><img id="spImgPrev" alt="" style="height:54px;display:none;border-radius:8px"></div>
+            <input type="file" id="spImgIn" accept="image/*" hidden><div class="hint">Reduced automatically to a small file.</div></div>
+          <div><label for="spFrom">Start date</label><input id="spFrom" type="date"></div>
+          <div><label for="spTo">End date (empty = no end)</label><input id="spTo" type="date"></div>
+          <div class="full"><label>Days</label><div class="days" id="spDays"></div></div>
+          <div><label for="spH1">From hour (Cairo)</label><select id="spH1"></select></div>
+          <div><label for="spH2">To hour</label><select id="spH2"></select></div>
+          <div class="full"><div class="photo-btns">
+            <button type="button" class="btn ghost small" data-preset="0,24">All day</button>
+            <button type="button" class="btn ghost small" data-preset="19,24">Evening peak 7 pm–12 am</button>
+            <button type="button" class="btn ghost small" data-preset="12,16">Lunch 12–4 pm</button>
+            <button type="button" class="btn ghost small" data-preset="21,2">Late night 9 pm–2 am</button>
+          </div></div>
+          <div><label for="spWeight">Share of rotation</label><select id="spWeight"></select><div class="hint">2 = shows twice as often as a sponsor at 1.</div></div>
+          <div><label>Where it shows</label><div class="days" id="spSlots">
+            <label><input type="checkbox" value="banner" checked> Top banner</label>
+            <label><input type="checkbox" value="feed" checked> Between listings</label>
+            <label><input type="checkbox" value="flyer" checked> Flyers &amp; PDFs</label></div></div>
+          <div class="full"><label class="showsold" style="color:var(--text)"><input type="checkbox" id="spActive" checked> Active</label></div>
+        </div>
+        <div class="actions">
+          <button type="button" class="btn primary" id="spSave">Save sponsor</button>
+          <button type="button" class="btn ghost" id="spReset">Clear</button>
+        </div>
+        <div class="msg" id="spMsg"></div>
+      </div>
+      <div id="spList"></div>
+      <div class="hint">When no sponsor is scheduled, MASAR shows by default. Rotation changes every 8 seconds.</div>
+    </div>
+
+    <div data-pane="stats" hidden>
+      <div class="stats">
+        <div class="stat"><b id="stToday">–</b><span>Site views today</span></div>
+        <div class="stat"><b id="st7">–</b><span>Last 7 days</span></div>
+        <div class="stat"><b id="st30">–</b><span>Last 30 days</span></div>
+      </div>
+      <div class="muted" style="margin-bottom:6px">Site views per day, last 30 days</div>
+      <div class="bars" id="stBars"></div>
+      <table class="mini" id="stPages"></table>
+      <h3 class="slab" style="margin:16px 0 8px">Most viewed listings</h3>
+      <table class="mini" id="stTop"></table>
+      <div class="hint">A visitor counts once per page per day, and once per listing per visit, when the listing is on screen for a second or its photos are opened.</div>
+    </div>
+  </section>
+</main>
+<footer>High End Communities · Estd 2024</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="config.js"></script>
+<script src="common.js"></script>
+
+<script>
+initHeader();
+let items = [], editing = null, sponsorsAll = [], spEditing = null, spImage = null;
+const REASONS = ["Missing photos","Photos not clear","Missing ownership papers","Price looks wrong","Missing details","Duplicate listing","Item already sold","Not allowed in this group"];
+const reasonMsg = (L,r,kind)=> kind==="changes"
+  ? `Hello, this is the ${MARKET_NAME} admin.\n\nAbout your listing "${titleOf(L)}": please update it before we publish it.\nWhat's needed: ${r}.\n\nReply here with the fix (or new photos) and we'll update it. Thank you!`
+  : `Hello, this is the ${MARKET_NAME} admin.\n\nYour listing "${titleOf(L)}" was not published / was removed.\nReason: ${r}.\n\nYou're welcome to post it again once it's fixed. Thank you!`;
+
+/* ---------- login ---------- */
+async function enter(){
+  const {data:{session}} = await sb.auth.getSession();
+  if (!session){ $("#loginView").hidden=false; $("#adminView").hidden=true; return; }
+  const {data:ok} = await sb.rpc("is_admin");
+  if (!ok){ showMsg("This account is not an admin. Add its email to the admins table (setup.sql step 1).","err",$("#loginMsg")); await sb.auth.signOut(); return; }
+  $("#loginView").hidden=true; $("#adminView").hidden=false;
+  $("#who").textContent = "Logged in as " + session.user.email;
+  countPage("admin");
+  initCategoryPicker(); initPhotoInputs(); renderFields(); $("#terms").checked=true;
+  $("#submitBtn").textContent = "Publish now";
+  await Promise.all([loadAll(), loadSponsorsAdmin()]);
+  loadSponsors();
+}
+$("#loginBtn").onclick = async ()=>{
+  if (!sb){ showMsg("Add your Supabase details to config.js first.","err",$("#loginMsg")); return; }
+  $("#loginBtn").disabled=true;
+  const {error} = await sb.auth.signInWithPassword({email:$("#email").value.trim(), password:$("#pass").value});
+  $("#loginBtn").disabled=false;
+  if (error){ showMsg(niceError(error),"err",$("#loginMsg")); return; }
+  enter();
+};
+$("#pass").addEventListener("keydown",e=>{ if(e.key==="Enter") $("#loginBtn").click(); });
+$("#logout").onclick = async ()=>{ await sb.auth.signOut(); location.reload(); };
+
+/* ---------- tabs ---------- */
+function tab(t){
+  document.querySelectorAll("#adminView .tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));
+  document.querySelectorAll("[data-pane]").forEach(p=>p.hidden = p.dataset.pane!==t);
+  if (t==="stats") loadStats();
+}
+document.querySelectorAll("#adminView .tabs button").forEach(b=>b.onclick=()=>tab(b.dataset.tab));
+
+/* ---------- listings ---------- */
+async function loadAll(){
+  showMsg("Loading…","info",$("#listMsg"));
+  const {data,error} = await sb.from("listings").select(LIST_COLS+",note").neq("status","rejected").order("created_at",{ascending:false}).limit(1000);
+  if (error){ showMsg(niceError(error),"err",$("#listMsg")); return; }
+  showMsg("","info",$("#listMsg"));
+  items = (data||[]).map(rowToItem);
+  renderAll();
+}
+async function setStatus(item, patch){
+  const {error} = await sb.from("listings").update(patch).eq("id",item.id);
+  if (error) throw error;
+  Object.assign(item.L, {status:patch.status??item.L.status, soldAt:patch.sold_at?Date.parse(patch.sold_at):(patch.status==="live"?null:item.L.soldAt), note:patch.note??item.L.note});
+  renderAll();
+}
+async function removeItem(item){
+  const {error} = await sb.from("listings").delete().eq("id",item.id);
+  if (error) throw error;
+  items = items.filter(x=>x!==item); renderAll();
+}
+function btn(label, cls, fn, confirmText){
+  const b=document.createElement("button"); b.type="button"; b.textContent=label; if (cls) b.className=cls;
+  b.onclick = async ()=>{
+    if (confirmText && b.dataset.c!=="1"){ b.dataset.c="1"; b.textContent=confirmText; return; }
+    b.disabled=true; try{ await fn(); }catch(e){ showMsg(niceError(e),"err",$("#listMsg")); b.disabled=false; b.dataset.c=""; b.textContent=label; }
+  };
+  return b;
+}
+function adminTools(item){
+  const L=item.L, a=document.createElement("div"); a.className="admin";
+  const phone=String(L.f.phone||"").replace(/\D/g,"");
+  const sel=document.createElement("select"); REASONS.forEach(r=>{ const o=document.createElement("option"); o.textContent=r; sel.appendChild(o); });
+  const ask=document.createElement("a"); ask.className="btn ghost small"; ask.target="_blank"; ask.rel="noopener";
+  const upd=()=>{ ask.textContent = L.status==="pending"?"✏️ Ask for changes":"✉️ Tell seller";
+    ask.href="https://wa.me/2"+phone+"?text="+encodeURIComponent(reasonMsg(L, sel.value, L.status==="pending"?"changes":"removed")); };
+  sel.onchange=upd; upd();
+  ask.addEventListener("click",()=>{ if (L.status==="pending") sb.from("listings").update({note:"Changes requested: "+sel.value}).eq("id",item.id).then(()=>{ L.note="Changes requested: "+sel.value; renderAll(); }); });
+  const edit=btn("✎ Edit","",()=>startEdit(item));
+  if (L.status==="pending"){
+    a.append(btn("✓ Approve","ok",()=>setStatus(item,{status:"live", note:null})), edit, sel, ask,
+             btn("✕ Reject","bad",()=>removeItem(item),"Tap again: reject & delete"));
+  } else if (L.status==="live"){
+    a.append(btn("🏷️ Mark sold","",()=>setStatus(item,{status:"sold", sold_at:new Date().toISOString()})), edit, sel, ask,
+             btn("🗑 Delete","bad",()=>removeItem(item),"Tap again: delete"));
+  } else {
+    a.append(btn("↺ Mark available","",()=>setStatus(item,{status:"live", sold_at:null})),
+             btn("🗑 Delete","bad",()=>removeItem(item),"Tap again: delete"));
+  }
+  return a;
+}
+function renderAll(){
+  const groups = {pending:[], live:[], sold:[]};
+  items.forEach(x=>{ if (groups[x.L.status]) groups[x.L.status].push(x); });
+  for (const [k,list] of Object.entries(groups)){
+    const box=$("#"+k+"List"); box.innerHTML="";
+    $("#n"+k[0].toUpperCase()+k.slice(1)).textContent = list.length?`(${list.length})`:"";
+    if (!list.length){ box.innerHTML=`<div class="empty">${k==="pending"?"Nothing waiting for review 🎉":"Nothing here."}</div>`; continue; }
+    list.forEach(item=>{
+      const {card, body, meta} = buildCard(item, k==="pending"?"pending":"admin");
+      if (item.L.note){ const n=document.createElement("div"); n.className="hint"; n.style.color="#b7791f"; n.textContent="📝 "+item.L.note; body.appendChild(n); }
+      body.appendChild(adminTools(item)); body.appendChild(meta); box.appendChild(card);
+    });
+  }
+}
+
+/* ---------- add / edit ---------- */
+$("#dumpBtn").onclick = ()=>{
+  const t=$("#dumpIn").value.trim(); if(!t){ $("#dumpHint").textContent="Paste the message first."; return; }
+  const r=applyDump(t); $("#dumpHint").textContent=`Filled ${r.n} fields as ${LABELS[r.type]}. Add the photos (save them from WhatsApp first), check, and publish.`;
+};
+function setForm(tp, f){
+  const mb=document.querySelector(`#mains button[data-m="${GROUP[tp]}"]`); if (mb) mb.click();
+  if (GROUP[tp]==="moto"){ const b=document.querySelector(`#types button[data-t="${tp}"]`); if (b) b.click(); }
+  for (const s of SCHEMAS[tp]){
+    const el=$("#f_"+s.k); let v=f[s.k]; if (!el || v==null) continue;
+    if (s.type==="checks"){ const vs=String(v).split(/,\s*/); el.querySelectorAll("input").forEach(c=>c.checked=vs.includes(c.value)); continue; }
+    if (s.type==="price") v = fmt(v);
+    el.value = v; if (s.k==="category") el.dispatchEvent(new Event("change"));
+  }
+}
+async function startEdit(item){
+  tab("add");
+  editing = item;
+  setForm(item.L.type, item.L.f);
+  const ps = await loadPhotos(item);
+  photos = ps.map(u=>({url:u, bytes:Math.round(u.length*3/4), w:0, h:0, orig:Math.round(u.length*3/4)}));
+  renderThumbs(); $("#terms").checked = true;
+  $("#editBanner").hidden=false; $("#editBanner").textContent = `Editing: ${titleOf(item.L)} (${item.L.status}). Saving keeps its status.`;
+  $("#submitBtn").textContent = "Save changes";
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function endEdit(){ editing=null; $("#editBanner").hidden=true; $("#submitBtn").textContent="Publish now"; photos=[]; renderThumbs(); renderFields(); $("#terms").checked=true; }
+$("#resetBtn").onclick = ()=>{ endEdit(); showMsg(""); $("#done").classList.remove("show"); };
+$("#form").addEventListener("submit", async e=>{
+  e.preventDefault();
+  $("#done").classList.remove("show");
+  const f = collect();
+  if (!f){ showMsg("Please fix the highlighted fields.","err"); return; }
+  $("#submitBtn").disabled=true; showMsg("Saving…","info");
+  try{
+    const pics=photos.map(p=>p.url); f._np=pics.length;
+    const payload = {type, f, phone:f.phone, thumb: await makeThumb(pics[0]), photos:pics};
+    let id;
+    if (editing){
+      id = editing.id;
+      const {error} = await sb.from("listings").update(payload).eq("id",id); if (error) throw error;
+    } else {
+      id = uuid();
+      const {error} = await sb.from("listings").insert({...payload, id, terms:true, status:"live"}); if (error) throw error;
+    }
+    const L = {type, f, photos:pics, thumb:payload.thumb, at:Date.now(), status: editing?editing.L.status:"live"};
+    showMsg("");
+    const d=$("#done"); d.innerHTML="";
+    const p=document.createElement("p"); p.textContent = editing?"✅ Saved.":"✅ Published — it's live.";
+    const sh=document.createElement("a"); sh.className="btn wa"; sh.target="_blank"; sh.rel="noopener"; sh.textContent="Share to WhatsApp group"; sh.href=waHref(shareText(L,id));
+    const r=document.createElement("div"); r.className="dlrow";
+    r.append(btn("🖼️ Flyer image","btn ghost small",()=>exportImage(L,id)), btn("📄 Flyer PDF","btn ghost small",()=>exportPdf(L,id)));
+    d.append(p, sh, r); d.classList.add("show");
+    endEdit(); $("#dumpIn").value="";
+    loadAll();
+  }catch(err){ showMsg(niceError(err),"err"); }
+  finally{ $("#submitBtn").disabled=false; }
+});
+
+/* ---------- sponsors ---------- */
+const DAY_N=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+(function initSponsorForm(){
+  $("#spDays").innerHTML = DAY_N.map((d,i)=>`<label><input type="checkbox" value="${i}" checked> ${d}</label>`).join("");
+  const hh=h=> h===0?"12 am":h<12?h+" am":h===12?"12 pm":h===24?"12 am (midnight)":(h-12)+" pm";
+  for (let h=0;h<=23;h++) $("#spH1").insertAdjacentHTML("beforeend",`<option value="${h}">${hh(h)}</option>`);
+  for (let h=1;h<=24;h++) $("#spH2").insertAdjacentHTML("beforeend",`<option value="${h}">${hh(h)}</option>`);
+  for (let w=1;w<=10;w++) $("#spWeight").insertAdjacentHTML("beforeend",`<option value="${w}">${w}${w===1?" (normal)":""}</option>`);
+  document.querySelectorAll("[data-preset]").forEach(b=>b.onclick=()=>{ const [a,z]=b.dataset.preset.split(",").map(Number); $("#spH1").value=a; $("#spH2").value=z; });
+  spReset();
+})();
+function spReset(){
+  spEditing=null; spImage=null; $("#spTitle").textContent="Add a sponsor";
+  ["spName","spLink","spTag","spTo"].forEach(k=>$("#"+k).value="");
+  $("#spFrom").value = new Date().toISOString().slice(0,10);
+  $("#spH1").value=0; $("#spH2").value=24; $("#spWeight").value=1; $("#spActive").checked=true;
+  document.querySelectorAll("#spDays input,#spSlots input").forEach(c=>c.checked=true);
+  $("#spImgPrev").style.display="none"; showMsg("","info",$("#spMsg"));
+}
+$("#spReset").onclick = spReset;
+$("#spImgBtn").onclick = ()=>$("#spImgIn").click();
+$("#spImgIn").onchange = async e=>{
+  const file=e.target.files[0]; e.target.value=""; if(!file) return;
+  const img=await loadImage(file); const max=320, r=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));
+  const c=document.createElement("canvas"); c.width=Math.round(img.naturalWidth*r); c.height=Math.round(img.naturalHeight*r);
+  const ctx=c.getContext("2d"); ctx.fillStyle="#fff"; ctx.fillRect(0,0,c.width,c.height); ctx.drawImage(img,0,0,c.width,c.height);
+  spImage=c.toDataURL("image/jpeg",0.8); $("#spImgPrev").src=spImage; $("#spImgPrev").style.display="block";
+};
+async function loadSponsorsAdmin(){
+  const {data,error} = await sb.from("sponsors").select("*").order("created_at",{ascending:false});
+  if (error){ showMsg(niceError(error),"err",$("#spMsg")); return; }
+  sponsorsAll = data||[]; renderSponsors();
+}
+function spSchedule(s){
+  const hh=h=> h===0||h===24?"12am":h<12?h+"am":h===12?"12pm":(h-12)+"pm";
+  const days = (s.days||[]).length===7?"Every day":(s.days||[]).map(d=>DAY_N[d]).join(", ");
+  const hours = (s.hour_from===0&&s.hour_to===24)?"all day":`${hh(s.hour_from)}–${hh(s.hour_to)}`;
+  return `${s.starts_on}${s.ends_on?" → "+s.ends_on:" → no end"} · ${days} · ${hours} · weight ${s.weight} · ${(s.slots||[]).join(", ")}`;
+}
+function renderSponsors(){
+  const box=$("#spList"); box.innerHTML="";
+  if (!sponsorsAll.length){ box.innerHTML='<div class="empty">No sponsors yet — MASAR shows by default.</div>'; return; }
+  const today=new Date(new Date().toLocaleString("en-US",{timeZone:"Africa/Cairo"})).toISOString().slice(0,10);
+  sponsorsAll.forEach(s=>{
+    const inDates = s.starts_on<=today && (!s.ends_on || s.ends_on>=today);
+    const on = s.active && inDates && sponsorOnNow(s);
+    const row=document.createElement("div"); row.className="sp-row";
+    const im=document.createElement("img"); im.src=s.image; im.alt="";
+    const x=document.createElement("div"); x.className="x";
+    const b=document.createElement("b"); b.textContent=s.name+" ";
+    const pill=document.createElement("span"); pill.className="pill"+(on?"":" off"); pill.textContent = !s.active?"Paused": !inDates?(s.starts_on>today?"Scheduled":"Ended"): on?"Showing now":"Off-hours";
+    b.appendChild(pill);
+    const sp=document.createElement("span"); sp.textContent=spSchedule(s);
+    x.append(b,sp);
+    const tools=document.createElement("div"); tools.className="admin"; tools.style.border="0"; tools.style.margin="0"; tools.style.padding="0";
+    tools.append(
+      btn("✎","",()=>spLoad(s)),
+      btn(s.active?"⏸":"▶","",async()=>{ const {error}=await sb.from("sponsors").update({active:!s.active}).eq("id",s.id); if(error) throw error; await loadSponsorsAdmin(); }),
+      btn("🗑","bad",async()=>{ const {error}=await sb.from("sponsors").delete().eq("id",s.id); if(error) throw error; await loadSponsorsAdmin(); },"Delete?"));
+    row.append(im,x,tools); box.appendChild(row);
+  });
+}
+function spLoad(s){
+  spEditing=s; spImage=s.image; $("#spTitle").textContent="Edit sponsor";
+  $("#spName").value=s.name; $("#spLink").value=s.link||""; $("#spTag").value=s.tagline||"";
+  $("#spFrom").value=s.starts_on; $("#spTo").value=s.ends_on||"";
+  $("#spH1").value=s.hour_from; $("#spH2").value=s.hour_to; $("#spWeight").value=s.weight; $("#spActive").checked=s.active;
+  document.querySelectorAll("#spDays input").forEach(c=>c.checked=(s.days||[]).includes(+c.value));
+  document.querySelectorAll("#spSlots input").forEach(c=>c.checked=(s.slots||[]).includes(c.value));
+  $("#spImgPrev").src=s.image; $("#spImgPrev").style.display="block";
+  $("#spName").scrollIntoView({behavior:"smooth",block:"center"});
+}
+$("#spSave").onclick = async ()=>{
+  const name=$("#spName").value.trim(), link=$("#spLink").value.trim();
+  if (!name){ showMsg("Enter the sponsor's name.","err",$("#spMsg")); return; }
+  if (!spImage){ showMsg("Choose a logo or banner image.","err",$("#spMsg")); return; }
+  if (link && !/^https:\/\//.test(link)){ showMsg("The link must start with https://","err",$("#spMsg")); return; }
+  const days=[...document.querySelectorAll("#spDays input:checked")].map(c=>+c.value);
+  const slots=[...document.querySelectorAll("#spSlots input:checked")].map(c=>c.value);
+  if (!days.length||!slots.length){ showMsg("Pick at least one day and one place to show it.","err",$("#spMsg")); return; }
+  const rec={name, link:link||null, tagline:$("#spTag").value.trim()||null, image:spImage, starts_on:$("#spFrom").value||new Date().toISOString().slice(0,10),
+    ends_on:$("#spTo").value||null, days, hour_from:+$("#spH1").value, hour_to:+$("#spH2").value, weight:+$("#spWeight").value, slots, active:$("#spActive").checked};
+  if (rec.hour_from===rec.hour_to){ showMsg("Start and end hour can't be the same.","err",$("#spMsg")); return; }
+  $("#spSave").disabled=true;
+  try{
+    const q = spEditing ? sb.from("sponsors").update(rec).eq("id",spEditing.id) : sb.from("sponsors").insert(rec);
+    const {error}=await q; if (error) throw error;
+    showMsg("Saved.","ok",$("#spMsg")); spReset(); await loadSponsorsAdmin(); loadSponsors();
+  }catch(e){ showMsg(niceError(e),"err",$("#spMsg")); }
+  finally{ $("#spSave").disabled=false; }
+};
+
+/* ---------- stats ---------- */
+async function loadStats(){
+  const since = new Date(Date.now()-30*864e5).toISOString().slice(0,10);
+  const {data,error} = await sb.from("site_stats").select("day,page,views").gte("day",since).order("day");
+  if (error){ showMsg(niceError(error),"err",$("#listMsg")); return; }
+  const rows=data||[], byDay={}, byPage={};
+  const today=new Date(new Date().toLocaleString("en-US",{timeZone:"Africa/Cairo"})).toISOString().slice(0,10);
+  const d7=new Date(Date.parse(today)-6*864e5).toISOString().slice(0,10);
+  let t=0,w=0,m=0;
+  rows.forEach(r=>{ byDay[r.day]=(byDay[r.day]||0)+r.views; byPage[r.page]=byPage[r.page]||{t:0,w:0,m:0};
+    m+=r.views; byPage[r.page].m+=r.views; if(r.day>=d7){ w+=r.views; byPage[r.page].w+=r.views; } if(r.day===today){ t+=r.views; byPage[r.page].t+=r.views; } });
+  $("#stToday").textContent=fmt(t); $("#st7").textContent=fmt(w); $("#st30").textContent=fmt(m);
+  const days=[]; for(let i=29;i>=0;i--) days.push(new Date(Date.parse(today)-i*864e5).toISOString().slice(0,10));
+  const mx=Math.max(1,...days.map(d=>byDay[d]||0));
+  $("#stBars").innerHTML = days.map(d=>`<div style="height:${Math.round((byDay[d]||0)/mx*100)}%" data-t="${d.slice(5)}: ${byDay[d]||0}"></div>`).join("");
+  const names={catalogue:"Catalogue",post:"Post a listing",admin:"Admin"};
+  $("#stPages").innerHTML = "<tr><th>Page</th><th class='n'>Today</th><th class='n'>7 days</th><th class='n'>30 days</th></tr>" +
+    Object.keys(names).map(p=>{ const v=byPage[p]||{t:0,w:0,m:0}; return `<tr><td>${names[p]}</td><td class="n">${fmt(v.t)}</td><td class="n">${fmt(v.w)}</td><td class="n">${fmt(v.m)}</td></tr>`; }).join("");
+  const top = items.filter(x=>x.L.status!=="pending").sort((a,b)=>(b.L.views||0)-(a.L.views||0)).slice(0,10);
+  const tb=$("#stTop"); tb.innerHTML="<tr><th>Listing</th><th>Status</th><th class='n'>Views</th></tr>";
+  top.forEach(x=>{ const tr=document.createElement("tr"); const a=document.createElement("td"); a.textContent=titleOf(x.L); const s=document.createElement("td"); s.textContent=x.L.status; const v=document.createElement("td"); v.className="n"; v.textContent=fmt(x.L.views||0); tr.append(a,s,v); tb.appendChild(tr); });
+  if (!top.length) tb.insertAdjacentHTML("beforeend","<tr><td colspan='3' class='muted'>No views yet.</td></tr>");
+}
+
+if (sb){ enter(); sb.auth.onAuthStateChange((ev)=>{ if (ev==="SIGNED_OUT"){ $("#loginView").hidden=false; $("#adminView").hidden=true; } }); }
+else showMsg("Add your Supabase details to config.js first.","err",$("#loginMsg"));
+</script>
+</body>
+</html>

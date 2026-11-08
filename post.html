@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Post a listing — High End Communities</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2b2b2b">
+<link rel="icon" href="favicon.ico">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="High End">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+</head>
+<body>
+<div class="checker"></div>
+<header>
+  <img id="mainLogo" alt="High End Communities" style="width:min(260px,70vw);height:auto;display:block;margin:0 auto">
+  <div class="brands" id="brands"></div>
+  <p class="sub">Buy and sell motorcycles, watches, cars, horses, yachts &amp; boats, modern &amp; art, and real estate — new and used.</p>
+</header>
+<div class="checker"></div>
+<main>
+  <div class="topnav"><a class="btn ghost small" href="./">← Browse the catalogue</a></div>
+  <aside class="masar sponsor-banner"></aside>
+  <div class="card dump" style="margin-bottom:12px">
+      <label for="dumpIn"><b>⚡ Quick fill</b> — paste your WhatsApp message</label>
+      <textarea id="dumpIn" placeholder="Paste or type it any way you like, e.g.&#10;Harley Fat Bob 2018, 9,000 km, 1745cc, stage 1, original paint, 1.2M, 01012345678"></textarea>
+      <div class="actions" style="margin-top:8px"><button type="button" class="btn primary small" id="dumpBtn">Fill the form for me</button></div>
+      <div class="hint" id="dumpHint">The form below fills itself. Check it, add your photos, tick the terms and send.</div>
+    </div>
+  <form id="form" class="card" novalidate>
+      <div class="types" id="mains">
+        <button type="button" data-m="moto" class="on"><img class="lg" alt="" data-brand="moto">Motorcycles</button>
+        <button type="button" data-m="watch"><img class="lg" alt="" data-brand="watch">Watches</button>
+        <button type="button" data-m="car"><img class="lg" alt="" data-brand="car">Cars</button>
+        <button type="button" data-m="equine"><span class="ic">🐎</span>Equine</button>
+        <button type="button" data-m="boat"><img class="lg" alt="" data-brand="boat">Yachts & boats</button>
+        <button type="button" data-m="art"><span class="ic">🎨</span>Modern & art</button>
+        <button type="button" data-m="estate"><span class="ic">🏠</span>Real estate</button>
+      </div>
+      <div class="types sub" id="types">
+        <button type="button" data-t="bike" class="on"><span class="ic">🏍️</span>Motorcycle</button>
+        <button type="button" data-t="gear"><span class="ic">🪖</span>Safety gear</button>
+        <button type="button" data-t="acc"><span class="ic">🔧</span>Accessory</button>
+      </div>
+
+      <div class="photos">
+        <label>Photos <span class="req">*</span> <span class="muted">(1–4 photos, auto-reduced to low resolution)</span></label>
+        <div class="photo-btns">
+          <button type="button" class="btn primary" id="camBtn">📷 Take photo</button>
+          <button type="button" class="btn ghost" id="galBtn">🖼️ Choose from gallery</button>
+        </div>
+        <input type="file" id="camInput" accept="image/*" capture="environment" hidden>
+        <input type="file" id="galInput" accept="image/*" multiple hidden>
+        <div class="thumbs" id="thumbs"></div>
+        <div class="hint" id="photoHint"></div>
+      </div>
+
+      <div class="grid" id="fields"></div>
+
+      <label class="terms" id="termsWrap"><input type="checkbox" id="terms"> <span>I accept the terms: High End Communities is <b>not responsible for any product</b> listed. Buyers and sellers do their own due diligence and check ownership papers with a lawyer. I confirm I own this item or am authorised to sell it.</span></label>
+      <details class="tx"><summary>Read the full terms</summary>
+        <ol>
+          <li><b>Listing platform only.</b> High End Communities is a place where members advertise items. We do not own, inspect, verify, value or guarantee any item, and we are not a party to any sale.</li>
+          <li><b>No responsibility.</b> High End Communities, its admins and sponsors are not responsible for any product promoted here, its condition, legality, ownership, description or price, or for any loss or dispute arising from a sale.</li>
+          <li><b>Due diligence is yours.</b> Buyers must inspect the item, verify the seller's identity, and confirm the seller owns it and can legally sell it.</li>
+          <li><b>Check the papers with a lawyer.</b> Before paying, consult a lawyer or the relevant authority for the ownership and transfer papers the item needs, for example: vehicle or motorcycle licence and traffic records; boat registration and marina papers; property title deed, registration and contract; horse passport, pedigree and vet certificate; watch box &amp; papers, or a certificate of authenticity for art.</li>
+          <li><b>Seller's responsibility.</b> Sellers confirm they own the item or are authorised to sell it, that the description and photos are true, and that the item is legal to sell.</li>
+          <li><b>Payments and meetings</b> are arranged directly between buyer and seller at their own risk. Meet in safe places and never pay before checking the item and its papers.</li>
+          <li>Admins may remove any listing at any time.</li>
+        </ol>
+      </details>
+      <div class="actions">
+        <button type="submit" class="btn primary" id="submitBtn">Post listing</button>
+        
+        <button type="button" class="btn ghost" id="resetBtn">Clear</button>
+      </div>
+      <div class="msg" id="msg"></div>
+      <div class="done" id="done"></div>
+    </form>
+</main>
+<footer>High End Communities · Estd 2024</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="config.js"></script>
+<script src="common.js"></script>
+
+<script>
+initHeader();
+initCategoryPicker();
+initPhotoInputs();
+renderFields();
+startBannerRotation();
+loadSponsors().then(startBannerRotation);
+countPage("post");
+$("#submitBtn").textContent = "Send for review";
+
+$("#dumpBtn").onclick = ()=>{
+  const t = $("#dumpIn").value.trim();
+  if (!t){ $("#dumpHint").textContent = "Paste your message first."; return; }
+  const r = applyDump(t);
+  $("#dumpHint").textContent = `Filled ${r.n} fields as ${LABELS[r.type]}. Check everything below, add your photos, tick the terms and send.`;
+  $("#form").scrollIntoView({behavior:"smooth"});
+};
+
+function showDone(row, code){
+  const L = {type:row.type, f:row.f};
+  const d = $("#done"); d.innerHTML = "";
+  const p = document.createElement("p"); p.textContent = "✅ Sent for review!";
+  const t = document.createElement("div"); t.style.cssText="font-size:14px;color:#1d6b3e;margin-bottom:6px";
+  t.textContent = "The admin checks it and puts it live. Keep this seller code — you need it to mark your item as sold:";
+  const c = document.createElement("div"); c.className="code"; c.textContent = code;
+  const row1 = document.createElement("div"); row1.className="dlrow";
+  const cp = document.createElement("button"); cp.type="button"; cp.className="btn ghost small"; cp.textContent="Copy code";
+  cp.onclick = async ()=>{ try{ await navigator.clipboard.writeText(code); cp.textContent="Copied ✓"; }catch(e){ cp.textContent=code; } };
+  const me = document.createElement("a"); me.className="btn ghost small"; me.target="_blank"; me.rel="noopener"; me.textContent="Save code in my WhatsApp";
+  me.href = "https://wa.me/2"+row.phone+"?text="+encodeURIComponent(`${MARKET_NAME} — seller code for "${titleOf(L)}": ${code}`);
+  row1.append(cp, me);
+  const al = document.createElement("a"); al.className="btn wa"; al.target="_blank"; al.rel="noopener"; al.style.marginTop="10px";
+  al.textContent = "Tell the admin on WhatsApp (faster review)";
+  al.href = adminHref(`🆕 *New listing waiting for review*\n\n${listingText(L)}\n\nRef: ${row.id}`);
+  d.append(p, t, c, row1, al);
+  d.classList.add("show");
+  d.scrollIntoView({behavior:"smooth", block:"center"});
+}
+
+$("#form").addEventListener("submit", async e=>{
+  e.preventDefault();
+  $("#done").classList.remove("show");
+  const f = collect();
+  if (!f){ showMsg($("#terms").checked?"Please fix the highlighted fields.":"Please accept the terms and fix any highlighted fields.","err"); return; }
+  if (!sb){ showMsg("This page isn't connected to its database yet (config.js).","err"); return; }
+  try{ localStorage.setItem("mm_phone", f.phone); }catch(e){}
+  $("#submitBtn").disabled = true; showMsg("Sending…","info");
+  try{
+    const pics = photos.map(p=>p.url);
+    f._np = pics.length;
+    const code = newSellerCode();
+    const row = { id: uuid(), type, f, phone: f.phone, thumb: await makeThumb(pics[0]), photos: pics, terms: true, seller_code: code };
+    const {error} = await sb.from("listings").insert(row);
+    if (error) throw error;
+    showMsg("");
+    showDone(row, code);
+    photos=[]; renderThumbs(); renderFields(); $("#terms").checked=false; $("#dumpIn").value="";
+  }catch(err){ showMsg(niceError(err),"err"); }
+  finally{ $("#submitBtn").disabled = false; }
+});
+$("#resetBtn").onclick = ()=>{ photos=[]; renderThumbs(); renderFields(); showMsg(""); $("#done").classList.remove("show"); };
+</script>
+</body>
+</html>
