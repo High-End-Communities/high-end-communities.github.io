@@ -232,6 +232,9 @@ const SECTION_NAMES = {bike:"Motorcycles", gear:"Safety gear & helmets", acc:"Mo
   equine:"Horses", equinepart:"Equine accessories", art:"Modern & art", estate:"Real estate", bag:"Women's bags & accessories"};
 const GROUP_NAMES = {moto:"Motorcycles, gear & accessories", car:"Cars & car parts", boat:"Yachts, boats & marine parts", equine:"Equine",
   watch:"Watches", art:"Modern & art", estate:"Real estate", bag:"Women's bags & accessories"};
+const GROUP_ORDER=["moto","car","watch","bag","boat","equine","art","estate"];
+const TYPE_ORDER = GROUP_ORDER.flatMap(g => SUBTYPES[g] ? SUBTYPES[g].map(x=>x[0]) : Object.keys(GROUP).filter(t=>GROUP[t]===g));
+function bySection(items){ return TYPE_ORDER.map(t=>[t, items.filter(x=>x.L.type===t)]).filter(([,xs])=>xs.length); }
 let CAT_TITLE = "";        // set by the catalogue page to the section being shown
 const CI_TO_CC = 16.387, KM_PER_MI = 1.609344;
 // Best-selling and most popular motorcycles worldwide (suggestions only — sellers can still type anything)
@@ -358,6 +361,7 @@ function renderFields(clear){
     if (br){ br.addEventListener("input", fill); br.addEventListener("change", fill); fill(); }
   }
   restoreForm(keep);
+  if (type==="bike") setupBikePickers();
   updatePriceHint();
   // Remember phone for convenience
   try{ const p=localStorage.getItem("mm_phone"); if(p && !$("#f_phone").value) $("#f_phone").value=p; }catch(e){}
@@ -571,9 +575,8 @@ function catalogueText(items){
   const groups = {bike:"🏍️ *Motorcycles*", gear:"🪖 *Safety gear*", acc:"🔧 *Moto accessories*", watch:"⌚ *Watches*", car:"🚗 *Cars*", carpart:"🔩 *Car parts & accessories*", bag:"👜 *Women's bags & accessories*", equinepart:"🏇 *Equine accessories*", boatpart:"⚓ *Marine parts & accessories*", equine:"🐎 *Equine*", boat:"🛥️ *Yachts & boats*", art:"🎨 *Modern & art*", estate:"🏠 *Real estate*"};
   let t = `📒 *${MARKET_NAME} — ${CAT_TITLE ? CAT_TITLE+" catalogue" : "Catalogue"}*\n`;
   let n = 0;
-  for (const g of Object.keys(groups)){
-    const xs = items.filter(x=>x.L.type===g).slice(0,40);
-    if (!xs.length) continue;
+  for (const [g, all] of bySection(items)){
+    const xs = all.slice(0,40);
     t += `\n${groups[g]}\n`;
     for (const {L} of xs){ n++; t += `${n}. ${titleOf(L)} — ${priceStr(L.f)} — 📞 ${L.f.phone}\n`; }
   }
@@ -932,6 +935,7 @@ function applyDump(raw){
     if (f.type==="select"){ const o=[...el.options].find(o=>o.value.toLowerCase()===String(v).toLowerCase()); if(!o) continue; v=o.value; }
     el.value = v; if (f.k==="category") el.dispatchEvent(new Event("change")); n++;
   }
+  if (window.syncBikePickers) syncBikePickers();
   return {type:tp, n, kept};
 }
 
@@ -1197,7 +1201,19 @@ async function exportCatalogue(){
     } else y = 8;
   };
   newPage();
-  for (const {id,L} of items){
+  const sections = bySection(items), many = sections.length>1;
+  const flat = [];
+  for (const [t,xs] of sections) xs.forEach((it,i)=>flat.push({...it, head: many && i===0 ? [t, xs.length] : null}));
+  for (const {id,L,head} of flat){
+    if (head){
+      if (col===1){ col=0; y+=CH; }
+      if (y+9+CH > PH-20) newPage();
+      const [t,n]=head, ic=GROUP[t];
+      P.text(pdfSafe(SECTION_NAMES[t]||LABELS[t]).toUpperCase(),M,y+5,{size:11,bold:1,serif:1});
+      P.text(n+(n===1?" listing":" listings"),PW-M,y+5,{size:7.5,color:"#77736b",align:"right"});
+      P.rect(M,y+7,PW-2*M,0.4,"#2b2b2b");
+      y+=10;
+    }
     if (col===0 && y+CH > PH-20) newPage();
     const x = M + col*(CW+G);
     P.rect(x,y,CW,CH-4,"#f6f5f2",2);
@@ -1223,4 +1239,48 @@ async function exportCatalogue(){
   doc.setProperties({title:MARKET_NAME+" - Catalogue"});
   const slug = CAT_TITLE ? "-"+pdfSafe(CAT_TITLE).replace(/[^A-Za-z0-9]+/g,"-").replace(/^-|-$/g,"") : "";
   await saveFile("High-End"+slug+"-Catalogue.pdf", doc.output("blob"));
+}
+
+/* ===================== Motorcycle brand & model pickers ===================== */
+// A real dropdown (works on iPhone) above the text box. "Other" lets the seller type anything.
+function setupBikePickers(){
+  const br=$("#f_brand"), md=$("#f_model"); if (!br || !md) return;
+  const OTHER="__other";
+  const mk=(id,first)=>{ const s=document.createElement("select"); s.id=id; s.className="picker"; const o=document.createElement("option"); o.value=""; o.textContent=first; s.appendChild(o); return s; };
+  const sb=mk("p_brand","Choose the brand…"), sm=mk("p_model","Choose the model…");
+  Object.keys(BIKE_DB).sort((a,b)=>a.localeCompare(b)).forEach(b=>{ const o=document.createElement("option"); o.value=b; o.textContent=b; sb.appendChild(o); });
+  const ob=document.createElement("option"); ob.value=OTHER; ob.textContent="Other brand (type it)"; sb.appendChild(ob);
+  (br.closest(".unitrow")||br).before(sb); (md.closest(".unitrow")||md).before(sm);
+  const wb=sb.parentElement, wm=sm.parentElement;
+  if (wb && wm && wb!==wm && (wm.compareDocumentPosition(wb) & Node.DOCUMENT_POSITION_FOLLOWING)) wm.before(wb);
+  const keyOf=v=>Object.keys(BIKE_DB).find(b=>b.toLowerCase()===String(v||"").trim().toLowerCase());
+  const fillModels=()=>{
+    const key=keyOf(br.value); sm.innerHTML=""; const f=document.createElement("option"); f.value=""; f.textContent= key ? `Choose the ${key} model…` : "Choose the brand first"; sm.appendChild(f);
+    (key?BIKE_DB[key]:[]).forEach(m=>{ const o=document.createElement("option"); o.value=m; o.textContent=m; sm.appendChild(o); });
+    const om=document.createElement("option"); om.value=OTHER; om.textContent="Other model (type it)"; sm.appendChild(om);
+    sm.disabled = !key && !br.value;
+  };
+  const show=(input, on)=>{ input.hidden=!on; (input.closest(".unitrow")||input).hidden=!on; };
+  window.syncBikePickers = ()=>{
+    const key=keyOf(br.value);
+    sb.value = key || (br.value ? OTHER : ""); if (key) br.value=key;
+    show(br, sb.value===OTHER);
+    fillModels();
+    const m=(BIKE_DB[key]||[]).find(x=>x.toLowerCase()===String(md.value).trim().toLowerCase());
+    sm.value = m || (md.value ? OTHER : ""); if (m) md.value=m;
+    show(md, sm.value===OTHER || (!key && !!br.value));
+  };
+  sb.addEventListener("change", ()=>{
+    if (sb.value===OTHER){ br.value=""; show(br,true); br.focus(); }
+    else { br.value=sb.value; show(br,false); }
+    md.value=""; fillModels(); sm.value=""; show(md, sb.value===OTHER);
+    br.dispatchEvent(new Event("input",{bubbles:true}));
+  });
+  sm.addEventListener("change", ()=>{
+    if (sm.value===OTHER){ md.value=""; show(md,true); md.focus(); }
+    else { md.value=sm.value; show(md,false); }
+    md.dispatchEvent(new Event("input",{bubbles:true}));
+  });
+  br.addEventListener("input", ()=>{ if (sb.value===OTHER) fillModels(); });
+  syncBikePickers();
 }

@@ -234,7 +234,6 @@ function section(key, title, icon, items, onAll){
   items.forEach(it=>g.appendChild(cardFor(it)));
   sec.append(h,g); return sec;
 }
-const GROUP_ORDER=["moto","car","watch","bag","boat","equine","art","estate"];
 const GROUP_ICON={moto:"🏍️",car:"🚗",watch:"⌚",bag:"👜",boat:"🛥️",equine:"🐎",art:"🎨",estate:"🏠"};
 const PER_SECTION=6;
 function pick(f){ filter=f; sub="all"; document.querySelectorAll("#filters .chip").forEach(x=>x.classList.toggle("on",x.dataset.f===f)); drawSubfilters(); render(); window.scrollTo({top:$("#filters").getBoundingClientRect().top+scrollY-10,behavior:"smooth"}); }

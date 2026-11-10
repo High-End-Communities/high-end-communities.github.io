@@ -217,3 +217,6 @@ details.more .tools a,details.more .tools button{color:var(--text);text-decorati
   .catsec h2{font-size:17px}
   .feedad{grid-column:1/-1}
 }
+
+select.picker{width:100%;margin-bottom:6px;font-weight:600}
+select.picker:disabled{opacity:.6}
