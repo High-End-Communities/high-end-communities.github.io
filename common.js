@@ -6,10 +6,10 @@ const PHOTO_MAX_EDGE = 480;      // longest side in pixels (very low resolution)
 const PHOTO_MAX_BYTES = 35000;   // target size per photo (~35 KB)
 const MAX_PHOTOS = 4;
 const SMALL_TYPES = ["gear","acc","carpart","boatpart","equinepart"];   // small items & spare parts: 2 photos, up to 20 per seller
-const BULK_TYPES = ["watch", ...SMALL_TYPES];                          // up to 20 listings per seller
-function maxPhotos(t){ return SMALL_TYPES.includes(t || type) ? 2 : MAX_PHOTOS; }
+const BULK_TYPES = ["watch", "bag", ...SMALL_TYPES];                          // up to 20 listings per seller
+function maxPhotos(t){ return SMALL_TYPES.includes(t || type) ? 3 : MAX_PHOTOS; }
 function photoRuleText(){ return SMALL_TYPES.includes(type)
-  ? "(1–2 photos for small items & spare parts, auto-reduced)"
+  ? "(1–3 photos for small items & spare parts, auto-reduced)"
   : "(1–4 photos, auto-reduced to low resolution)"; }
 const BIKE_RANGE = [100000, 2000000];
 const GEAR_RANGES = {            // EGP
@@ -20,6 +20,7 @@ const ACC_RANGES = {
   "Exhaust":[5000,100000], "LED lights":[1000,60000], "Crash bars / frame sliders":[1500,40000],
   "Luggage / top box / panniers":[3000,80000], "Seat":[2000,50000], "Windscreen":[1500,30000],
   "Mirrors":[500,15000], "Phone holder / mount":[300,8000], "Grips / levers / tank pad":[300,15000],
+  "Cleaning & care products":[100,20000], "Oils & lubricants":[200,30000], "Filters":[100,20000],
   "Other accessory":[500,100000]
 };
 const WATCH_RANGE = [4000, 2000000];
@@ -28,7 +29,10 @@ const HORSE_RANGE = [20000, 20000000];
 const EQUINE_RANGES = { "Saddle":[2000,500000], "Bridle & tack":[300,100000], "Rugs & blankets":[300,50000], "Grooming":[100,30000],
   "Riding wear & helmets":[300,100000], "Stable & yard equipment":[500,500000], "Horse trailer / box":[30000,3000000], "Other":[100,500000] };
 const CARPART_RANGES = { "Wheels & tyres":[1000,500000], "Body parts":[500,300000], "Engine & mechanical":[500,1000000], "Lights":[300,150000],
-  "Interior":[300,300000], "Electronics & audio":[300,200000], "Performance parts":[1000,1000000], "Accessories":[100,200000], "Other":[100,1000000] };
+  "Interior":[300,300000], "Electronics & audio":[300,200000], "Performance parts":[1000,1000000], "Accessories":[100,200000], "Oils, filters & care":[100,30000], "Other":[100,1000000] };
+const BAG_RANGES = { "Handbag":[5000,5000000], "Shoulder bag":[5000,3000000], "Tote":[5000,2000000], "Clutch & evening bag":[3000,2000000],
+  "Backpack":[3000,1000000], "Wallet & card holder":[1500,300000], "Belt":[1500,200000], "Scarf & shawl":[1000,150000],
+  "Sunglasses":[1500,150000], "Jewelry":[2000,10000000], "Other":[1000,2000000] };
 const BOATPART_RANGES = { "Engine & outboard":[5000,5000000], "Electronics & navigation":[1000,1000000], "Safety equipment":[200,200000],
   "Deck hardware":[200,500000], "Water sports gear":[500,500000], "Covers & upholstery":[500,300000], "Trailer":[10000,1500000], "Other":[200,5000000] };
 const USD_TO_EGP = (typeof USD_RATE !== "undefined" && USD_RATE > 0) ? USD_RATE : 52;   // used only to check USD prices against the EGP ranges
@@ -49,7 +53,7 @@ const SCHEMAS = {
     {k:"brand", l:"Brand", req:1, ph:"e.g. Harley-Davidson"},
     {k:"year", l:"Model year", req:1, type:"number", min:1960, max:thisYear+1, ph:String(thisYear-3)},
     {k:"engine", l:"Engine size", req:1, type:"number", min:50, max:3000, ph:"e.g. 1868 or 114", units:["cc","ci"], unitRange:{cc:[50,3000], ci:[3,200]}},
-    {k:"mileage", l:"Mileage (km)", req:1, type:"number", min:0, max:500000, ph:"e.g. 12000"},
+    {k:"mileage", l:"Mileage", req:1, type:"number", min:0, max:500000, ph:"e.g. 12000", units:["km","mi"], unitRange:{km:[0,500000], mi:[0,310000]}},
     {k:"paint", l:"Original paint", type:"select", opts:["Yes","No"], def:"Yes"},
     {k:"condition", l:"Condition", req:1, type:"select", opts:["New","Used"], def:"Used"},
     {k:"addons", l:"Add-ons", type:"textarea", full:1, ph:"Exhaust, crash bars, luggage…"},
@@ -77,6 +81,7 @@ const SCHEMAS = {
     {k:"condition", l:"Condition", req:1, type:"select", opts:["New","Used"], def:"Used"},
     {k:"color", l:"Color", ph:"e.g. Titanium"},
     {k:"packaging", l:"Original packaging", type:"select", opts:["Yes","No"], def:"No"},
+    {k:"stock", l:"Quantity in stock", type:"number", min:1, max:9999, ph:"leave empty if you have 1", hint:"For oils, filters, parts you have several of"},
     {k:"price", l:"Price", req:1, type:"price", units:["EGP","USD"]},
     {k:"phone", l:"Phone number", req:1, type:"phone"}
   ],
@@ -170,6 +175,7 @@ const SCHEMAS = {
     {k:"brand", l:"Brand", req:1, ph:"e.g. BBS, Bosch, original"},
     {k:"compat", l:"Compatible with", req:1, ph:"e.g. Mercedes G-Class 2019–2024"},
     {k:"oem", l:"Original or aftermarket", type:"select", opts:["Original (OEM)","Aftermarket"], def:"Original (OEM)"},
+    {k:"stock", l:"Quantity in stock", type:"number", min:1, max:9999, ph:"leave empty if you have 1", hint:"For oils, filters, parts you have several of"},
     {k:"condition", l:"Condition", req:1, type:"select", opts:["New","Used"], def:"Used"},
     {k:"price", l:"Price", req:1, type:"price", units:["EGP","USD"]},
     {k:"phone", l:"Phone number", req:1, type:"phone"}
@@ -180,7 +186,22 @@ const SCHEMAS = {
     {k:"brand", l:"Brand", req:1, ph:"e.g. Yamaha, Garmin"},
     {k:"compat", l:"Fits / compatible with", ph:"e.g. boats 18–24 ft"},
     {k:"hours", l:"Engine hours", type:"number", min:0, max:100000, ph:"if it's an engine"},
+    {k:"stock", l:"Quantity in stock", type:"number", min:1, max:9999, ph:"leave empty if you have 1", hint:"For oils, filters, parts you have several of"},
     {k:"condition", l:"Condition", req:1, type:"select", opts:["New","Used"], def:"Used"},
+    {k:"price", l:"Price", req:1, type:"price", units:["EGP","USD"]},
+    {k:"phone", l:"Phone number", req:1, type:"phone"}
+  ],
+  bag: [
+    {k:"category", l:"Item type", req:1, type:"select", opts:Object.keys(BAG_RANGES), def:"Handbag"},
+    {k:"brand", l:"Brand", req:1, ph:"e.g. Hermès, Chanel, Louis Vuitton", list:"BAG_BRANDS"},
+    {k:"model", l:"Model", req:1, ph:"e.g. Birkin 30, Classic Flap, Neverfull MM"},
+    {k:"color", l:"Color", ph:"e.g. Black, Gold hardware"},
+    {k:"material", l:"Material", ph:"e.g. Togo leather, Caviar, Canvas"},
+    {k:"size", l:"Size", ph:"e.g. 30 cm, Medium"},
+    {k:"year", l:"Year", type:"number", min:1950, max:thisYear+1, ph:"e.g. 2022"},
+    {k:"condition", l:"Condition", req:1, type:"select", opts:["New","Used"], def:"Used"},
+    {k:"set", l:"Box, dust bag & papers", type:"select", opts:["Full set","Dust bag only","Box only","None"], def:"Full set"},
+    {k:"receipt", l:"Receipt / certificate", type:"select", opts:["Yes","No"], def:"No"},
     {k:"price", l:"Price", req:1, type:"price", units:["EGP","USD"]},
     {k:"phone", l:"Phone number", req:1, type:"phone"}
   ],
@@ -190,22 +211,49 @@ const SCHEMAS = {
     {k:"brand", l:"Brand", req:1, ph:"e.g. Stübben, Kentucky"},
     {k:"size", l:"Size", ph:"e.g. 17.5\", Full, M"},
     {k:"color", l:"Color", ph:"e.g. Brown"},
+    {k:"stock", l:"Quantity in stock", type:"number", min:1, max:9999, ph:"leave empty if you have 1", hint:"For oils, filters, parts you have several of"},
     {k:"condition", l:"Condition", req:1, type:"select", opts:["New","Used"], def:"Used"},
     {k:"price", l:"Price", req:1, type:"price", units:["EGP","USD"]},
     {k:"phone", l:"Phone number", req:1, type:"phone"}
   ]
 };
-const LABELS = {bike:"Motorcycle", gear:"Safety gear", acc:"Moto accessory", watch:"Watch", car:"Car", carpart:"Car part / accessory", equine:"Horse", equinepart:"Equine accessory", boatpart:"Marine part / accessory", boat:"Yacht & boat", art:"Modern & art", estate:"Real estate"};
-const ICONS = {bike:"🏍️", gear:"🪖", acc:"🔧", watch:"⌚", car:"🚗", carpart:"🔩", equinepart:"🏇", boatpart:"⚓", equine:"🐎", boat:"🛥️", art:"🎨", estate:"🏠"};
-const GROUP = {bike:"moto", gear:"moto", acc:"moto", watch:"watch", car:"car", carpart:"car", equinepart:"equine", boatpart:"boat", equine:"equine", boat:"boat", art:"art", estate:"estate"};
-const RANGES = {bike:BIKE_RANGE, gear:GEAR_RANGES, acc:ACC_RANGES, watch:WATCH_RANGE, car:CAR_RANGE, carpart:CARPART_RANGES, equine:HORSE_RANGE, equinepart:EQUINE_RANGES, boatpart:BOATPART_RANGES, boat:BOAT_RANGES, art:ART_RANGES, estate:ESTATE_RANGES};
+const LABELS = {bike:"Motorcycle", gear:"Safety gear", acc:"Moto accessory", watch:"Watch", car:"Car", carpart:"Car part / accessory", equine:"Horse", equinepart:"Equine accessory", boatpart:"Marine part / accessory", bag:"Women's bag / accessory", boat:"Yacht & boat", art:"Modern & art", estate:"Real estate"};
+const ICONS = {bag:"👜", bike:"🏍️", gear:"🪖", acc:"🔧", watch:"⌚", car:"🚗", carpart:"🔩", equinepart:"🏇", boatpart:"⚓", equine:"🐎", boat:"🛥️", art:"🎨", estate:"🏠"};
+const GROUP = {bag:"bag", bike:"moto", gear:"moto", acc:"moto", watch:"watch", car:"car", carpart:"car", equinepart:"equine", boatpart:"boat", equine:"equine", boat:"boat", art:"art", estate:"estate"};
+const RANGES = {bag:BAG_RANGES, bike:BIKE_RANGE, gear:GEAR_RANGES, acc:ACC_RANGES, watch:WATCH_RANGE, car:CAR_RANGE, carpart:CARPART_RANGES, equine:HORSE_RANGE, equinepart:EQUINE_RANGES, boatpart:BOATPART_RANGES, boat:BOAT_RANGES, art:ART_RANGES, estate:ESTATE_RANGES};
 const SUBTYPES = {
   moto:  [["bike","🏍️","Motorcycle"],["gear","🪖","Safety gear"],["acc","🔧","Accessory"]],
   car:   [["car","🚗","Car"],["carpart","🔩","Parts & accessories"]],
   boat:  [["boat","🛥️","Yacht / boat"],["boatpart","⚓","Parts & accessories"]],
   equine:[["equine","🐎","Horse"],["equinepart","🏇","Saddles, tack & accessories"]]
 };
-const CI_TO_CC = 16.387;
+const SECTION_NAMES = {bike:"Motorcycles", gear:"Safety gear & helmets", acc:"Motorcycle accessories & parts", watch:"Watches",
+  car:"Cars", carpart:"Car parts & accessories", boat:"Yachts & boats", boatpart:"Marine parts & accessories",
+  equine:"Horses", equinepart:"Equine accessories", art:"Modern & art", estate:"Real estate", bag:"Women's bags & accessories"};
+const GROUP_NAMES = {moto:"Motorcycles, gear & accessories", car:"Cars & car parts", boat:"Yachts, boats & marine parts", equine:"Equine",
+  watch:"Watches", art:"Modern & art", estate:"Real estate", bag:"Women's bags & accessories"};
+let CAT_TITLE = "";        // set by the catalogue page to the section being shown
+const CI_TO_CC = 16.387, KM_PER_MI = 1.609344;
+// Best-selling and most popular motorcycles worldwide (suggestions only — sellers can still type anything)
+const BIKE_DB = {
+  "Harley-Davidson":["Street Glide","Road Glide","Road King","Electra Glide","Ultra Limited","CVO Street Glide","CVO Road Glide","Fat Boy","Fat Bob","Heritage Classic","Breakout","Low Rider S","Low Rider ST","Street Bob","Softail Standard","Sportster S","Nightster","Iron 883","Forty-Eight","Pan America 1250"],
+  "Honda":["CBR1000RR-R Fireblade","CBR650R","CB650R","CBR500R","CB750 Hornet","CB1000 Hornet","CRF1100L Africa Twin","XL750 Transalp","NX500","NC750X","Gold Wing","Rebel 1100","Rebel 500","X-ADV","Forza 750","PCX 160"],
+  "Yamaha":["YZF-R1","YZF-R7","YZF-R3","MT-10","MT-09","MT-07","MT-03","Tracer 9 GT","Ténéré 700","XSR900","XSR700","TMAX 560","XMAX 300","NMAX 155"],
+  "Kawasaki":["Ninja ZX-10R","Ninja ZX-6R","Ninja H2","Ninja 650","Ninja 500","Z H2","Z900","Z900RS","Z650","Versys 1000","Versys 650","Vulcan S","KLR 650"],
+  "Suzuki":["Hayabusa","GSX-R1000R","GSX-R750","GSX-S1000","GSX-8S","GSX-8R","V-Strom 1050","V-Strom 800DE","V-Strom 650","SV650","Burgman 400"],
+  "BMW":["R 1300 GS","R 1250 GS","R 1250 GS Adventure","R 1300 GS Adventure","R 1250 RT","K 1600 GTL","S 1000 RR","M 1000 RR","S 1000 R","S 1000 XR","F 900 GS","F 800 GS","F 900 R","F 900 XR","R nineT","R 18","G 310 GS","G 310 R","C 400 X"],
+  "Ducati":["Panigale V4","Panigale V2","Streetfighter V4","Streetfighter V2","Monster","Multistrada V4","Multistrada V2","DesertX","Diavel V4","XDiavel","Hypermotard 950","SuperSport 950","Scrambler Icon"],
+  "KTM":["1390 Super Duke R","1290 Super Duke R","990 Duke","890 Duke","390 Duke","1290 Super Adventure","890 Adventure","390 Adventure","690 SMC R","RC 390"],
+  "Triumph":["Bonneville T120","Bonneville T100","Speed Twin 1200","Thruxton RS","Scrambler 1200","Street Triple 765","Speed Triple 1200","Trident 660","Tiger 900","Tiger 1200","Rocket 3","Speed 400","Scrambler 400 X"],
+  "Indian":["Chief","Chief Dark Horse","Chieftain","Roadmaster","Springfield","Challenger","Pursuit","Scout","Scout Bobber","FTR"],
+  "Royal Enfield":["Classic 350","Bullet 350","Meteor 350","Hunter 350","Himalayan 450","Interceptor 650","Continental GT 650","Super Meteor 650","Shotgun 650"],
+  "Aprilia":["RSV4","Tuono V4","RS 660","Tuono 660","Tuareg 660"],
+  "MV Agusta":["Brutale","Dragster","F3","Turismo Veloce"],
+  "Benelli":["TRK 502","TRK 702","Leoncino 500","302S"],
+  "CFMoto":["800MT","700CL-X","450SR","450MT"],
+  "Vespa":["GTS 300","Primavera","Sprint"]
+};
+const BAG_BRANDS = ["Hermès","Chanel","Louis Vuitton","Dior","Gucci","Prada","Saint Laurent","Fendi","Bottega Veneta","Celine","Balenciaga","Givenchy","Valentino","Loewe","Burberry","Goyard","Miu Miu","Versace","Dolce & Gabbana","Chloé","Cartier","Tiffany & Co.","Van Cleef & Arpels","Bulgari","Michael Kors","Coach","Tory Burch"];
 const UNITS = {mileage:" km", size:" mm", length:" ft", hours:" h", height:" cm", age:" yrs", area:" m²"};
 
 let type = "bike";
@@ -220,7 +268,34 @@ function priceRange(){
   return (r && r[cat]) || [0, 1e9];
 }
 
-function renderFields(){
+// Remember what's in the form so switching category doesn't wipe it.
+function snapshotForm(){
+  const box = $("#fields"); if (!box) return null;
+  const v = {};
+  box.querySelectorAll("[id^=f_]").forEach(el=>{
+    const k = el.id.slice(2);
+    if (el.classList.contains("checks")) v[k] = [...el.querySelectorAll("input:checked")].map(c=>c.value);
+    else if (el.value!=="" && el.value!=null) v[k] = el.value;
+  });
+  box.querySelectorAll("select.unit").forEach(u=>{ v[u.id] = u.value; });
+  return v;
+}
+function restoreForm(v){
+  if (!v) return;
+  for (const f of SCHEMAS[type]){
+    const el = $("#f_"+f.k); if (!el) continue;
+    let val = v[f.k];
+    if (val==null && f.k==="model") val = v.name;       // model ↔ name carry over between categories
+    if (val==null && f.k==="name") val = v.model;
+    if (val==null || val==="") continue;
+    if (f.type==="checks"){ const vs=[].concat(val); el.querySelectorAll("input").forEach(c=>c.checked=vs.includes(c.value)); continue; }
+    if (el.tagName==="SELECT"){ if ([...el.options].some(o=>o.value===val)) el.value = val; continue; }
+    el.value = val;
+    const u = $("#u_"+f.k); if (u && v["u_"+f.k] && [...u.options].some(o=>o.value===v["u_"+f.k])) u.value = v["u_"+f.k];
+  }
+}
+function renderFields(clear){
+  const keep = clear===true ? null : snapshotForm();
   const pr = $("#photoRule"); if (pr) pr.textContent = photoRuleText();
   if (typeof photos!=="undefined" && photos.length > maxPhotos()){
     photos = photos.slice(0, maxPhotos()); renderThumbs();
@@ -252,6 +327,12 @@ function renderFields(){
     }
     el.id = "f_"+f.k;
     if (f.ph) el.placeholder = f.ph;
+    const sugg = (type==="bike" && f.k==="brand") ? Object.keys(BIKE_DB) : (f.list==="BAG_BRANDS" ? BAG_BRANDS : null);
+    if (sugg || (type==="bike" && f.k==="model")){
+      const dl=document.createElement("datalist"); dl.id="dl_"+f.k; el.setAttribute("list", dl.id); el.autocomplete="off";
+      (sugg||[]).forEach(v=>{ const o=document.createElement("option"); o.value=v; dl.appendChild(o); });
+      wrap.appendChild(dl);
+    }
     if (f.units){
       const row=document.createElement("div"); row.className="unitrow";
       const us=document.createElement("select"); us.id="u_"+f.k; us.className="unit";
@@ -270,9 +351,16 @@ function renderFields(){
   }
   const cat = $("#f_category");
   if (cat) cat.addEventListener("change", updatePriceHint);
+  if (type==="bike"){
+    const br=$("#f_brand"), dl=$("#dl_model");
+    const fill=()=>{ if(!dl) return; dl.innerHTML=""; const key=Object.keys(BIKE_DB).find(b=>b.toLowerCase()===String(br.value).trim().toLowerCase());
+      (key?BIKE_DB[key]:[]).forEach(m=>{ const o=document.createElement("option"); o.value=m; dl.appendChild(o); }); };
+    if (br){ br.addEventListener("input", fill); br.addEventListener("change", fill); fill(); }
+  }
+  restoreForm(keep);
   updatePriceHint();
   // Remember phone for convenience
-  try{ const p=localStorage.getItem("mm_phone"); if(p) $("#f_phone").value=p; }catch(e){}
+  try{ const p=localStorage.getItem("mm_phone"); if(p && !$("#f_phone").value) $("#f_phone").value=p; }catch(e){}
 }
 function updatePriceHint(){
   const [lo,hi] = priceRange();
@@ -289,6 +377,10 @@ function updateUnitHint(f){
 function priceStr(f){ return (f.price_unit==="USD" ? "$"+fmt(f.price) : fmt(f.price)+" EGP"); }
 function unitStr(f, k, v){
   const u = f[k+"_unit"];
+  if (k==="mileage"){
+    if (u==="mi") return `${fmt(v)} mi (${fmt(Math.round(v*KM_PER_MI))} km)`;
+    return `${fmt(v)} km (${fmt(Math.round(v/KM_PER_MI))} mi)`;
+  }
   if (k==="engine"){
     if (u==="ci") return `${fmt(v)} ci (${fmt(Math.round(v*CI_TO_CC))} cc)`;
     return `${fmt(v)} cc` + (v>=600 ? ` (${fmt(Math.round(v/CI_TO_CC))} ci)` : "");
@@ -296,6 +388,7 @@ function unitStr(f, k, v){
   return null;
 }
 
+let CAT_PICKED = false;      // true once the person taps a category themselves
 function initCategoryPicker(){
   const lastSub = {moto:"bike", car:"car", boat:"boat", equine:"equine"};
   const box = $("#types");
@@ -307,23 +400,22 @@ function initCategoryPicker(){
     subs.forEach(([t,ic,label])=>{
       const b=document.createElement("button"); b.type="button"; b.dataset.t=t; b.className = t===type?"on":"";
       b.innerHTML = `<span class="ic">${ic}</span>`; b.appendChild(document.createTextNode(label));
-      b.onclick = ()=>{
-        const ph = ($("#f_phone")||{}).value;
+      b.onclick = (e)=>{
+        if (e && e.isTrusted) CAT_PICKED = true;
         type = t; lastSub[group] = t;
         box.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));
-        renderFields(); if (ph) $("#f_phone").value = ph; showMsg("");
+        renderFields(); showMsg("");
       };
       box.appendChild(b);
     });
   }
-  document.querySelectorAll("#mains button").forEach(b=>b.onclick=()=>{
-    const ph = ($("#f_phone")||{}).value;
+  document.querySelectorAll("#mains button").forEach(b=>b.onclick=(e)=>{
+    if (e && e.isTrusted) CAT_PICKED = true;
     document.querySelectorAll("#mains button").forEach(x=>x.classList.toggle("on",x===b));
     const m = b.dataset.m;
     type = SUBTYPES[m] ? lastSub[m] : m;
     drawSubs(m);
     renderFields();
-    if (ph) $("#f_phone").value = ph;
     showMsg(""); const d=$("#done"); if (d) d.classList.remove("show");
   });
   drawSubs(GROUP[type] || "moto");
@@ -344,14 +436,27 @@ function loadImage(file){
     img.src = u;
   });
 }
+function watermarkSrc(){ try{ return logoFor(type); }catch(e){ return MAIN_LOGO; } }
+function drawWatermark(ctx, w, h, mark){
+  if (!mark || !mark.naturalWidth) return;
+  const mw = Math.round(Math.max(70, w*0.24)), mh = Math.round(mw*mark.naturalHeight/mark.naturalWidth);
+  const pad = Math.round(mw*0.06), x = w - mw - Math.round(w*0.025) - pad, y = h - mh - Math.round(h*0.025) - pad;
+  ctx.save();
+  ctx.globalAlpha = 0.82; ctx.fillStyle = "#ffffff";
+  ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x-pad, y-pad, mw+2*pad, mh+2*pad, pad*1.5); else ctx.rect(x-pad, y-pad, mw+2*pad, mh+2*pad); ctx.fill();
+  ctx.globalAlpha = 0.95; ctx.drawImage(mark, x, y, mw, mh);
+  ctx.restore();
+}
 async function shrink(file){
   const img = await loadImage(file);
+  let mark = null; try{ mark = await loadSrc(watermarkSrc()); }catch(e){}
   let edge = PHOTO_MAX_EDGE, q = 0.5, url;
   for (let i=0;i<8;i++){
     const s = Math.min(1, edge/Math.max(img.naturalWidth, img.naturalHeight));
     const w = Math.round(img.naturalWidth*s), h = Math.round(img.naturalHeight*s);
     const c = document.createElement("canvas"); c.width=w; c.height=h;
     const ctx = c.getContext("2d"); ctx.imageSmoothingQuality="medium"; ctx.drawImage(img,0,0,w,h);
+    drawWatermark(ctx, w, h, mark);
     url = c.toDataURL("image/jpeg", q);
     const bytes = Math.round((url.length - 23) * 3/4);
     if (bytes <= PHOTO_MAX_BYTES) return {url, bytes, w, h, orig: file.size};
@@ -436,10 +541,11 @@ function titleOf(L){
 function rows(L){
   const out = [];
   for (const f of SCHEMAS[L.type]){
-    if (["price","phone","model","name"].includes(f.k)) continue;
+    if (["price","phone","model","name","stock"].includes(f.k)) continue;
     let v = L.f[f.k]; if (v===undefined||v==="") continue;
     const us = unitStr(L.f, f.k, v);
-    if (us) v = us; else if (UNITS[f.k]) v = (f.k==="year"?v:fmt(v)) + UNITS[f.k];
+    const num = !isNaN(Number(String(v).replace(/,/g,"")));
+    if (num && us) v = us; else if (num && UNITS[f.k]) v = (f.k==="year"?v:fmt(v)) + UNITS[f.k];
     out.push([f.l.replace(/ \(.*\)/,""), String(v)]);
   }
   return out;
@@ -459,11 +565,11 @@ function linkFor(id){ const s=safeId(id); return s ? baseUrl()+"/#l-"+s : baseUr
 function waHref(text){ return "https://wa.me/?text="+encodeURIComponent(text); }
 function shareText(L,id){
   const icon = ICONS[L.type] || "🏷️";
-  return `${icon} *${MARKET_NAME}*\n\n${listingText(L)}` + (INCLUDE_LINK ? `\n\n📸 Photos & details: ${linkFor(id)}` : "") + `\n\n_⚠️ ${DISCLAIMER}_`;
+  return `${icon} *${MARKET_NAME}*${isFeatured(L)?" ⭐":""}\n\n${listingText(L)}` + (L.discount ? `\n🏷️ *${L.discount}% off* — get your discount code on the site` : "") + (INCLUDE_LINK ? `\n\n📸 Photos & details: ${linkFor(id)}` : "") + `\n\n_⚠️ ${DISCLAIMER}_`;
 }
 function catalogueText(items){
-  const groups = {bike:"🏍️ *Motorcycles*", gear:"🪖 *Safety gear*", acc:"🔧 *Moto accessories*", watch:"⌚ *Watches*", car:"🚗 *Cars*", carpart:"🔩 *Car parts & accessories*", equinepart:"🏇 *Equine accessories*", boatpart:"⚓ *Marine parts & accessories*", equine:"🐎 *Equine*", boat:"🛥️ *Yachts & boats*", art:"🎨 *Modern & art*", estate:"🏠 *Real estate*"};
-  let t = `📒 *${MARKET_NAME} — Catalogue*\n`;
+  const groups = {bike:"🏍️ *Motorcycles*", gear:"🪖 *Safety gear*", acc:"🔧 *Moto accessories*", watch:"⌚ *Watches*", car:"🚗 *Cars*", carpart:"🔩 *Car parts & accessories*", bag:"👜 *Women's bags & accessories*", equinepart:"🏇 *Equine accessories*", boatpart:"⚓ *Marine parts & accessories*", equine:"🐎 *Equine*", boat:"🛥️ *Yachts & boats*", art:"🎨 *Modern & art*", estate:"🏠 *Real estate*"};
+  let t = `📒 *${MARKET_NAME} — ${CAT_TITLE ? CAT_TITLE+" catalogue" : "Catalogue"}*\n`;
   let n = 0;
   for (const g of Object.keys(groups)){
     const xs = items.filter(x=>x.L.type===g).slice(0,40);
@@ -530,10 +636,34 @@ function wrapText(P,s,o,maxW,maxLines){
 }
 function clip(P,s,o,maxW){ return wrapText(P,s,o,maxW,1)[0]||""; }
 function checker(P,x,y,w,sq){ const n=Math.ceil(w/sq); P.rect(x,y,w,sq*2,"#ffffff"); for(let r=0;r<2;r++) for(let i=0;i<n;i++) if((i+r)%2===0) P.rect(x+i*sq,y+r*sq,Math.min(sq,x+w-(x+i*sq)),sq,"#2b2b2b"); }
-function fitImg(P,im,x,y,w,h,bg){
-  P.rect(x,y,w,h,bg||"#151515");
-  const r = Math.min(w/im.naturalWidth, h/im.naturalHeight); const iw=im.naturalWidth*r, ih=im.naturalHeight*r;
-  P.img(im, x+(w-iw)/2, y+(h-ih)/2, iw, ih);
+const _fillCache = new Map();
+async function filledPhoto(im, w, h){
+  // w, h in mm → small canvas (about 5 px/mm) so files stay light
+  const key = im.src.length + ":" + im.src.slice(-60) + ":" + Math.round(w*10) + "x" + Math.round(h*10);
+  if (_fillCache.has(key)) return _fillCache.get(key);
+  const k = 5.2, cw = Math.max(40, Math.round(w*k)), ch = Math.max(30, Math.round(h*k));
+  const c = document.createElement("canvas"); c.width=cw; c.height=ch; const ctx = c.getContext("2d");
+  // background: the photo scaled to cover, blurred by shrinking it to a few pixels and stretching back
+  const sc = Math.max(cw/im.naturalWidth, ch/im.naturalHeight);
+  const t = document.createElement("canvas"); t.width=24; t.height=Math.max(8, Math.round(24*ch/cw));
+  const tctx = t.getContext("2d"); tctx.imageSmoothingEnabled = true;
+  const bw = im.naturalWidth*sc, bh = im.naturalHeight*sc;
+  tctx.drawImage(im, (cw-bw)/2*t.width/cw, (ch-bh)/2*t.height/ch, bw*t.width/cw, bh*t.height/ch);
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(t, 0, 0, cw, ch);
+  ctx.fillStyle = "rgba(255,255,255,0.18)"; ctx.fillRect(0,0,cw,ch);
+  // the whole photo on top
+  const r = Math.min(cw/im.naturalWidth, ch/im.naturalHeight), iw = im.naturalWidth*r, ih = im.naturalHeight*r;
+  ctx.drawImage(im, (cw-iw)/2, (ch-ih)/2, iw, ih);
+  const out = await loadSrc(c.toDataURL("image/jpeg", 0.72));
+  _fillCache.set(key, out);
+  return out;
+}
+async function fitImg(P,im,x,y,w,h){
+  let f = im;
+  try{ f = await filledPhoto(im, w, h); }catch(e){}
+  if (f === im){ P.rect(x,y,w,h,"#efece5"); const r=Math.min(w/im.naturalWidth,h/im.naturalHeight), iw=im.naturalWidth*r, ih=im.naturalHeight*r; P.img(im,x+(w-iw)/2,y+(h-ih)/2,iw,ih); return; }
+  P.img(f, x, y, w, h);
 }
 function masarStrip(P,img,x,y,w,h,sp){
   sp = sp || DEFAULT_SPONSOR;
@@ -569,8 +699,8 @@ async function drawFlyer(P, L, id){
   const lw = logo.naturalWidth*lr, lh = logo.naturalHeight*lr; P.img(logo,(FW-lw)/2,6,lw,lh);
   if (drawQR(P, linkFor(id), FW-8-21, 6, 21)) P.text("Scan for photos", FW-8-10.5, 6+21+3, {size:5.2, color:"#77736b", align:"center"});
   let y = 6+lh+3;
-  if (ph.length){ fitImg(P,ph[0],M,y,W,76); y+=76; }
-  if (ph.length>1){ const tw=(W-2*3)/3, th=16; y+=2; ph.slice(1,4).forEach((im,i)=>fitImg(P,im,M+i*(tw+3),y,tw,th)); y+=th; }
+  if (ph.length){ await fitImg(P,ph[0],M,y,W,76); y+=76; }
+  if (ph.length>1){ const tw=(W-2*3)/3, th=16; y+=2; let i=0; for (const im of ph.slice(1,4)){ await fitImg(P,im,M+i*(tw+3),y,tw,th); i++; } y+=th; }
   y += 6;
   const badge = (LABELS[L.type] + (L.f.category?" - "+L.f.category:"")).toUpperCase();
   P.text(badge,M,y,{size:7,bold:1,color:"#77736b"}); y+=6.5;
@@ -608,10 +738,12 @@ function fileBase(L){ return pdfSafe(titleOf(L)).replace(/[^A-Za-z0-9]+/g,"-").r
 const sb = (window.supabase && SUPABASE_URL && !/YOUR-PROJECT/.test(SUPABASE_URL))
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {auth:{persistSession:true}})
   : null;
-const LIST_COLS = "id,created_at,status,type,f,phone,thumb,sold_at,views";
+const LIST_COLS = "id,created_at,status,type,f,phone,thumb,sold_at,views,promoted,promoted_until,stock,discount_pct";
 function rowToItem(r){
   return { id:r.id, L:{ type:r.type, f:r.f||{}, thumb:r.thumb||null, photos:Array.isArray(r.photos)?r.photos:null,
-    at:Date.parse(r.created_at)||Date.now(), status:r.status, views:r.views||0, soldAt:r.sold_at?Date.parse(r.sold_at):null, note:r.note||null } };
+    at:Date.parse(r.created_at)||Date.now(), status:r.status, views:r.views||0, soldAt:r.sold_at?Date.parse(r.sold_at):null, note:r.note||null,
+    promoted:!!r.promoted, promotedUntil:r.promoted_until?Date.parse(r.promoted_until):null,
+    stock:(r.stock===null||r.stock===undefined)?null:Number(r.stock), discount:r.discount_pct||null } };
 }
 async function loadPhotos(item){
   if (item.L.photos && item.L.photos.length) return item.L.photos;
@@ -621,9 +753,11 @@ async function loadPhotos(item){
   return item.L.photos || (item.L.thumb ? [item.L.thumb] : []);
 }
 function isSold(id,L){ return L.status==="sold"; }
+function isFeatured(L){ return !!L.promoted && (!L.promotedUntil || L.promotedUntil > Date.now()) && L.status==="live"; }
+function sortListings(list){ return list.slice().sort((a,b)=>(isFeatured(b.L)-isFeatured(a.L)) || ((b.L.at||0)-(a.L.at||0))); }
 function niceError(e){
   const m = (e && (e.message||e.error_description||e.msg)) || String(e||"");
-  if (/queue is full|already has listings/i.test(m)) return m;
+  if (/queue is full|already has|can post|a month/i.test(m)) return m;
   if (/Failed to fetch|NetworkError|network/i.test(m)) return "No connection — check your internet and try again.";
   if (/Invalid login/i.test(m)) return "Wrong email or password.";
   return "Something went wrong: " + m;
@@ -641,11 +775,14 @@ function adminHref(text){ return "https://wa.me/2"+ADMIN_WA+"?text="+encodeURICo
 
 /* ===================== Quick dump: paste a WhatsApp message, the form fills itself ===================== */
 const KEYWORDS = {
+  bag:["handbag","hand bag","birkin","kelly","neverfull","speedy","flap bag","tote","clutch","crossbody","hermes","hermès","chanel","louis vuitton","dior","goyard","bottega","celine","saint laurent","ysl","شنطة","شنطه","حقيبة"],
   watch:["rolex","omega","patek","audemars","royal oak","cartier","tag heuer","breitling","tudor","hublot","iwc","panerai","longines","seiko","grand seiko","richard mille","vacheron","jaeger","zenith","watch","chronograph","ساعة","ساعه"],
-  car:["mercedes","porsche","audi","toyota","lexus","range rover","land rover","jeep","ferrari","lamborghini","bentley","maserati","nissan","hyundai","kia","chevrolet","ford","volvo","peugeot","car","sedan","suv","coupe","سيارة","عربية","عربيه"],
+  car:["bmw x","x5","x6","x7","g class","g-class","g63","amg","range rover","sedan","hatchback","mercedes","porsche","audi","toyota","lexus","range rover","land rover","jeep","ferrari","lamborghini","bentley","maserati","nissan","hyundai","kia","chevrolet","ford","volvo","peugeot","car","sedan","suv","coupe","سيارة","عربية","عربيه"],
   bike:["harley","davidson","ducati","triumph","ktm","kawasaki","yamaha","suzuki","aprilia","mv agusta","indian","royal enfield","benelli","gs 1250","r1250","s1000","motorcycle","motorbike","موتوسيكل","موتوسكل","موتور"],
   gear:["helmet","jacket","gloves","boots","intercom","sena","cardo","shoei","arai","agv","hjc","alpinestars","dainese","rev'it","revit","klim","خوذة","خوذه","جاكيت"],
-  acc:["exhaust","akrapovic","akrapovič","vance","led","fog light","crash bar","slider","top box","pannier","windscreen","windshield","mirror","grips","شكمان"],
+  acc:["exhaust","akrapovic","akrapovič","vance","slip-on","muffler","led","fog light","crash bar","slider","top box","pannier","windscreen","windshield","mirror","grips","backrest","sissy bar","saddlebag",
+       "oil filter","air filter","filter","engine oil","motor oil","motul","castrol","liqui moly","chain lube","chain","sprocket","spark plug","brake pads","battery","cleaner","polish","wax","hiflo","hiflofiltro","k&n",
+       "شكمان","فلتر","زيت","شمع","منظف","بطارية","جنزير"],
   boat:["yacht","boat","jet ski","jetski","sea-doo","seadoo","azimut","ferretti","sunseeker","princess","riva","sailboat","speedboat","marina","يخت","مركب","لانش"],
   equine:["horse","mare","stallion","gelding","filly","colt","arabian","حصان","فرس","مهر"],
   equinepart:["saddle","bridle","girth","stirrup","horse rug","numnah","saddle pad","riding boots","riding helmet","horse trailer","horse box","سرج","لجام","ركاب"],
@@ -662,22 +799,43 @@ const BRANDS = ["Harley-Davidson","Ducati","Triumph","KTM","Kawasaki","Yamaha","
   "BBS","Vossen","Brembo","Bosch","Michelin","Pirelli","Bridgestone","Continental","Recaro","Akrapovic","Bilstein","KW","Eibach","Hella","Bose",
   "Stübben","Stubben","Kentucky","Prestige","Passier","Kieffer","Pessoa","Equiline","Samshield","Cavallo"];
 function toLatinDigits(t){ return t.replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d)); }
-function parseDump(raw){
+function parseDump(raw, forced){
   const t0 = toLatinDigits(String(raw||"")).replace(/[*_~]/g,"");
   const low = t0.toLowerCase();
   const out = {type:null, vals:{}};
   // 1) "Watch for sale" style header
   for (const [k,v] of Object.entries(LABELS)) if (low.includes(v.toLowerCase()+" for sale")) out.type=k;
-  // 2) keyword score
+  // 2) keyword score — an item for a vehicle mentions the vehicle, so item words weigh more than brand words
+  if (forced && SCHEMAS[forced]) out.type = forced;
   if (!out.type){
-    let best=0;
+    const PART = ["acc","gear","carpart","boatpart","equinepart"], VEH = ["bike","car","boat","equine"];
+    const sc = {};
+    const has = w => new RegExp("(^|[^\\p{L}])"+w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"($|[^\\p{L}])","iu").test(low);
     for (const [k,words] of Object.entries(KEYWORDS)){
-      let sc=0; for (const w of words) if (low.includes(w)) sc += w.length>3?2:1;
-      if (sc>best){ best=sc; out.type=k; }
+      let v=0; for (const w of words) if (has(w)) v += (PART.includes(k) ? 3 : (w.length>3?2:1));
+      sc[k]=v;
     }
+    const fits = /\b(for|fits|fit|compatible|suits?)\b|يركب|مناسب ل|لـ ?(موتوسيكل|عربية)/.test(low);
+    const usage = /\d[\d.,]*\s*(km|kilo|miles?|mi\b|كم|كيلو|ميل)/.test(low);
+    const engine = /\d{2,4}\s*(cc|ci)\b/.test(low);
+    if (usage) { sc.bike=(sc.bike||0)+4; sc.car=(sc.car||0)+4; sc.boat=(sc.boat||0)+2; }
+    if (engine) sc.bike=(sc.bike||0)+2;
+    if (fits) PART.forEach(k=>{ if (sc[k]) sc[k]+=3; });
+    const partBest = PART.reduce((a,k)=>sc[k]>(sc[a]||0)?k:a, PART[0]);
+    // an exhaust, LED or "oil filter" can be for a bike or a car: decide by the vehicle it mentions
+    if ((partBest==="acc"||partBest==="carpart") && sc[partBest]>0){
+      const bikeCtx = sc.bike||0, carCtx = sc.car||0;
+      const pick = carCtx>bikeCtx ? "carpart" : bikeCtx>carCtx ? "acc" : partBest;
+      sc[pick] = Math.max(sc.acc||0, sc.carpart||0);
+    }
+    let best=0;
+    for (const [k,v] of Object.entries(sc)) if (v>best){ best=v; out.type=k; }
+    // a part word wins over the vehicle when there is no mileage (a used bike or car always has km)
+    const p2 = PART.reduce((a,k)=>sc[k]>(sc[a]||0)?k:a, PART[0]);
+    if (VEH.includes(out.type) && sc[p2]>=3 && !usage) out.type = p2;
     if (!out.type) out.type="bike";
     // BMW / Honda can be a car or a bike
-    if (out.type==="car" && /\b(gs|r ?1250|s ?1000|rt|adventure|cbr|africa twin|goldwing)\b/i.test(t0)) out.type="bike";
+    if (out.type==="car" && /\br ?1[0-3][0-9]0|\bgs\b|gs\b|\bs ?1000|\bf ?[789][05]0|\bk ?1600|\brt\b|adventure|africa twin|gold ?wing|\bcbr|\bducati|\bharley/i.test(t0)) out.type="bike";
   }
   const sch = SCHEMAS[out.type];
   // 3) "Label: value" lines
@@ -714,6 +872,7 @@ function parseDump(raw){
   const cc = low.match(/(\d{2,4})\s*cc\b/); if (cc && !out.vals.engine){ out.vals.engine = cc[1]; out.vals.engine_unit = "cc"; }
   const ci = low.match(/(\d{2,3})\s*(?:ci|cu\.?\s*in|cubic inch(?:es)?)\b/); if (ci && !out.vals.engine){ out.vals.engine = ci[1]; out.vals.engine_unit = "ci"; }
   if (/\$|\busd\b|dollars?\b|دولار/.test(low)) out.vals.price_unit = "USD";
+  const mi = low.match(/([\d.,]+)\s*(?:mi\b|miles?\b|ميل)/); if (mi && !out.vals.mileage){ out.vals.mileage = mi[1].replace(/[.,]/g,""); out.vals.mileage_unit = "mi"; }
   const mm = low.match(/(\d{2})\s*mm\b/); if (mm && !out.vals.size) out.vals.size = mm[1];
   const ar = low.match(/(\d{2,6})\s*(?:m2|m²|sqm|متر)/); if (ar && !out.vals.area) out.vals.area = ar[1];
   const bd = low.match(/(\d{1,2})\s*(?:bed|bedroom|rooms|غرف|غرفة)/); if (bd && !out.vals.bedrooms) out.vals.bedrooms = bd[1];
@@ -755,11 +914,14 @@ function parseDump(raw){
   return out;
 }
 function applyDump(raw){
-  const {type:tp, vals} = parseDump(raw);
-  const mainBtn = document.querySelector(`#mains button[data-m="${GROUP[tp]}"]`); if (mainBtn) mainBtn.click();
-  if (SUBTYPES[GROUP[tp]]){ const b=document.querySelector(`#types button[data-t="${tp}"]`); if (b) b.click(); }
+  const kept = CAT_PICKED;      // the person already chose the category → fill that one, don't switch
+  const {type:tp, vals} = parseDump(raw, kept ? type : null);
+  if (!kept){
+    const mainBtn = document.querySelector(`#mains button[data-m="${GROUP[tp]}"]`); if (mainBtn) mainBtn.click();
+    if (SUBTYPES[GROUP[tp]]){ const b=document.querySelector(`#types button[data-t="${tp}"]`); if (b) b.click(); }
+  }
   let n=0;
-  for (const k of ["engine","price"]){ const u=$("#u_"+k); if (u && vals[k+"_unit"] && [...u.options].some(o=>o.value===vals[k+"_unit"])){ u.value=vals[k+"_unit"]; u.dispatchEvent(new Event("change")); } }
+  for (const k of ["engine","price","mileage"]){ const u=$("#u_"+k); if (u && vals[k+"_unit"] && [...u.options].some(o=>o.value===vals[k+"_unit"])){ u.value=vals[k+"_unit"]; u.dispatchEvent(new Event("change")); } }
   const order = SCHEMAS[tp].slice().sort((a,b)=>(a.k==="category"?-1:0)-(b.k==="category"?-1:0));
   for (const f of order){
     let v = vals[f.k]; if (v==null || v==="") continue;
@@ -770,7 +932,7 @@ function applyDump(raw){
     if (f.type==="select"){ const o=[...el.options].find(o=>o.value.toLowerCase()===String(v).toLowerCase()); if(!o) continue; v=o.value; }
     el.value = v; if (f.k==="category") el.dispatchEvent(new Event("change")); n++;
   }
-  return {type:tp, n};
+  return {type:tp, n, kept};
 }
 
 /* ===================== Sponsors: rotating ads by date, day and hour ===================== */
@@ -835,6 +997,44 @@ function feedSponsorCard(i){
   const box=document.createElement("aside"); box.className="masar feedad"; fillSponsorBox(box,s); return box;
 }
 function flyerSponsor(){ return pickWeighted(sponsorsFor("flyer")); }
+
+/* ===================== Maintenance page ===================== */
+// Shown when the admin switches maintenance on, or when the database can't be reached / is overloaded.
+function showMaintenance(kind, msg){
+  if (document.getElementById("maint")) return;
+  const d = document.createElement("div"); d.id="maint"; d.className="maint";
+  const img = document.createElement("img"); img.src = MAIN_LOGO; img.alt = "High End Communities";
+  const h = document.createElement("h2"); h.className="slab"; h.textContent = "🛠 Website under maintenance";
+  const ar = document.createElement("div"); ar.className="ar"; ar.textContent = kind==="manual" ? "الموقع تحت الصيانة — هنرجع قريب" : "الموقع عليه ضغط أو مش متاح دلوقتي — جرّب كمان شوية";
+  const p = document.createElement("p");
+  p.textContent = kind==="manual" ? (msg || "We're updating the site. Please check back soon.")
+                                  : "The site is very busy or temporarily unavailable. Please try again in a few minutes.";
+  const row = document.createElement("div"); row.className="actions"; row.style.justifyContent="center";
+  const again = document.createElement("button"); again.type="button"; again.className="btn primary"; again.textContent="Try again";
+  again.onclick = ()=>location.reload();
+  const wa = document.createElement("a"); wa.className="btn wa"; wa.target="_blank"; wa.rel="noopener"; wa.textContent="WhatsApp us";
+  wa.href = "https://wa.me/2"+ADMIN_WA;
+  row.append(again, wa);
+  const t = document.createElement("div"); t.className="muted"; t.style.marginTop="10px"; t.textContent="This page checks again by itself every minute.";
+  d.append(img, h, ar, p, row, t);
+  document.body.appendChild(d);
+  document.body.style.overflow = "hidden";
+  setInterval(async ()=>{ if (await siteCheck(null, true)) location.reload(); }, 60000);
+}
+// true = site is fine. Database down, overloaded (429/5xx) or too slow → maintenance page.
+async function siteCheck(page, quiet){
+  if (!sb) return true;
+  const slow = new Promise(r=>setTimeout(()=>r({slow:true}), 10000));
+  let res;
+  try{ res = await Promise.race([sb.from("settings").select("*").eq("id",1).maybeSingle(), slow]); }
+  catch(e){ res = {error:e, status:0}; }
+  const down = res.slow || (res.error && ((res.status||0)===0 || res.status>=500 || res.status===429 ||
+               /Failed to fetch|NetworkError|Load failed|fetch failed|timed? ?out/i.test(String(res.error.message||res.error))));
+  if (down){ if (!quiet) showMaintenance("down"); return false; }
+  const st = res.data || {};
+  if (st.maintenance && page!=="admin"){ if (!quiet) showMaintenance("manual", st.maintenance_msg); return false; }
+  return true;
+}
 
 /* ===================== Saving / sharing files on a phone ===================== */
 async function saveFile(filename, blob, fallbackImgUrl){
@@ -908,6 +1108,10 @@ function buildCard(item, mode){
   badge.textContent = LABELS[L.type] + (L.f.category?" · "+L.f.category:"") + (L.f.condition?" · "+L.f.condition:"");
   const h=document.createElement("h3"); h.textContent=titleOf(L);
   const pr=document.createElement("div"); pr.className="price"; pr.textContent = sold?"SOLD":priceStr(L.f);
+  const tags=document.createElement("div"); tags.className="tags";
+  if (!sold && isFeatured(L)){ card.classList.add("featured"); const t=document.createElement("span"); t.className="tag feat"; t.textContent="⭐ Featured"; tags.appendChild(t); }
+  if (!sold && L.discount){ const t=document.createElement("span"); t.className="tag disc"; t.textContent=`🏷️ ${L.discount}% off with code`; tags.appendChild(t); }
+  if (!sold && L.stock!==null && L.stock!==undefined){ const t=document.createElement("span"); t.className="tag stock"+(L.stock<=2?" low":""); t.textContent = L.stock>0 ? `📦 ${L.stock} in stock` : "Out of stock"; tags.appendChild(t); }
   const dl=document.createElement("dl");
   for (const [k,v] of rows(L)){ const dt=document.createElement("dt"); dt.textContent=k; const dd=document.createElement("dd"); dd.textContent=v; dl.append(dt,dd); }
   const c=document.createElement("div"); c.className="contact";
@@ -923,7 +1127,26 @@ function buildCard(item, mode){
       c.append(sh,bI,bP);
     }
   }
-  body.append(badge,h,pr,dl,c);
+  if (mode==="public"){
+    // tidy card: 3 key facts on one line, full details + extra tools folded away
+    const r = rows(L), spec=document.createElement("div"); spec.className="spec";
+    const tl=titleOf(L).toLowerCase();
+    spec.textContent = r.filter(x=>!tl.includes(String(x[1]).toLowerCase())).slice(0,3).map(x=>x[1]).join("  ·  ");
+    const det=document.createElement("details"); det.className="more";
+    const sm=document.createElement("summary"); sm.textContent="Details"; det.append(sm, dl);
+    const extra=[...c.querySelectorAll("a:not(.wa):not([href^='tel:']),button")];
+    if (extra.length){ const tb=document.createElement("div"); tb.className="tools"; extra.forEach(e=>tb.appendChild(e)); det.appendChild(tb); }
+    body.append(badge,h,pr); if (tags.childNodes.length) body.appendChild(tags);
+    if (spec.textContent) body.appendChild(spec);
+    if (r.length || extra.length) body.appendChild(det);
+    body.appendChild(c);
+    card.appendChild(body);
+    const meta=document.createElement("div"); meta.className="muted meta";
+    meta.textContent = (L.at?fmtDate(L.at):"") + (sold&&L.soldAt?" · Sold "+fmtDate(L.soldAt):"");
+    const v=document.createElement("span"); v.className="views"; v.textContent="  ·  👁 "+fmtViews(L.views); meta.appendChild(v);
+    return {card, body, meta, more:det};
+  }
+  body.append(badge,h,pr); if (tags.childNodes.length) body.appendChild(tags); body.append(dl,c);
   const meta=document.createElement("div"); meta.className="muted";
   meta.textContent = (L.at?"Posted "+fmtDate(L.at):"") + (sold&&L.soldAt?" · Sold "+fmtDate(L.soldAt):"");
   if (L.status!=="pending"){ const v=document.createElement("span"); v.className="views"; v.textContent="  ·  👁 "+fmtViews(L.views)+(Number(L.views)===1?" view":" views"); meta.appendChild(v); }
@@ -964,7 +1187,7 @@ async function exportCatalogue(){
     if (page===1){
       const lw=46, lh=lw*logo.naturalHeight/logo.naturalWidth; P.img(logo,(PW-lw)/2,7,lw,lh);
       y = 7+lh+5;
-      P.text("CATALOGUE",PW/2,y,{size:13,bold:1,serif:1,align:"center"});
+      P.text(CAT_TITLE ? pdfSafe(CAT_TITLE).toUpperCase()+" CATALOGUE" : "CATALOGUE",PW/2,y,{size:13,bold:1,serif:1,align:"center"});
       const site = baseUrl().replace(/^https?:\/\//,"");
       P.text("Live catalogue: "+site,PW/2,y+5.5,{size:9,bold:1,color:"#2b2b2b",align:"center"});
       P.link(PW/2-45,y+1.5,90,5.5,baseUrl()+"/");
@@ -979,7 +1202,7 @@ async function exportCatalogue(){
     const x = M + col*(CW+G);
     P.rect(x,y,CW,CH-4,"#f6f5f2",2);
     const ph = L.thumb || (L.photos||[]).find(p=>typeof p==="string"&&p.startsWith("data:image/"));
-    if (ph) fitImg(P,await loadSrc(ph),x,y,CW,42,"#151515"); else P.rect(x,y,CW,42,"#dedad2");
+    if (ph) await fitImg(P,await loadSrc(ph),x,y,CW,42); else P.rect(x,y,CW,42,"#dedad2");
     let ty = y+46.5;
     P.text((LABELS[L.type]+(L.f.category?" - "+L.f.category:"")).toUpperCase(),x+3,ty,{size:6.5,bold:1,color:"#77736b"});
     ty+=5.5;
@@ -998,5 +1221,6 @@ async function exportCatalogue(){
   }
   footer();
   doc.setProperties({title:MARKET_NAME+" - Catalogue"});
-  await saveFile("High-End-Communities-Catalogue.pdf", doc.output("blob"));
+  const slug = CAT_TITLE ? "-"+pdfSafe(CAT_TITLE).replace(/[^A-Za-z0-9]+/g,"-").replace(/^-|-$/g,"") : "";
+  await saveFile("High-End"+slug+"-Catalogue.pdf", doc.output("blob"));
 }

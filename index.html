@@ -51,10 +51,12 @@
       <button class="chip" data-f="boat">🛥️ Yachts & boats</button>
       <button class="chip" data-f="art">🎨 Modern & art</button>
       <button class="chip" data-f="estate">🏠 Real estate</button>
+      <button class="chip" data-f="bag">👜 Women's bags</button>
     </div>
   </div>
+  <div class="filters subfilters" id="subfilters" hidden></div>
   <div class="toolbar">
-    <label class="showsold"><input type="checkbox" id="showSold" checked> Show sold</label>
+    <label class="showsold"><input type="checkbox" id="showSold"> Show sold</label>
     <span>
       <button type="button" class="btn ghost small" id="catPdf" hidden>📄 Catalogue PDF</button>
       <a class="btn wa small" id="catShare" href="#" target="_blank" rel="noopener" hidden>Share catalogue on WhatsApp</a>
@@ -77,17 +79,40 @@
 
 <div class="modal" id="soldModal" hidden>
   <div class="card">
-    <h3>Mark as sold</h3>
+    <h3>Seller tools</h3>
     <p class="muted" id="soldTitle" style="font-size:14px"></p>
     <label for="soldCode">Your 6-digit seller code</label>
     <input id="soldCode" inputmode="numeric" maxlength="12" placeholder="e.g. 482913">
     <div class="hint">You got it when you posted. Lost it? Ask the admin on WhatsApp.</div>
+    <div id="stockBox" hidden style="margin-top:10px">
+      <label for="stockIn">Quantity in stock now</label>
+      <div class="unitrow"><input id="stockIn" inputmode="numeric" placeholder="e.g. 12"><button type="button" class="btn ghost small" id="stockGo">Update stock</button></div>
+      <div class="hint">Put 0 when everything is sold.</div>
+    </div>
     <div class="actions">
       <button type="button" class="btn primary" id="soldGo">Mark as sold</button>
       <a class="btn ghost" id="soldAsk" target="_blank" rel="noopener">Ask the admin</a>
       <button type="button" class="btn ghost" id="soldClose">Close</button>
     </div>
     <div class="msg" id="soldMsg"></div>
+  </div>
+</div>
+<div class="modal" id="discModal" hidden>
+  <div class="card">
+    <h3>🏷️ Get your discount code</h3>
+    <p class="muted" id="discTitle" style="font-size:14px"></p>
+    <div id="discAsk">
+      <label for="discPhone">Your mobile number</label>
+      <input id="discPhone" type="tel" inputmode="tel" placeholder="01xxxxxxxxx">
+      <div class="actions"><button type="button" class="btn primary" id="discGo">Get my code</button><button type="button" class="btn ghost" id="discClose">Close</button></div>
+    </div>
+    <div id="discDone" hidden style="text-align:center">
+      <div class="code" id="discCode"></div>
+      <p style="font-size:14px;margin:6px 0 10px">Send this code to High End on WhatsApp to get <b id="discPct"></b> off. The code works once and only for this item.</p>
+      <a class="btn wa" id="discSend" target="_blank" rel="noopener">Send code on WhatsApp</a>
+      <div class="actions" style="justify-content:center"><button type="button" class="btn ghost small" id="discClose2">Close</button></div>
+    </div>
+    <div class="msg" id="discMsg"></div>
   </div>
 </div>
 <footer>High End Communities · Estd 2024</footer>
@@ -99,7 +124,19 @@
 <script src="common.js"></script>
 
 <script>
-let all = [], filter = "all";
+const FIXED = window.FIXED_GROUP || null;     // bags.html shows one category only
+let all = [], filter = FIXED || "all", sub = "all";
+function drawSubfilters(){
+  const box=$("#subfilters"); const subs = SUBTYPES[filter];
+  box.hidden = !subs; if (!subs) return; box.innerHTML="";
+  [["all","","All "+(GROUP_NAMES[filter]||"").split(/[ ,&]/)[0].toLowerCase()]].concat(subs).forEach(([t,ic,label])=>{
+    const b=document.createElement("button"); b.className="chip"+(sub===t?" on":""); b.dataset.s=t;
+    b.textContent = (ic?ic+" ":"")+(t==="all" ? "All" : (SECTION_NAMES[t]||label));
+    b.onclick=()=>{ sub=t; drawSubfilters(); render(); };
+    box.appendChild(b);
+  });
+}
+if (FIXED){ const f=$("#filters"); if (f) f.parentElement.hidden = true; }
 initHeader();
 startBannerRotation();
 loadSponsors().then(startBannerRotation);
@@ -122,34 +159,120 @@ function openSold(item){
     }catch(e){ showMsg(niceError(e),"err",$("#soldMsg")); }
     finally{ $("#soldGo").disabled = false; }
   };
+  const hasStock = item.L.stock!==null && item.L.stock!==undefined;
+  $("#stockBox").hidden = !hasStock; if (hasStock) $("#stockIn").value = item.L.stock;
+  $("#stockGo").onclick = async ()=>{
+    const code = $("#soldCode").value.replace(/\D/g,""), n = parseInt($("#stockIn").value,10);
+    if (code.length<4){ showMsg("Enter your seller code.","err",$("#soldMsg")); return; }
+    if (isNaN(n) || n<0){ showMsg("Enter the quantity (0 or more).","err",$("#soldMsg")); return; }
+    $("#stockGo").disabled = true;
+    try{
+      const {data, error} = await sb.rpc("seller_update_stock",{p_id:item.id, p_code:code, p_stock:n});
+      if (error) throw error;
+      const m = {ok:"Stock updated. Thank you!", wrong:"That code is not right.", locked:"Too many wrong tries. Ask the admin.", no_code:"This listing has no seller code. Ask the admin.", not_found:"This listing can't be changed.", bad_number:"Enter a number between 0 and 99,999."}[data] || "Something went wrong.";
+      showMsg(m, data==="ok"?"ok":"err", $("#soldMsg"));
+      if (data==="ok"){ item.L.stock=n; if (n===0){ item.L.status="sold"; item.L.soldAt=Date.now(); } render(); }
+    }catch(e){ showMsg(niceError(e),"err",$("#soldMsg")); }
+    finally{ $("#stockGo").disabled = false; }
+  };
   $("#soldModal").hidden = false;
 }
+function openDiscount(item){
+  $("#discTitle").textContent = `${titleOf(item.L)} — ${item.L.discount}% off`;
+  $("#discAsk").hidden=false; $("#discDone").hidden=true; showMsg("","info",$("#discMsg"));
+  try{ const p=localStorage.getItem("mm_phone"); if (p) $("#discPhone").value=p; }catch(e){}
+  $("#discGo").onclick = async ()=>{
+    const ph = $("#discPhone").value.replace(/[\s-]/g,"").replace(/^\+?20/,"0");
+    if (!/^01[0125]\d{8}$/.test(ph)){ showMsg("Enter an Egyptian mobile number (11 digits, 010/011/012/015).","err",$("#discMsg")); return; }
+    $("#discGo").disabled=true;
+    try{
+      const {data, error} = await sb.rpc("request_discount",{p_id:item.id, p_phone:ph});
+      if (error) throw error;
+      if (data && data.code){
+        try{ localStorage.setItem("mm_phone", ph); }catch(e){}
+        $("#discCode").textContent=data.code; $("#discPct").textContent=data.pct+"%";
+        $("#discSend").href = adminHref(`🏷️ *Discount code request*\n\n${titleOf(item.L)}\nPrice: ${priceStr(item.L.f)}\nDiscount: ${data.pct}%\nMy code: *${data.code}*\nMy number: ${ph}\nRef: ${item.id}`);
+        $("#discAsk").hidden=true; $("#discDone").hidden=false; showMsg("","info",$("#discMsg"));
+      } else {
+        const m={no_discount:"This item has no discount right now.", sold_out:"Sorry, this item is sold out.", too_many:"You already asked for codes for this item today. Use the one you have.", bad_phone:"Check your mobile number.", try_again:"Please try again."}[(data||{}).error] || "Something went wrong.";
+        showMsg(m,"err",$("#discMsg"));
+      }
+    }catch(e){ showMsg(niceError(e),"err",$("#discMsg")); }
+    finally{ $("#discGo").disabled=false; }
+  };
+  $("#discModal").hidden = false;
+}
+$("#discClose").onclick = $("#discClose2").onclick = ()=>{ $("#discModal").hidden = true; };
 $("#soldClose").onclick = ()=>{ $("#soldModal").hidden = true; };
 
+function cardFor(item){
+  const {card, body, meta, more} = buildCard(item, "public");
+  const live = item.L.status!=="sold";
+  if (live && item.L.discount && (item.L.stock===null || item.L.stock>0)){
+    const d=document.createElement("button"); d.type="button"; d.className="btn primary small discbtn";
+    d.textContent=`🏷️ Get ${item.L.discount}% discount code`; d.onclick=()=>openDiscount(item);
+    body.insertBefore(d, body.querySelector(".contact"));
+  }
+  if (live){
+    const s=document.createElement("button"); s.type="button"; s.className="seller";
+    s.textContent = (item.L.stock!==null && item.L.stock!==undefined) ? "Seller? Update stock / mark sold" : "Seller? Mark as sold";
+    s.onclick = ()=>openSold(item); (more||body).appendChild(s);
+  }
+  body.appendChild(meta);
+  if (viewObserver) viewObserver.observe(card);
+  return card;
+}
+function section(key, title, icon, items, onAll){
+  const sec=document.createElement("section"); sec.className="catsec";
+  const h=document.createElement("div"); h.className="cathead";
+  h.innerHTML=`<h2>${icon?icon+" ":""}${title}</h2><span class="cnt">${items.length}</span>`;
+  if (onAll){ const a=document.createElement("button"); a.type="button"; a.className="seeall"; a.textContent="See all ›"; a.onclick=onAll; h.appendChild(a); }
+  const g=document.createElement("div"); g.className="list";
+  items.forEach(it=>g.appendChild(cardFor(it)));
+  sec.append(h,g); return sec;
+}
+const GROUP_ORDER=["moto","car","watch","bag","boat","equine","art","estate"];
+const GROUP_ICON={moto:"🏍️",car:"🚗",watch:"⌚",bag:"👜",boat:"🛥️",equine:"🐎",art:"🎨",estate:"🏠"};
+const PER_SECTION=6;
+function pick(f){ filter=f; sub="all"; document.querySelectorAll("#filters .chip").forEach(x=>x.classList.toggle("on",x.dataset.f===f)); drawSubfilters(); render(); window.scrollTo({top:$("#filters").getBoundingClientRect().top+scrollY-10,behavior:"smooth"}); }
+function pickSub(t){ sub=t; drawSubfilters(); render(); }
 function render(){
-  const box = $("#list"); box.innerHTML = "";
+  const box = $("#list"); box.innerHTML = ""; box.className="sections";
   const showSold = $("#showSold").checked;
-  const inCat = all.filter(x=>x.L.f && SCHEMAS[x.L.type] && (filter==="all" || GROUP[x.L.type]===filter));
-  const live = inCat.filter(x=>x.L.status!=="sold"), sold = inCat.filter(x=>x.L.status==="sold");
-  const items = showSold ? live.concat(sold) : live;
+  const inCat = all.filter(x=>x.L.f && SCHEMAS[x.L.type] && (filter==="all" || GROUP[x.L.type]===filter) && (sub==="all" || x.L.type===sub));
+  CAT_TITLE = sub!=="all" ? (SECTION_NAMES[sub]||"") : (filter!=="all" ? (GROUP_NAMES[filter]||"") : "");
+  $("#catPdf").textContent = "📄 " + (CAT_TITLE ? CAT_TITLE+" PDF" : "Catalogue PDF");
+  $("#catShare").textContent = "Share " + (CAT_TITLE ? CAT_TITLE.toLowerCase() : "catalogue") + " on WhatsApp";
+  const live = sortListings(inCat.filter(x=>x.L.status!=="sold")), sold = inCat.filter(x=>x.L.status==="sold");
   shownItems = live;
   $("#catShare").hidden = !live.length; $("#catPdf").hidden = !live.length;
   $("#catShare").href = waHref(catalogueText(live));
-  if (!items.length){ box.innerHTML = `<div class="empty">No listings here yet.</div>`; return; }
-  items.forEach((item,i)=>{
-    const {card, body, meta} = buildCard(item, "public");
-    if (item.L.status!=="sold"){
-      const s=document.createElement("button"); s.type="button"; s.className="seller"; s.textContent="Are you the seller? Mark as sold";
-      s.onclick = ()=>openSold(item); body.appendChild(s);
-    }
-    body.appendChild(meta);
-    box.appendChild(card);
-    if (viewObserver) viewObserver.observe(card);
-    if ((i+1) % 6 === 0 && i < items.length-1) box.appendChild(feedSponsorCard(Math.floor(i/6)));
-  });
+  if (!live.length && !(showSold && sold.length)){ box.innerHTML = `<div class="empty">No listings here yet.</div>`; return; }
+  let n=0;
+  const addAd=()=>{ box.appendChild(feedSponsorCard(n++)); };
+  if (filter==="all"){
+    // home: one tidy row per category, newest/featured first, "See all" opens it
+    GROUP_ORDER.forEach((g,i)=>{
+      const its = live.filter(x=>GROUP[x.L.type]===g); if (!its.length) return;
+      box.appendChild(section(g, GROUP_NAMES[g], GROUP_ICON[g], its.slice(0,PER_SECTION), its.length>PER_SECTION||SUBTYPES[g] ? ()=>pick(g) : null));
+      if (box.children.length===2) addAd();
+    });
+  } else if (sub==="all" && SUBTYPES[filter]){
+    // a category with sub-sections: one block per sub-section
+    SUBTYPES[filter].forEach(([t,ic])=>{
+      const its = live.filter(x=>x.L.type===t); if (!its.length) return;
+      box.appendChild(section(t, SECTION_NAMES[t], ic, its.slice(0,PER_SECTION*2), its.length>PER_SECTION*2 ? ()=>pickSub(t) : null));
+    });
+    if (box.children.length>1) box.insertBefore(feedSponsorCard(0), box.children[1]);
+  } else if (live.length){
+    const g=document.createElement("div"); g.className="list";
+    live.forEach((it,i)=>{ g.appendChild(cardFor(it)); if ((i+1)%8===0 && i<live.length-1) g.appendChild(feedSponsorCard(n++)); });
+    box.appendChild(g);
+  }
+  if (showSold && sold.length){ const s=section("sold","Sold","✅",sold,null); s.classList.add("soldsec"); box.appendChild(s); }
 }
 document.querySelectorAll("#filters .chip").forEach(b=>b.onclick=()=>{
-  filter=b.dataset.f; document.querySelectorAll("#filters .chip").forEach(x=>x.classList.toggle("on",x===b)); render();
+  filter=b.dataset.f; sub="all"; document.querySelectorAll("#filters .chip").forEach(x=>x.classList.toggle("on",x===b)); drawSubfilters(); render();
 });
 $("#showSold").onchange = render;
 $("#catPdf").onclick = ()=>exportCatalogue();
@@ -163,11 +286,13 @@ window.addEventListener("hashchange", goToHash);
 
 (async ()=>{
   if (!sb){ showMsg("The catalogue isn't connected to its database yet (config.js).","err",$("#listMsg")); return; }
+  if (!(await siteCheck("catalogue"))) return;
+  if (FIXED) drawSubfilters();
   showMsg("Loading listings…","info",$("#listMsg"));
   const t = setTimeout(()=>showMsg("Still loading… if this takes long, check your connection.","info",$("#listMsg")), 8000);
   const {data, error} = await sb.from("listings").select(LIST_COLS).in("status",["live","sold"]).order("created_at",{ascending:false}).limit(500);
   clearTimeout(t);
-  if (error){ showMsg(niceError(error),"err",$("#listMsg")); return; }
+  if (error){ if (!(await siteCheck("catalogue"))) return; showMsg(niceError(error),"err",$("#listMsg")); return; }
   showMsg("","info",$("#listMsg"));
   all = (data||[]).map(rowToItem);
   render(); goToHash();

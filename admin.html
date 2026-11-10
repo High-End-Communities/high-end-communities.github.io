@@ -42,12 +42,37 @@
       <button type="button" data-tab="live">Live <span id="nLive"></span></button>
       <button type="button" data-tab="sold">Sold <span id="nSold"></span></button>
       <button type="button" data-tab="add">➕ Add / edit</button>
+      <button type="button" data-tab="codes">🏷️ Codes <span id="nCodes"></span></button>
       <button type="button" data-tab="sponsors">Sponsors</button>
+      <button type="button" data-tab="limits">🏍️ Limits</button>
       <button type="button" data-tab="stats">Stats</button>
     </div>
     <div class="toolbar"><span class="muted" id="who"></span><button type="button" class="btn ghost small" id="logout">Log out</button></div>
     <div class="msg" id="listMsg"></div>
 
+    <div class="card" id="maintCard" style="margin-bottom:12px">
+      <label class="showsold" style="color:var(--text);font-weight:600"><input type="checkbox" id="maintOn"> 🛠 Maintenance mode — visitors see "Website under maintenance"</label>
+      <div class="unitrow" style="margin-top:8px"><input id="maintMsg" maxlength="200" placeholder="Message (optional), e.g. Back at 10 pm"><button type="button" class="btn ghost small" id="maintSave">Save</button></div>
+      <div class="hint" id="maintHint">You can still use admin while it's on. The page also shows by itself if the database is down or overloaded.</div>
+    </div>
+    <div data-pane="limits" hidden>
+      <div class="card" style="margin-bottom:12px">
+        <h3 style="margin:0 0 6px">Motorcycle listings per month</h3>
+        <div class="unitrow"><input id="bikeLim" type="number" min="1" max="100" inputmode="numeric"><button type="button" class="btn ghost small" id="bikeLimSave">Save</button></div>
+        <div class="hint">How many motorcycles one phone number can post in 30 days. Trusted numbers below have their own limit.</div>
+      </div>
+      <div class="card">
+        <h3 style="margin:0 0 6px">Trusted numbers (dealers, showrooms…)</h3>
+        <div class="unitrow" style="flex-wrap:wrap">
+          <input id="trPhone" type="tel" inputmode="tel" placeholder="01xxxxxxxxx" style="flex:2 1 140px">
+          <input id="trLim" type="number" min="1" max="500" inputmode="numeric" placeholder="Per month, e.g. 10" style="flex:1 1 90px">
+          <input id="trNote" maxlength="80" placeholder="Name / note (optional)" style="flex:2 1 160px">
+          <button type="button" class="btn primary small" id="trAdd">Add / update</button>
+        </div>
+        <div class="msg" id="trMsg"></div>
+        <div id="trList" style="margin-top:10px"></div>
+      </div>
+    </div>
     <div data-pane="pending">
       <div class="disc" style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap">
         <label class="showsold" style="color:var(--text);font-weight:600"><input type="checkbox" id="autoApprove"> Publish new listings straight away (auto-approve)</label>
@@ -75,6 +100,7 @@
         <button type="button" data-m="boat"><img class="lg" alt="" data-brand="boat">Yachts & boats</button>
         <button type="button" data-m="art"><span class="ic">🎨</span>Modern & art</button>
         <button type="button" data-m="estate"><span class="ic">🏠</span>Real estate</button>
+        <button type="button" data-m="bag"><span class="ic">👜</span>Women's bags</button>
       </div>
       <div class="types sub" id="types">
         <button type="button" data-t="bike" class="on"><span class="ic">🏍️</span>Motorcycle</button>
@@ -118,6 +144,22 @@
     </form>
     </div>
 
+    <div data-pane="codes" hidden>
+      <div class="card" style="margin-bottom:12px">
+        <label for="codeIn"><b>Confirm a discount code</b> (when the buyer sends it on WhatsApp)</label>
+        <div class="unitrow"><input id="codeIn" placeholder="HE-XXXXXX" style="text-transform:uppercase"><button type="button" class="btn primary small" id="codeGo">Confirm</button></div>
+        <div class="hint">Confirming marks the code as used and takes 1 off the item's stock. At 0 the item shows as sold.</div>
+        <div class="msg" id="codeMsg"></div>
+      </div>
+      <div class="card" style="margin-bottom:12px">
+        <label for="repWa"><b>Report goes to this WhatsApp number</b></label>
+        <div class="unitrow"><input id="repWa" type="tel" placeholder="01xxxxxxxxx"><button type="button" class="btn ghost small" id="repSave">Save</button></div>
+        <div class="actions"><a class="btn wa small" id="repSend" target="_blank" rel="noopener">Send today's report</a><a class="btn ghost small" id="repSend7" target="_blank" rel="noopener">Send last 7 days</a></div>
+        <div class="msg" id="repMsg"></div>
+      </div>
+      <table class="mini" id="codeList"></table>
+    </div>
+
     <div data-pane="sponsors" hidden>
       <div class="card" style="margin-bottom:12px">
         <h3 class="slab" style="margin:0 0 8px" id="spTitle">Add a sponsor</h3>
@@ -157,6 +199,13 @@
     </div>
 
     <div data-pane="stats" hidden>
+      <div class="card" style="margin-bottom:12px">
+        <h3 style="margin:0 0 6px">💾 Database space</h3>
+        <div style="height:12px;background:#efece5;border-radius:999px;overflow:hidden"><div id="dbBar" style="height:100%;width:0;background:#1f8a4c"></div></div>
+        <div class="hint" id="dbTxt">Loading…</div>
+        <div class="unitrow" style="margin-top:8px"><input id="dbBudget" type="number" min="50" max="450" inputmode="numeric"><button type="button" class="btn ghost small" id="dbBudgetSave">Save MB</button></div>
+        <div class="hint">When listings use more than this, the oldest are removed (sold first). 350 MB is safe on the free 500 MB plan.</div>
+      </div>
       <div class="stats">
         <div class="stat"><b id="stToday">–</b><span>Site views today</span></div>
         <div class="stat"><b id="st7">–</b><span>Last 7 days</span></div>
@@ -198,7 +247,8 @@ async function enter(){
   countPage("admin");
   initCategoryPicker(); initPhotoInputs(); renderFields(); $("#terms").checked=true;
   $("#submitBtn").textContent = "Publish now";
-  await Promise.all([loadAll(), loadSponsorsAdmin(), loadSettings()]);
+  await Promise.all([loadAll(), loadSponsorsAdmin(), loadSettings(), loadTrusted()]);
+  loadCodes();
   loadSponsors();
 }
 $("#loginBtn").onclick = async ()=>{
@@ -217,6 +267,7 @@ function tab(t){
   document.querySelectorAll("#adminView .tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));
   document.querySelectorAll("[data-pane]").forEach(p=>p.hidden = p.dataset.pane!==t);
   if (t==="stats") loadStats();
+  if (t==="codes") loadCodes();
 }
 document.querySelectorAll("#adminView .tabs button").forEach(b=>b.onclick=()=>tab(b.dataset.tab));
 
@@ -230,10 +281,51 @@ async function loadAll(){
   renderAll();
 }
 async function loadSettings(){
-  const {data} = await sb.from("settings").select("auto_approve").eq("id",1).maybeSingle();
+  const {data} = await sb.from("settings").select("*").eq("id",1).maybeSingle();
+  if (data){ $("#maintOn").checked = !!data.maintenance; $("#maintMsg").value = data.maintenance_msg || ""; maintUi(); }
+  if (data && data.report_wa) $("#repWa").value = data.report_wa;
+  $("#bikeLim").value = (data && data.bike_monthly_limit) || 2;
   const on = !data || data.auto_approve!==false;
   $("#autoApprove").checked = on; autoHint(on);
 }
+function maintUi(){ const on=$("#maintOn").checked; $("#maintCard").style.background = on ? "#fff3cd" : ""; $("#maintHint").textContent = on ? "Maintenance is ON — visitors see the maintenance page. Untick and Save to open the site again." : "You can still use admin while it's on. The page also shows by itself if the database is down or overloaded."; }
+async function saveMaint(){
+  const {error} = await sb.from("settings").update({maintenance:$("#maintOn").checked, maintenance_msg:$("#maintMsg").value.trim()||null}).eq("id",1);
+  if (error){ showMsg(niceError(error),"err",$("#listMsg")); $("#maintOn").checked=!$("#maintOn").checked; }
+  maintUi();
+}
+/* ---------- motorcycle monthly limit + trusted numbers ---------- */
+$("#bikeLimSave").onclick = async ()=>{
+  const n=parseInt($("#bikeLim").value,10); if (!(n>=1&&n<=100)){ showMsg("Enter 1–100.","err",$("#trMsg")); return; }
+  const {error}=await sb.from("settings").update({bike_monthly_limit:n}).eq("id",1);
+  showMsg(error?niceError(error):`Saved — ${n} motorcycle listings per number per month.`, error?"err":"ok", $("#trMsg"));
+};
+async function loadTrusted(){
+  const {data,error}=await sb.from("trusted_sellers").select("*").order("created_at",{ascending:false});
+  const box=$("#trList"); box.innerHTML="";
+  if (error){ box.innerHTML='<div class="muted">Run update6.sql in Supabase to turn this on.</div>'; return; }
+  if (!data.length){ box.innerHTML='<div class="muted">No trusted numbers yet.</div>'; return; }
+  data.forEach(t=>{
+    const r=document.createElement("div"); r.className="sp-row";
+    const x=document.createElement("div"); x.className="x";
+    const b=document.createElement("b"); b.textContent=t.phone; const sp=document.createElement("span"); sp.textContent=`${t.monthly_limit} motorcycles / month`+(t.note?" · "+t.note:"");
+    x.append(b,sp);
+    const ed=document.createElement("button"); ed.type="button"; ed.className="btn ghost small"; ed.textContent="Edit";
+    ed.onclick=()=>{ $("#trPhone").value=t.phone; $("#trLim").value=t.monthly_limit; $("#trNote").value=t.note||""; $("#trPhone").focus(); };
+    const del=document.createElement("button"); del.type="button"; del.className="btn ghost small"; del.textContent="🗑";
+    del.onclick=async()=>{ if(!confirm("Remove "+t.phone+" from trusted numbers?")) return; const {error}=await sb.from("trusted_sellers").delete().eq("phone",t.phone); if(error) showMsg(niceError(error),"err",$("#trMsg")); loadTrusted(); };
+    r.append(x,ed,del); box.appendChild(r);
+  });
+}
+$("#trAdd").onclick = async ()=>{
+  const ph=$("#trPhone").value.replace(/[\s-]/g,"").replace(/^\+?20/,"0"), n=parseInt($("#trLim").value,10);
+  if (!/^01[0125]\d{8}$/.test(ph)){ showMsg("Enter an Egyptian mobile number (11 digits).","err",$("#trMsg")); return; }
+  if (!(n>=1&&n<=500)){ showMsg("Enter how many per month (1–500).","err",$("#trMsg")); return; }
+  const {error}=await sb.from("trusted_sellers").upsert({phone:ph, monthly_limit:n, note:$("#trNote").value.trim()||null});
+  if (error){ showMsg(niceError(error),"err",$("#trMsg")); return; }
+  showMsg(`Saved — ${ph} can post ${n} motorcycles a month.`,"ok",$("#trMsg")); $("#trPhone").value=$("#trLim").value=$("#trNote").value=""; loadTrusted();
+};
+$("#maintOn").onchange = saveMaint; $("#maintSave").onclick = saveMaint;
 function autoHint(on){ $("#autoHint").textContent = on ? "New listings go live at once and appear here for you to check." : "New listings wait here until you approve them."; }
 $("#autoApprove").onchange = async e=>{
   const on=e.target.checked;
@@ -288,12 +380,46 @@ function adminTools(item){
   }
   return a;
 }
+function offerTools(item){
+  const L=item.L, a=document.createElement("div"); a.className="admin";
+  // ⭐ Featured
+  const dur=document.createElement("select"); [["3","3 days"],["7","7 days"],["14","14 days"],["30","30 days"],["0","No end"]].forEach(([v,t])=>{ const o=document.createElement("option"); o.value=v; o.textContent=t; dur.appendChild(o); }); dur.value="7";
+  const feat = isFeatured(L);
+  const fb = btn(feat?"☆ Stop featuring":"⭐ Feature", feat?"":"ok", async()=>{
+    const days=+dur.value, patch = feat ? {promoted:false, promoted_until:null}
+      : {promoted:true, promoted_until: days ? new Date(Date.now()+days*864e5).toISOString() : null};
+    const {error}=await sb.from("listings").update(patch).eq("id",item.id); if (error) throw error;
+    L.promoted=patch.promoted; L.promotedUntil=patch.promoted_until?Date.parse(patch.promoted_until):null; renderAll();
+  });
+  if (feat){ const sp=document.createElement("span"); sp.className="muted"; sp.textContent = L.promotedUntil ? "until "+fmtDate(L.promotedUntil) : "no end"; a.append(fb, sp); } else a.append(fb, dur);
+  // 🏷️ discount %
+  const dp=document.createElement("input"); dp.type="number"; dp.min=1; dp.max=90; dp.placeholder="% off"; dp.style.width="72px"; if (L.discount) dp.value=L.discount;
+  a.append(dp, btn(L.discount?"Update discount":"🏷️ Set discount","",async()=>{
+    const v = dp.value===""?null:Math.round(+dp.value);
+    if (v!==null && (v<1||v>90)) throw new Error("Discount must be 1–90%");
+    const {error}=await sb.from("listings").update({discount_pct:v}).eq("id",item.id); if (error) throw error;
+    L.discount=v; renderAll();
+  }));
+  if (L.discount) a.append(btn("No discount","",async()=>{ const {error}=await sb.from("listings").update({discount_pct:null}).eq("id",item.id); if(error) throw error; L.discount=null; renderAll(); }));
+  // 📦 stock
+  const qty=document.createElement("input"); qty.type="number"; qty.min=0; qty.placeholder="qty"; qty.style.width="64px"; if (L.stock!==null && L.stock!==undefined) qty.value=L.stock;
+  const setStock = async n=>{
+    const patch = {stock:n}; if (n===0){ patch.status="sold"; patch.sold_at=new Date().toISOString(); }
+    const {error}=await sb.from("listings").update(patch).eq("id",item.id); if (error) throw error;
+    L.stock=n; if (n===0){ L.status="sold"; L.soldAt=Date.now(); } renderAll();
+  };
+  if (L.stock!==null && L.stock!==undefined && L.stock>0) a.append(btn("−1 sold one","",()=>setStock(L.stock-1)));
+  a.append(qty, btn("📦 Set stock","",()=>{ if (qty.value===""){ return setStockNull(); } const n=parseInt(qty.value,10); if(isNaN(n)||n<0) throw new Error("Enter 0 or more"); return setStock(n); }));
+  async function setStockNull(){ const {error}=await sb.from("listings").update({stock:null}).eq("id",item.id); if (error) throw error; L.stock=null; renderAll(); }
+  return a;
+}
 function renderAll(){
   const groups = {pending:[], live:[], sold:[]};
   items.forEach(x=>{
     if (x.L.status==="pending" || (x.L.status==="live" && !x.L.reviewed)) groups.pending.push(x);
     if (x.L.status==="live" || x.L.status==="sold") groups[x.L.status].push(x);
   });
+  groups.live = sortListings(groups.live);
   for (const [k,list] of Object.entries(groups)){
     const box=$("#"+k+"List"); box.innerHTML="";
     $("#n"+k[0].toUpperCase()+k.slice(1)).textContent = list.length?`(${list.length})`:"";
@@ -302,7 +428,7 @@ function renderAll(){
       const {card, body, meta} = buildCard(item, item.L.status==="pending"?"pending":"admin");
       if (k==="pending" && item.L.status==="live"){ const nb=document.createElement("div"); nb.className="ribbon pend"; nb.style.background="#1f8a4c"; nb.textContent="NEW · LIVE"; card.prepend(nb); }
       if (item.L.note){ const n=document.createElement("div"); n.className="hint"; n.style.color="#b7791f"; n.textContent="📝 "+item.L.note; body.appendChild(n); }
-      body.appendChild(adminTools(item)); body.appendChild(meta); box.appendChild(card);
+      body.appendChild(adminTools(item)); if (item.L.status==="live") body.appendChild(offerTools(item)); body.appendChild(meta); box.appendChild(card);
     });
   }
 }
@@ -310,12 +436,12 @@ function renderAll(){
 /* ---------- add / edit ---------- */
 $("#dumpBtn").onclick = ()=>{
   const t=$("#dumpIn").value.trim(); if(!t){ $("#dumpHint").textContent="Paste the message first."; return; }
-  const r=applyDump(t); $("#dumpHint").textContent=`Filled ${r.n} fields as ${LABELS[r.type]}. Add the photos (save them from WhatsApp first), check, and publish.`;
+  const r=applyDump(t); $("#dumpHint").textContent=(r.kept?`Filled ${r.n} fields into ${LABELS[r.type]} (the category you chose).`:`Filled ${r.n} fields as ${LABELS[r.type]}. Wrong category? Tap the right one — the details stay.`)+" Add the photos, check, and publish.";
 };
 function setForm(tp, f){
   const mb=document.querySelector(`#mains button[data-m="${GROUP[tp]}"]`); if (mb) mb.click();
   if (SUBTYPES[GROUP[tp]]){ const b=document.querySelector(`#types button[data-t="${tp}"]`); if (b) b.click(); }
-  for (const k of ["engine","price"]){ const u=$("#u_"+k); if (u && f[k+"_unit"]) u.value=f[k+"_unit"]; }
+  for (const k of ["engine","price","mileage"]){ const u=$("#u_"+k); if (u && f[k+"_unit"]) u.value=f[k+"_unit"]; }
   for (const s of SCHEMAS[tp]){
     const el=$("#f_"+s.k); let v=f[s.k]; if (!el || v==null) continue;
     if (s.type==="checks"){ const vs=String(v).split(/,\s*/); el.querySelectorAll("input").forEach(c=>c.checked=vs.includes(c.value)); continue; }
@@ -326,7 +452,7 @@ function setForm(tp, f){
 async function startEdit(item){
   tab("add");
   editing = item;
-  setForm(item.L.type, item.L.f);
+  setForm(item.L.type, {...item.L.f, stock: (item.L.stock??item.L.f.stock)});
   const ps = await loadPhotos(item);
   photos = ps.map(u=>({url:u, bytes:Math.round(u.length*3/4), w:0, h:0, orig:Math.round(u.length*3/4)}));
   renderThumbs(); $("#terms").checked = true;
@@ -334,7 +460,7 @@ async function startEdit(item){
   $("#submitBtn").textContent = "Save changes";
   window.scrollTo({top:0,behavior:"smooth"});
 }
-function endEdit(){ editing=null; $("#editBanner").hidden=true; $("#submitBtn").textContent="Publish now"; photos=[]; renderThumbs(); renderFields(); $("#terms").checked=true; }
+function endEdit(){ editing=null; $("#editBanner").hidden=true; $("#submitBtn").textContent="Publish now"; photos=[]; renderThumbs(); renderFields(true); $("#terms").checked=true; }
 $("#resetBtn").onclick = ()=>{ endEdit(); showMsg(""); $("#done").classList.remove("show"); };
 $("#form").addEventListener("submit", async e=>{
   e.preventDefault();
@@ -344,7 +470,7 @@ $("#form").addEventListener("submit", async e=>{
   $("#submitBtn").disabled=true; showMsg("Saving…","info");
   try{
     const pics=photos.map(p=>p.url); f._np=pics.length;
-    const payload = {type, f, phone:f.phone, thumb: await makeThumb(pics[0]), photos:pics, reviewed:true};
+    const payload = {type, f, phone:f.phone, thumb: await makeThumb(pics[0]), photos:pics, reviewed:true, stock: f.stock?Number(f.stock):null};
     let id;
     if (editing){
       id = editing.id;
@@ -459,8 +585,79 @@ $("#spSave").onclick = async ()=>{
   finally{ $("#spSave").disabled=false; }
 };
 
+/* ---------- discount codes ---------- */
+let codesAll = [];
+async function loadCodes(){
+  const {data,error} = await sb.from("discount_codes").select("code,listing_id,buyer_phone,pct,created_at,redeemed_at").order("created_at",{ascending:false}).limit(300);
+  if (error){ showMsg(niceError(error),"err",$("#codeMsg")); return; }
+  codesAll = data||[];
+  const waiting = codesAll.filter(c=>!c.redeemed_at).length;
+  $("#nCodes").textContent = waiting?`(${waiting})`:"";
+  const tb=$("#codeList"); tb.innerHTML="<tr><th>Code</th><th>Item</th><th>Buyer</th><th>When</th><th></th></tr>";
+  if (!codesAll.length){ tb.insertAdjacentHTML("beforeend","<tr><td colspan='5' class='muted'>No codes yet. Set a discount on a live listing to start.</td></tr>"); }
+  codesAll.forEach(c=>{
+    const it = items.find(x=>x.id===c.listing_id);
+    const tr=document.createElement("tr");
+    const td=(t)=>{ const d=document.createElement("td"); d.textContent=t; tr.appendChild(d); return d; };
+    td(c.code); td((it?titleOf(it.L):"(removed)")+` · ${c.pct}%`); td(c.buyer_phone);
+    td(new Date(c.created_at).toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}));
+    const last=document.createElement("td");
+    if (c.redeemed_at){ last.textContent="✓ used"; last.className="muted"; }
+    else last.appendChild(btn("Confirm","ok",()=>redeem(c.code)));
+    tr.appendChild(last); tb.appendChild(tr);
+  });
+}
+async function redeem(code){
+  const {data,error} = await sb.rpc("redeem_discount",{p_code:code});
+  if (error) throw error;
+  if (data && data.ok){
+    showMsg(`✓ ${code} confirmed.`+(data.stock!==null && data.stock!==undefined ? ` Stock left: ${data.stock}${data.stock===0?" — marked as sold.":""}` : ""),"ok",$("#codeMsg"));
+    await loadAll(); await loadCodes();
+  } else {
+    const m={not_found:"No such code.", already_used:"This code was already used.", not_admin:"Log in as admin."}[(data||{}).error] || "Couldn't confirm.";
+    showMsg(code+": "+m,"err",$("#codeMsg"));
+  }
+}
+$("#codeGo").onclick = async ()=>{ const c=$("#codeIn").value.trim().toUpperCase(); if(!c) return; try{ await redeem(c); $("#codeIn").value=""; }catch(e){ showMsg(niceError(e),"err",$("#codeMsg")); } };
+$("#repSave").onclick = async ()=>{
+  const v=$("#repWa").value.replace(/[\s-]/g,"").replace(/^\+?20/,"0");
+  if (v && !/^01[0125]\d{8}$/.test(v)){ showMsg("Enter an Egyptian mobile number.","err",$("#repMsg")); return; }
+  const {error}=await sb.from("settings").update({report_wa:v||null}).eq("id",1);
+  showMsg(error?niceError(error):"Saved.", error?"err":"ok", $("#repMsg")); updReport();
+};
+function reportText(days){
+  const since = Date.now() - days*864e5;
+  const list = codesAll.filter(c=>Date.parse(c.created_at)>=since);
+  const used = list.filter(c=>c.redeemed_at);
+  const per = {};
+  list.forEach(c=>{ const it=items.find(x=>x.id===c.listing_id); const k=it?titleOf(it.L):"(removed)"; per[k]=per[k]||{n:0,u:0}; per[k].n++; if(c.redeemed_at) per[k].u++; });
+  let t = `📊 *${MARKET_NAME} — discount report*\n${days===1?"Last 24 hours":"Last "+days+" days"}\n\nCodes given: ${list.length}\nCodes used: ${used.length}\n`;
+  Object.entries(per).forEach(([k,v])=>{ t+=`\n• ${k}: ${v.n} given, ${v.u} used`; });
+  const stockItems = items.filter(x=>x.L.status==="live" && x.L.stock!==null && x.L.stock!==undefined && x.L.discount);
+  if (stockItems.length){ t+="\n\n📦 Stock now:"; stockItems.forEach(x=>{ t+=`\n• ${titleOf(x.L)}: ${x.L.stock}`; }); }
+  return t;
+}
+function updReport(){
+  const n=$("#repWa").value.replace(/\D/g,"");
+  $("#repSend").href = (n? "https://wa.me/2"+n.replace(/^2/,"") : "https://wa.me/") + "?text="+encodeURIComponent(reportText(1));
+  $("#repSend7").href = (n? "https://wa.me/2"+n.replace(/^2/,"") : "https://wa.me/") + "?text="+encodeURIComponent(reportText(7));
+}
+$("#repSend").addEventListener("pointerdown", updReport); $("#repSend7").addEventListener("pointerdown", updReport); $("#repSend").addEventListener("focus", updReport);
+
 /* ---------- stats ---------- */
+async function loadDbUsage(){
+  const {data,error}=await sb.rpc("db_usage");
+  if (error||!data){ $("#dbTxt").textContent="Run update7.sql in Supabase to see this."; return; }
+  const pct=Math.min(100,Math.round(data.data_mb/data.budget_mb*100));
+  $("#dbBar").style.width=pct+"%"; $("#dbBar").style.background = pct>85?"#c0392b":pct>65?"#b7791f":"#1f8a4c";
+  const room = data.avg_kb>0 ? Math.max(0,Math.floor((data.budget_mb-data.data_mb)*1024/data.avg_kb)) : null;
+  $("#dbTxt").textContent=`${data.listings} listings use ${data.data_mb} MB of ${data.budget_mb} MB (${pct}%). Whole database: ${data.db_mb} MB of 500 MB.`+(room!==null?` Room for about ${room.toLocaleString()} more listings.`:"");
+  $("#dbBudget").value=data.budget_mb;
+}
+$("#dbBudgetSave").onclick=async()=>{ const n=parseInt($("#dbBudget").value,10); if(!(n>=50&&n<=450)) return toast("Enter 50–450 MB");
+  const {error}=await sb.from("settings").update({max_data_mb:n}).eq("id",1); if(error) return toast(niceError(error)); toast("Saved"); loadDbUsage(); };
 async function loadStats(){
+  loadDbUsage();
   const since = new Date(Date.now()-30*864e5).toISOString().slice(0,10);
   const {data,error} = await sb.from("site_stats").select("day,page,views").gte("day",since).order("day");
   if (error){ showMsg(niceError(error),"err",$("#listMsg")); return; }

@@ -43,6 +43,7 @@
         <button type="button" data-m="boat"><img class="lg" alt="" data-brand="boat">Yachts & boats</button>
         <button type="button" data-m="art"><span class="ic">🎨</span>Modern & art</button>
         <button type="button" data-m="estate"><span class="ic">🏠</span>Real estate</button>
+        <button type="button" data-m="bag"><span class="ic">👜</span>Women's bags</button>
       </div>
       <div class="types sub" id="types">
         <button type="button" data-t="bike" class="on"><span class="ic">🏍️</span>Motorcycle</button>
@@ -95,6 +96,7 @@
 
 <script>
 initHeader();
+siteCheck("post");
 initCategoryPicker();
 initPhotoInputs();
 renderFields();
@@ -102,12 +104,15 @@ startBannerRotation();
 loadSponsors().then(startBannerRotation);
 countPage("post");
 $("#submitBtn").textContent = "Publish my listing";
+function hashCategory(){ const m=(location.hash||"").slice(1); const b=m && document.querySelector(`#mains button[data-m="${m}"]`); if (b) b.click(); }
+hashCategory(); window.addEventListener("hashchange", hashCategory);
 
 $("#dumpBtn").onclick = ()=>{
   const t = $("#dumpIn").value.trim();
   if (!t){ $("#dumpHint").textContent = "Paste your message first."; return; }
   const r = applyDump(t);
-  $("#dumpHint").textContent = `Filled ${r.n} fields as ${LABELS[r.type]}. Check everything below, add your photos, tick the terms and send.`;
+  $("#dumpHint").textContent = (r.kept ? `Filled ${r.n} fields into ${LABELS[r.type]} (the category you chose).` : `Filled ${r.n} fields as ${LABELS[r.type]}. Wrong category? Just tap the right one — your details stay.`)
+    + " Check everything, add your photos, tick the terms and publish.";
   $("#form").scrollIntoView({behavior:"smooth"});
 };
 
@@ -156,6 +161,7 @@ $("#form").addEventListener("submit", async e=>{
     f._np = pics.length;
     const code = newSellerCode();
     const row = { id: uuid(), type, f, phone: f.phone, thumb: await makeThumb(pics[0]), photos: pics, terms: true, seller_code: code };
+    if (f.stock) row.stock = Number(f.stock);
     const {error} = await sb.from("listings").insert(row);
     if (error) throw error;
     // live straight away (auto-approve) if the public can already read it
@@ -163,11 +169,11 @@ $("#form").addEventListener("submit", async e=>{
     const live = !!(chk && chk.data && chk.data.status === "live");
     showMsg("");
     showDone(row, code, live);
-    photos=[]; renderThumbs(); renderFields(); $("#terms").checked=false; $("#dumpIn").value="";
-  }catch(err){ showMsg(niceError(err),"err"); }
+    photos=[]; renderThumbs(); renderFields(true); $("#terms").checked=false; $("#dumpIn").value="";
+  }catch(err){ if (!(await siteCheck("post"))) return; showMsg(niceError(err),"err"); }
   finally{ $("#submitBtn").disabled = false; }
 });
-$("#resetBtn").onclick = ()=>{ photos=[]; renderThumbs(); renderFields(); showMsg(""); $("#done").classList.remove("show"); };
+$("#resetBtn").onclick = ()=>{ photos=[]; renderThumbs(); renderFields(true); showMsg(""); $("#done").classList.remove("show"); };
 </script>
 </body>
 </html>
