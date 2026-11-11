@@ -26,7 +26,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=567a51a6">
+<link rel="stylesheet" href="common.css?v=a4c2abaf">
 </head>
 <body>
 <div class="checker"></div>
@@ -57,6 +57,7 @@
     </div>
   </div>
   <div class="filters subfilters" id="subfilters" hidden></div>
+  <div class="wfilters" id="wfilters" hidden></div>
   <div class="toolbar">
     <label class="showsold"><input type="checkbox" id="showSold"> Show sold</label>
     <span>
@@ -124,7 +125,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="config.js"></script>
-<script src="common.js?v=567a51a6"></script>
+<script src="common.js?v=a4c2abaf"></script>
 
 <script>
 const FIXED = window.FIXED_GROUP || null;     // bags.html shows one category only
@@ -245,11 +246,18 @@ function render(){
   CAT_TITLE = sub!=="all" ? (SECTION_NAMES[sub]||"") : (filter!=="all" ? (GROUP_NAMES[filter]||"") : "");
   $("#catPdf").textContent = "📄 " + (CAT_TITLE ? CAT_TITLE+" PDF" : "Catalogue PDF");
   $("#catShare").textContent = "Share " + (CAT_TITLE ? CAT_TITLE.toLowerCase() : "catalogue") + " on WhatsApp";
-  const live = sortListings(inCat.filter(x=>x.L.status!=="sold")), sold = inCat.filter(x=>x.L.status==="sold");
+  let live = sortListings(inCat.filter(x=>x.L.status!=="sold")), sold = inCat.filter(x=>x.L.status==="sold");
+  const wbox=$("#wfilters"), isW = filter==="watch";
+  wbox.hidden = !isW;
+  if (isW){
+    if (!wbox.dataset.on){ wbox.dataset.on="1"; drawWatchFilters(wbox, live, render); }
+    const total=live.length; live = watchFilterApply(live);
+    $("#wfCount").textContent = live.length===total ? `${total} watch${total===1?"":"es"}` : `${live.length} of ${total} watches`;
+  } else if (wbox.dataset.on){ delete wbox.dataset.on; }
   shownItems = live;
   $("#catShare").hidden = !live.length; $("#catPdf").hidden = !live.length;
   $("#catShare").href = waHref(catalogueText(live));
-  if (!live.length && !(showSold && sold.length)){ box.innerHTML = `<div class="empty">No listings here yet.</div>`; return; }
+  if (!live.length && !(showSold && sold.length)){ box.innerHTML = `<div class="empty">${isW && wbox.dataset.on ? "No watches match these filters." : "No listings here yet."}</div>`; return; }
   let n=0;
   const addAd=()=>{ box.appendChild(feedSponsorCard(n++)); };
   if (filter==="all"){

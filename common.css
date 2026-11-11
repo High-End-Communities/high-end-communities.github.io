@@ -220,3 +220,39 @@ details.more .tools a,details.more .tools button{color:var(--text);text-decorati
 
 select.picker{width:100%;margin-bottom:6px;font-weight:600}
 select.picker:disabled{opacity:.6}
+
+/* watches section */
+.wfilters{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px;margin:0 0 14px;display:flex;flex-direction:column;gap:8px}
+.wf-row{display:flex;gap:8px}
+.wf-row>*{flex:1;min-width:0}
+.wf-row .btn{flex:none}
+.wfilters input,.wfilters select{padding:9px 10px;font-size:14px}
+.wf-more summary{cursor:pointer;font:600 13px Inter;color:var(--muted);padding:2px 0 6px;list-style:none}
+.wf-more summary::-webkit-details-marker{display:none}
+.wf-more summary::after{content:" ▾"}
+.wf-more[open] summary::after{content:" ▴"}
+.wf-more .wf-row{margin-bottom:8px}
+.wf-count{font:600 12px Inter;color:var(--muted)}
+.wspec{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin:4px 0 2px;padding:6px 8px;background:#f6f5f2;border-radius:8px}
+.wspec div{display:flex;flex-direction:column;min-width:0}
+.wspec span{font:600 10px Inter;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.wspec b{font:600 12.5px Inter;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.usd{font:600 12px Inter;color:var(--muted);margin-top:-2px}
+@media (max-width:560px){.wspec{gap:3px 6px;padding:5px 6px}.wspec span{font-size:9px}.wspec b{font-size:11.5px}}
+
+/* main photo picker */
+#mainPreview{margin:4px 0 10px}
+.mp-card{position:relative;border-radius:12px;overflow:hidden;background:#ece9e3;aspect-ratio:4/3;max-width:420px}
+.mp-card img{width:100%;height:100%;object-fit:cover;display:block}
+.mp-cap{position:absolute;left:0;right:0;bottom:0;padding:26px 12px 10px;background:linear-gradient(transparent,rgba(0,0,0,.72));color:#fff;display:flex;flex-direction:column;gap:2px}
+.mp-cap b{font:700 16px "Roboto Slab",Georgia,serif}
+.mp-cap i{font:700 14px Inter;font-style:normal}
+.mp-tag{align-self:flex-start;background:#f2b705;color:#2b2b2b;font:700 10px Inter;padding:2px 7px;border-radius:999px;letter-spacing:.3px}
+.mp-note{font-size:12px;color:var(--muted);margin:6px 0}
+.thumb img{cursor:pointer}
+.thumb.main{outline:3px solid #f2b705;outline-offset:1px}
+.thumb.extra{opacity:.75}
+.thumb.extra small{background:#5b564d;color:#fff}
+.hdrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.hdbox{margin-top:12px;padding:10px;border:1px dashed #d4b24c;border-radius:12px;background:#fffaf0}
+.hdtitle{font:700 13px Inter;margin-bottom:2px}

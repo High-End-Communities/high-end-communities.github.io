@@ -15,7 +15,7 @@
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=567a51a6">
+<link rel="stylesheet" href="common.css?v=a4c2abaf">
 </head>
 <body>
 <div class="checker"></div>
@@ -92,7 +92,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="config.js"></script>
-<script src="common.js?v=567a51a6"></script>
+<script src="common.js?v=a4c2abaf"></script>
 
 <script>
 initHeader();
@@ -110,13 +110,13 @@ hashCategory(); window.addEventListener("hashchange", hashCategory);
 $("#dumpBtn").onclick = ()=>{
   const t = $("#dumpIn").value.trim();
   if (!t){ $("#dumpHint").textContent = "Paste your message first."; return; }
-  const r = applyDump(t);
+  const r = applyDump(t); if (photos.length) renderThumbs();
   $("#dumpHint").textContent = (r.kept ? `Filled ${r.n} fields into ${LABELS[r.type]} (the category you chose).` : `Filled ${r.n} fields as ${LABELS[r.type]}. Wrong category? Just tap the right one — your details stay.`)
     + " Check everything, add your photos, tick the terms and publish.";
   $("#form").scrollIntoView({behavior:"smooth"});
 };
 
-function showDone(row, code, live){
+function showDone(row, code, live, files){
   const L = {type:row.type, f:row.f, photos:row.photos, thumb:row.thumb, at:Date.now(), status: live?"live":"pending"};
   const d = $("#done"); d.innerHTML = "";
   const p = document.createElement("p"); p.textContent = live ? "✅ Your listing is live!" : "✅ Sent for review!";
@@ -144,6 +144,17 @@ function showDone(row, code, live){
     al.href = adminHref(`🆕 *New listing waiting for review*\n\n${listingText(L)}\n\nRef: ${row.id}`);
     d.append(al);
   }
+  if (files && files.length){
+    // HD flyer from the owner's original photos (all of them, not only the ones online)
+    const box=document.createElement("div"); box.className="hdbox";
+    const h=document.createElement("div"); h.className="hdtitle"; h.textContent=`⭐ HD flyer — all ${files.length} photo${files.length>1?"s":""}, every detail and the QR code`;
+    const r3=document.createElement("div"); r3.className="hdrow";
+    let hd=null; const getHD=()=> hd || (hd=Promise.all(files.map(f=>hdPhoto(f,1800))));
+    const go=async(btn,pdf)=>{ const t=btn.textContent; btn.disabled=true; btn.textContent="Preparing…"; try{ await exportHD(L,row.id,pdf,await getHD()); }catch(e){ toast("Couldn't make the HD flyer: "+(e.message||e)); } btn.disabled=false; btn.textContent=t; };
+    const hi=document.createElement("button"); hi.type="button"; hi.className="btn primary small"; hi.textContent="⭐ HD image"; hi.onclick=()=>go(hi,false);
+    const hp=document.createElement("button"); hp.type="button"; hp.className="btn ghost small"; hp.textContent="⭐ HD PDF"; hp.onclick=()=>go(hp,true);
+    r3.append(hi,hp); box.append(h,r3); d.append(box);
+  }
   d.classList.add("show");
   d.scrollIntoView({behavior:"smooth", block:"center"});
 }
@@ -157,7 +168,8 @@ $("#form").addEventListener("submit", async e=>{
   try{ localStorage.setItem("mm_phone", f.phone); }catch(e){}
   $("#submitBtn").disabled = true; showMsg("Sending…","info");
   try{
-    const pics = photos.map(p=>p.url);
+    const pics = photos.slice(0, maxPhotos()).map(p=>p.url);   // main photo first
+    const files = photos.map(p=>p.file).filter(Boolean);
     f._np = pics.length;
     const code = newSellerCode();
     const row = { id: uuid(), type, f, phone: f.phone, thumb: await makeThumb(pics[0]), photos: pics, terms: true, seller_code: code };
@@ -168,12 +180,16 @@ $("#form").addEventListener("submit", async e=>{
     const chk = await sb.from("listings").select("id,status").eq("id", row.id).maybeSingle();
     const live = !!(chk && chk.data && chk.data.status === "live");
     showMsg("");
-    showDone(row, code, live);
-    photos=[]; renderThumbs(); renderFields(true); $("#terms").checked=false; $("#dumpIn").value="";
+    showDone(row, code, live, files);
+    photos=[]; mainPicked=false; renderThumbs(); renderFields(true); $("#terms").checked=false; $("#dumpIn").value="";
   }catch(err){ if (!(await siteCheck("post"))) return; showMsg(niceError(err),"err"); }
   finally{ $("#submitBtn").disabled = false; }
 });
-$("#resetBtn").onclick = ()=>{ photos=[]; renderThumbs(); renderFields(true); showMsg(""); $("#done").classList.remove("show"); };
+// keep the main-photo preview caption in step with the title and price
+let _pvT=null; $("#form").addEventListener("input", ()=>{ if (!photos.length) return; clearTimeout(_pvT); _pvT=setTimeout(()=>{ const pv=$("#mainPreview"); if(!pv) return;
+  try{ const f={}; (SCHEMAS[type]||[]).forEach(x=>{ const el=$("#f_"+x.k); if(el) f[x.k]=el.value; }); const pu=$("#u_price"); if(pu) f.price_unit=pu.value;
+    const b=pv.querySelector(".mp-cap b"), i=pv.querySelector(".mp-cap i"); if(b) b.textContent=titleOf({type,f})||"Your listing title"; if(i) i.textContent=f.price?priceStr({...f,price:String(f.price).replace(/\D/g,"")}):""; }catch(e){} },250); });
+$("#resetBtn").onclick = ()=>{ photos=[]; mainPicked=false; renderThumbs(); renderFields(true); showMsg(""); $("#done").classList.remove("show"); };
 </script>
 </body>
 </html>

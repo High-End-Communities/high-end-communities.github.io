@@ -9,8 +9,8 @@ const SMALL_TYPES = ["gear","acc","carpart","boatpart","equinepart"];   // small
 const BULK_TYPES = ["watch", "bag", ...SMALL_TYPES];                          // up to 20 listings per seller
 function maxPhotos(t){ return SMALL_TYPES.includes(t || type) ? 3 : MAX_PHOTOS; }
 function photoRuleText(){ return SMALL_TYPES.includes(type)
-  ? "(1–3 photos for small items & spare parts, auto-reduced)"
-  : "(1–4 photos, auto-reduced to low resolution)"; }
+  ? "(1–3 photos go online, up to 10 for your HD flyer — tap a photo to make it the main one)"
+  : "(1–4 photos go online, up to 10 for your HD flyer — tap a photo to make it the main one)"; }
 const BIKE_RANGE = [100000, 2000000];
 const GEAR_RANGES = {            // EGP
   "Helmet":[1500,80000], "Jacket":[2000,60000], "Gloves":[500,20000], "Boots":[2000,40000],
@@ -238,6 +238,33 @@ function bySection(items){ return TYPE_ORDER.map(t=>[t, items.filter(x=>x.L.type
 let CAT_TITLE = "";        // set by the catalogue page to the section being shown
 const CI_TO_CC = 16.387, KM_PER_MI = 1.609344;
 // Best-selling and most popular motorcycles worldwide (suggestions only — sellers can still type anything)
+const WATCH_DB = {
+  "Rolex":["Submariner Date","Submariner (no date)","Daytona","GMT-Master II","Datejust 41","Datejust 36","Day-Date 40","Oyster Perpetual","Explorer","Explorer II","Sea-Dweller","Deepsea","Yacht-Master","Sky-Dweller","Air-King","Milgauss","Cellini","Lady-Datejust"],
+  "Patek Philippe":["Nautilus","Aquanaut","Calatrava","Complications","Grand Complications","Twenty~4","Gondolo","Golden Ellipse"],
+  "Audemars Piguet":["Royal Oak","Royal Oak Offshore","Royal Oak Chronograph","Royal Oak Concept","Code 11.59","Millenary"],
+  "Omega":["Speedmaster Moonwatch","Speedmaster","Seamaster Diver 300M","Seamaster Planet Ocean","Seamaster Aqua Terra","Constellation","De Ville","Railmaster"],
+  "Cartier":["Santos","Tank","Ballon Bleu","Panthère","Pasha","Calibre de Cartier","Drive de Cartier","Ronde"],
+  "Richard Mille":["RM 011","RM 035","RM 055","RM 067","RM 07-01","RM 030","RM 65-01"],
+  "Vacheron Constantin":["Overseas","Patrimony","Traditionnelle","Fiftysix","Historiques"],
+  "Tudor":["Black Bay 58","Black Bay","Black Bay GMT","Pelagos","Ranger","Royal","1926"],
+  "TAG Heuer":["Carrera","Monaco","Aquaracer","Formula 1","Autavia","Connected"],
+  "Breitling":["Navitimer","Superocean","Chronomat","Avenger","Premier","Top Time","Endurance Pro"],
+  "IWC":["Portugieser","Pilot's Watch","Portofino","Aquatimer","Ingenieur","Da Vinci"],
+  "Panerai":["Luminor","Luminor Marina","Radiomir","Submersible","Luminor Due"],
+  "Hublot":["Big Bang","Classic Fusion","Spirit of Big Bang","Square Bang","MP"],
+  "Jaeger-LeCoultre":["Reverso","Master Ultra Thin","Polaris","Master Control","Rendez-Vous"],
+  "Zenith":["El Primero","Chronomaster","Defy","Pilot"],
+  "Grand Seiko":["Heritage","Evolution 9","Sport","Elegance","Snowflake"],
+  "Seiko":["Prospex","Presage","5 Sports","Astron","King Seiko"],
+  "Longines":["HydroConquest","Master Collection","Spirit","Legend Diver","Conquest","DolceVita"],
+  "Chopard":["Alpine Eagle","Happy Sport","Mille Miglia","L.U.C"],
+  "Bvlgari":["Octo Finissimo","Serpenti","Bvlgari Bvlgari","Aluminium"],
+  "A. Lange & Söhne":["Lange 1","Saxonia","Zeitwerk","Odysseus","1815"],
+  "Breguet":["Classique","Marine","Type XX","Tradition","Reine de Naples"],
+  "Blancpain":["Fifty Fathoms","Villeret","Air Command"],
+  "Tissot":["PRX","Seastar","Le Locle","Gentleman"],
+  "Apple":["Watch Ultra","Watch Series","Watch SE"]
+};
 const BIKE_DB = {
   "Harley-Davidson":["Street Glide","Road Glide","Road King","Electra Glide","Ultra Limited","CVO Street Glide","CVO Road Glide","Fat Boy","Fat Bob","Heritage Classic","Breakout","Low Rider S","Low Rider ST","Street Bob","Softail Standard","Sportster S","Nightster","Iron 883","Forty-Eight","Pan America 1250"],
   "Honda":["CBR1000RR-R Fireblade","CBR650R","CB650R","CBR500R","CB750 Hornet","CB1000 Hornet","CRF1100L Africa Twin","XL750 Transalp","NX500","NC750X","Gold Wing","Rebel 1100","Rebel 500","X-ADV","Forza 750","PCX 160"],
@@ -301,8 +328,8 @@ function renderFields(clear){
   const keep = clear===true ? null : snapshotForm();
   const pr = $("#photoRule"); if (pr) pr.textContent = photoRuleText();
   if (typeof photos!=="undefined" && photos.length > maxPhotos()){
-    photos = photos.slice(0, maxPhotos()); renderThumbs();
-    const h=$("#photoHint"); if (h) h.textContent = `Small items and spare parts take up to ${maxPhotos()} photos, so the extra ones were removed.`;
+    renderThumbs();   // extra photos stay for the HD flyer
+    const h=$("#photoHint"); if (h) h.textContent = `Only ${maxPhotos()} photos go online for this category — the others stay in your HD flyer.`;
   }
   const box = $("#fields"); box.innerHTML = "";
   for (const f of SCHEMAS[type]){
@@ -330,7 +357,7 @@ function renderFields(clear){
     }
     el.id = "f_"+f.k;
     if (f.ph) el.placeholder = f.ph;
-    const sugg = (type==="bike" && f.k==="brand") ? Object.keys(BIKE_DB) : (f.list==="BAG_BRANDS" ? BAG_BRANDS : null);
+    const sugg = ((type==="bike"||type==="watch") && f.k==="brand") ? Object.keys(type==="watch"?WATCH_DB:BIKE_DB) : (f.list==="BAG_BRANDS" ? BAG_BRANDS : null);
     if (sugg || (type==="bike" && f.k==="model")){
       const dl=document.createElement("datalist"); dl.id="dl_"+f.k; el.setAttribute("list", dl.id); el.autocomplete="off";
       (sugg||[]).forEach(v=>{ const o=document.createElement("option"); o.value=v; dl.appendChild(o); });
@@ -361,7 +388,8 @@ function renderFields(clear){
     if (br){ br.addEventListener("input", fill); br.addEventListener("change", fill); fill(); }
   }
   restoreForm(keep);
-  if (type==="bike") setupBikePickers();
+  if (type==="bike") setupBikePickers(BIKE_DB);
+  if (type==="watch") setupBikePickers(WATCH_DB);
   updatePriceHint();
   // Remember phone for convenience
   try{ const p=localStorage.getItem("mm_phone"); if(p && !$("#f_phone").value) $("#f_phone").value=p; }catch(e){}
@@ -463,32 +491,77 @@ async function shrink(file){
     drawWatermark(ctx, w, h, mark);
     url = c.toDataURL("image/jpeg", q);
     const bytes = Math.round((url.length - 23) * 3/4);
-    if (bytes <= PHOTO_MAX_BYTES) return {url, bytes, w, h, orig: file.size};
+    if (bytes <= PHOTO_MAX_BYTES) return {url, bytes, w, h, orig: file.size, file, score: photoScore(img)};
     if (q > 0.3) q -= 0.08; else edge = Math.round(edge*0.85);
   }
-  return {url, bytes: Math.round(url.length*3/4), w:0, h:0, orig:file.size};
+  return {url, bytes: Math.round(url.length*3/4), w:0, h:0, orig:file.size, file, score: photoScore(img)};
 }
+const FLYER_MAX_PHOTOS = 10;   // the owner can add up to 10: the first ones go online, all go in the HD flyer
+let mainPicked = false;        // true once the owner chose the main photo themselves
+// How good is this photo as the main one? Sharp, well lit, landscape, high resolution.
+function photoScore(img){
+  try{
+    const W=320, H=Math.max(8,Math.round(320*img.naturalHeight/img.naturalWidth));
+    const c=document.createElement("canvas"); c.width=W; c.height=H; const x=c.getContext("2d"); x.drawImage(img,0,0,W,H);
+    const d=x.getImageData(0,0,W,H).data, g=new Float32Array(W*H); let sum=0;
+    for (let i=0;i<W*H;i++){ g[i]=(0.299*d[i*4]+0.587*d[i*4+1]+0.114*d[i*4+2])/255; sum+=g[i]; }
+    const mean=sum/(W*H); let lv=0, n=0, cs=0;
+    for (let yy=1;yy<H-1;yy++) for (let xx=1;xx<W-1;xx++){ const i=yy*W+xx; const l=4*g[i]-g[i-1]-g[i+1]-g[i-W]-g[i+W]; lv+=l*l; n++; cs+=(g[i]-mean)*(g[i]-mean); }
+    const sharp=Math.log(1+ (lv/n)*1000), contrast=Math.sqrt(cs/n);
+    const light = 1-Math.min(1,Math.abs(mean-0.5)*2.2);
+    const land = img.naturalWidth>=img.naturalHeight ? 0.6 : 0;
+    const res = Math.min(1,(img.naturalWidth*img.naturalHeight)/3e6)*0.4;
+    return sharp + light*1.2 + contrast*2 + land + res;
+  }catch(e){ return 0; }
+}
+function bestPhotoIndex(){ let b=0; photos.forEach((p,i)=>{ if ((p.score||0)>(photos[b].score||0)) b=i; }); return b; }
+function makeMain(i){ if (i<=0 || i>=photos.length) return; const [p]=photos.splice(i,1); photos.unshift(p); }
 async function addFiles(list, input){
   const files = [...list].filter(f=>f.type.startsWith("image/"));
   input.value = "";
   for (const f of files){
-    if (photos.length >= maxPhotos()){ $("#photoHint").textContent = `Maximum ${maxPhotos()} photos for this category.`; break; }
+    if (photos.length >= FLYER_MAX_PHOTOS){ $("#photoHint").textContent = `Maximum ${FLYER_MAX_PHOTOS} photos.`; break; }
     try{ photos.push(await shrink(f)); }catch(e){ $("#photoHint").textContent = e.message; }
   }
+  if (!mainPicked && photos.length > 1) makeMain(bestPhotoIndex());   // suggest the best main photo automatically
   renderThumbs();
 }
 function renderThumbs(){
   const t = $("#thumbs"); t.innerHTML="";
+  const online = maxPhotos(), best = photos.length>1 ? bestPhotoIndex() : 0;
+  // big preview of the main photo, the way buyers see it in the catalogue
+  let pv = $("#mainPreview");
+  if (!pv){ pv=document.createElement("div"); pv.id="mainPreview"; t.before(pv); }
+  pv.innerHTML = "";
+  if (photos.length){
+    const fig=document.createElement("div"); fig.className="mp-card";
+    const im=document.createElement("img"); im.src=photos[0].url; im.alt="Main photo preview";
+    const cap=document.createElement("div"); cap.className="mp-cap";
+    let title="", price=""; try{ const f={}; (SCHEMAS[type]||[]).forEach(x=>{ const el=$("#f_"+x.k); if(el) f[x.k]=el.value; }); const pu=$("#u_price"); if(pu) f.price_unit=pu.value;
+      title=titleOf({type,f}); price=f.price?priceStr({...f,price:String(f.price).replace(/\D/g,"")}):""; }catch(e){}
+    cap.innerHTML = `<span class="mp-tag">★ Main photo</span><b></b><i></i>`;
+    cap.querySelector("b").textContent = title || "Your listing title"; cap.querySelector("i").textContent = price;
+    fig.append(im, cap); pv.appendChild(fig);
+    const note=document.createElement("div"); note.className="mp-note";
+    note.textContent = mainPicked ? "You chose this main photo. Tap any photo below to change it."
+                                  : "We picked the clearest, best-lit photo as the main one. Tap any photo below to choose another.";
+    pv.appendChild(note);
+    if (best!==0){ const ub=document.createElement("button"); ub.type="button"; ub.className="btn ghost small"; ub.textContent="✨ Use the suggested photo";
+      ub.onclick=()=>{ makeMain(best); mainPicked=true; renderThumbs(); }; pv.appendChild(ub); }
+  }
   photos.forEach((p,i)=>{
-    const d = document.createElement("div"); d.className="thumb";
-    d.innerHTML = `<img alt="photo ${i+1}"><button type="button" aria-label="Remove">×</button><small>${p.w}×${p.h} · ${Math.round(p.bytes/1024)} KB</small>`;
+    const d = document.createElement("div"); d.className="thumb"+(i===0?" main":"")+(i>=online?" extra":"");
+    d.innerHTML = `<img alt="photo ${i+1}"><button type="button" aria-label="Remove">×</button><small></small>`;
     d.querySelector("img").src = p.url;
-    d.querySelector("button").onclick = ()=>{ photos.splice(i,1); renderThumbs(); };
+    d.querySelector("small").textContent = i===0 ? "★ Main" : (i>=online ? "HD flyer only" : (i===best ? "Suggested" : "Tap = main"));
+    d.querySelector("img").onclick = ()=>{ if (i===0) return; makeMain(i); mainPicked=true; renderThumbs(); };
+    d.querySelector("button").onclick = (e)=>{ e.stopPropagation(); photos.splice(i,1); if (i===0) mainPicked=false; renderThumbs(); };
     t.appendChild(d);
   });
   if (photos.length){
-    const saved = photos.reduce((a,p)=>a+p.orig,0), now = photos.reduce((a,p)=>a+p.bytes,0);
-    $("#photoHint").textContent = `${photos.length}/${maxPhotos()} photos · reduced from ${(saved/1048576).toFixed(1)} MB to ${Math.round(now/1024)} KB`;
+    const saved = photos.reduce((a,p)=>a+p.orig,0), now = photos.slice(0,online).reduce((a,p)=>a+p.bytes,0);
+    $("#photoHint").textContent = `${Math.min(photos.length,online)}/${online} photos go online (reduced from ${(saved/1048576).toFixed(1)} MB to ${Math.round(now/1024)} KB)`
+      + (photos.length>online ? ` · all ${photos.length} go in your HD flyer` : ` · add up to ${FLYER_MAX_PHOTOS} for the HD flyer`);
   } else $("#photoHint").textContent = "";
   $(".photos").classList.remove("bad");
 }
@@ -640,11 +713,12 @@ function wrapText(P,s,o,maxW,maxLines){
 function clip(P,s,o,maxW){ return wrapText(P,s,o,maxW,1)[0]||""; }
 function checker(P,x,y,w,sq){ const n=Math.ceil(w/sq); P.rect(x,y,w,sq*2,"#ffffff"); for(let r=0;r<2;r++) for(let i=0;i<n;i++) if((i+r)%2===0) P.rect(x+i*sq,y+r*sq,Math.min(sq,x+w-(x+i*sq)),sq,"#2b2b2b"); }
 const _fillCache = new Map();
+let FILL_PXMM = 5.2;   // photo pixels per mm in flyers (raised for the HD flyer)
 async function filledPhoto(im, w, h){
   // w, h in mm → small canvas (about 5 px/mm) so files stay light
-  const key = im.src.length + ":" + im.src.slice(-60) + ":" + Math.round(w*10) + "x" + Math.round(h*10);
+  const key = im.src.length + ":" + im.src.slice(-60) + ":" + Math.round(w*10) + "x" + Math.round(h*10) + "@" + FILL_PXMM;
   if (_fillCache.has(key)) return _fillCache.get(key);
-  const k = 5.2, cw = Math.max(40, Math.round(w*k)), ch = Math.max(30, Math.round(h*k));
+  const k = FILL_PXMM, cw = Math.max(40, Math.round(w*k)), ch = Math.max(30, Math.round(h*k));
   const c = document.createElement("canvas"); c.width=cw; c.height=ch; const ctx = c.getContext("2d");
   // background: the photo scaled to cover, blurred by shrinking it to a few pixels and stretching back
   const sc = Math.max(cw/im.naturalWidth, ch/im.naturalHeight);
@@ -658,11 +732,12 @@ async function filledPhoto(im, w, h){
   // the whole photo on top
   const r = Math.min(cw/im.naturalWidth, ch/im.naturalHeight), iw = im.naturalWidth*r, ih = im.naturalHeight*r;
   ctx.drawImage(im, (cw-iw)/2, (ch-ih)/2, iw, ih);
-  const out = await loadSrc(c.toDataURL("image/jpeg", 0.72));
+  const out = await loadSrc(c.toDataURL("image/jpeg", FILL_PXMM>6 ? 0.88 : 0.72));
   _fillCache.set(key, out);
   return out;
 }
 async function fitImg(P,im,x,y,w,h){
+  if (P.dry) return;
   let f = im;
   try{ f = await filledPhoto(im, w, h); }catch(e){}
   if (f === im){ P.rect(x,y,w,h,"#efece5"); const r=Math.min(w/im.naturalWidth,h/im.naturalHeight), iw=im.naturalWidth*r, ih=im.naturalHeight*r; P.img(im,x+(w-iw)/2,y+(h-ih)/2,iw,ih); return; }
@@ -1128,7 +1203,9 @@ function buildCard(item, mode){
       const sh=document.createElement("a"); sh.href=waHref(shareText(L,id)); sh.target="_blank"; sh.rel="noopener"; sh.textContent="↗ Share";
       const bI=document.createElement("button"); bI.type="button"; bI.textContent="🖼️ Image"; bI.onclick=()=>exportImage(L,id);
       const bP=document.createElement("button"); bP.type="button"; bP.textContent="📄 PDF"; bP.onclick=()=>exportPdf(L,id);
-      c.append(sh,bI,bP);
+      const bH=document.createElement("button"); bH.type="button"; bH.textContent="⭐ HD image"; bH.onclick=()=>exportHD(L,id,false);
+      const bHP=document.createElement("button"); bHP.type="button"; bHP.textContent="⭐ HD PDF"; bHP.onclick=()=>exportHD(L,id,true);
+      c.append(sh,bI,bP,bH,bHP);
     }
   }
   if (mode==="public"){
@@ -1141,7 +1218,14 @@ function buildCard(item, mode){
     const extra=[...c.querySelectorAll("a:not(.wa):not([href^='tel:']),button")];
     if (extra.length){ const tb=document.createElement("div"); tb.className="tools"; extra.forEach(e=>tb.appendChild(e)); det.appendChild(tb); }
     body.append(badge,h,pr); if (tags.childNodes.length) body.appendChild(tags);
-    if (spec.textContent) body.appendChild(spec);
+    if (L.type==="watch"){
+      const ws=watchSpecs(L).slice(0,4);
+      if (ws.length){ const g=document.createElement("div"); g.className="wspec";
+        ws.forEach(([k,v])=>{ const c=document.createElement("div"); const a=document.createElement("span"); a.textContent=k; const b=document.createElement("b"); b.textContent=v; c.append(a,b); g.appendChild(c); });
+        body.appendChild(g); }
+      if (L.f.price_unit!=="USD" && priceEGP(L.f)) { const u=document.createElement("div"); u.className="usd"; u.textContent="≈ $"+fmt(Math.round(priceEGP(L.f)/USD_TO_EGP)); pr.after(u); }
+      else if (L.f.price_unit==="USD") { const u=document.createElement("div"); u.className="usd"; u.textContent="≈ "+fmt(Math.round(priceEGP(L.f)))+" EGP"; pr.after(u); }
+    } else if (spec.textContent) body.appendChild(spec);
     if (r.length || extra.length) body.appendChild(det);
     body.appendChild(c);
     card.appendChild(body);
@@ -1243,20 +1327,20 @@ async function exportCatalogue(){
 
 /* ===================== Motorcycle brand & model pickers ===================== */
 // A real dropdown (works on iPhone) above the text box. "Other" lets the seller type anything.
-function setupBikePickers(){
+function setupBikePickers(DB){ DB = DB || DB;
   const br=$("#f_brand"), md=$("#f_model"); if (!br || !md) return;
   const OTHER="__other";
   const mk=(id,first)=>{ const s=document.createElement("select"); s.id=id; s.className="picker"; const o=document.createElement("option"); o.value=""; o.textContent=first; s.appendChild(o); return s; };
   const sb=mk("p_brand","Choose the brand…"), sm=mk("p_model","Choose the model…");
-  Object.keys(BIKE_DB).sort((a,b)=>a.localeCompare(b)).forEach(b=>{ const o=document.createElement("option"); o.value=b; o.textContent=b; sb.appendChild(o); });
+  Object.keys(DB).sort((a,b)=>a.localeCompare(b)).forEach(b=>{ const o=document.createElement("option"); o.value=b; o.textContent=b; sb.appendChild(o); });
   const ob=document.createElement("option"); ob.value=OTHER; ob.textContent="Other brand (type it)"; sb.appendChild(ob);
   (br.closest(".unitrow")||br).before(sb); (md.closest(".unitrow")||md).before(sm);
   const wb=sb.parentElement, wm=sm.parentElement;
   if (wb && wm && wb!==wm && (wm.compareDocumentPosition(wb) & Node.DOCUMENT_POSITION_FOLLOWING)) wm.before(wb);
-  const keyOf=v=>Object.keys(BIKE_DB).find(b=>b.toLowerCase()===String(v||"").trim().toLowerCase());
+  const keyOf=v=>Object.keys(DB).find(b=>b.toLowerCase()===String(v||"").trim().toLowerCase());
   const fillModels=()=>{
     const key=keyOf(br.value); sm.innerHTML=""; const f=document.createElement("option"); f.value=""; f.textContent= key ? `Choose the ${key} model…` : "Choose the brand first"; sm.appendChild(f);
-    (key?BIKE_DB[key]:[]).forEach(m=>{ const o=document.createElement("option"); o.value=m; o.textContent=m; sm.appendChild(o); });
+    (key?DB[key]:[]).forEach(m=>{ const o=document.createElement("option"); o.value=m; o.textContent=m; sm.appendChild(o); });
     const om=document.createElement("option"); om.value=OTHER; om.textContent="Other model (type it)"; sm.appendChild(om);
     sm.disabled = !key && !br.value;
   };
@@ -1266,7 +1350,7 @@ function setupBikePickers(){
     sb.value = key || (br.value ? OTHER : ""); if (key) br.value=key;
     show(br, sb.value===OTHER);
     fillModels();
-    const m=(BIKE_DB[key]||[]).find(x=>x.toLowerCase()===String(md.value).trim().toLowerCase());
+    const m=(DB[key]||[]).find(x=>x.toLowerCase()===String(md.value).trim().toLowerCase());
     sm.value = m || (md.value ? OTHER : ""); if (m) md.value=m;
     show(md, sm.value===OTHER || (!key && !!br.value));
   };
@@ -1283,4 +1367,164 @@ function setupBikePickers(){
   });
   br.addEventListener("input", ()=>{ if (sb.value===OTHER) fillModels(); });
   syncBikePickers();
+}
+
+/* ===================== Watches section (filters, sort, reference search) ===================== */
+function priceEGP(f){ const n=Number(String(f.price||"").replace(/[^\d.]/g,""))||0; return f.price_unit==="USD" ? n*USD_TO_EGP : n; }
+function watchSpecs(L){
+  const f=L.f, out=[];
+  if (f.ref) out.push(["Ref.", f.ref]);
+  if (f.year) out.push(["Year", f.year]);
+  if (f.size) out.push(["Case", f.size+" mm"]);
+  if (f.papers) out.push(["Box & papers", f.papers]);
+  if (f.movement) out.push(["Movement", f.movement]);
+  if (f.material) out.push(["Material", f.material]);
+  return out;
+}
+const WF = {q:"", brand:"", min:"", max:"", papers:"", cond:"", move:"", sort:"featured"};
+function watchFilterApply(items){
+  const q=WF.q.trim().toLowerCase().replace(/\s+/g," ");
+  const min=Number(String(WF.min).replace(/\D/g,""))||0, max=Number(String(WF.max).replace(/\D/g,""))||0;
+  let xs=items.filter(({L})=>{
+    const f=L.f;
+    if (q && ![f.brand,f.model,f.ref,f.material].join(" ").toLowerCase().replace(/[\s\-]+/g,"").includes(q.replace(/[\s\-]+/g,""))) return false;
+    if (WF.brand && String(f.brand||"").toLowerCase()!==WF.brand.toLowerCase()) return false;
+    const p=priceEGP(f); if (min && p<min) return false; if (max && p>max) return false;
+    if (WF.papers==="full" && f.papers!=="Full set") return false;
+    if (WF.papers && WF.papers!=="full" && f.papers!==WF.papers) return false;
+    if (WF.cond && f.condition!==WF.cond) return false;
+    if (WF.move && f.movement!==WF.move) return false;
+    return true;
+  });
+  const by={ "price_asc":(a,b)=>priceEGP(a.L.f)-priceEGP(b.L.f), "price_desc":(a,b)=>priceEGP(b.L.f)-priceEGP(a.L.f),
+    "newest":(a,b)=>(b.L.at||0)-(a.L.at||0), "year":(a,b)=>(Number(b.L.f.year)||0)-(Number(a.L.f.year)||0) }[WF.sort];
+  return by ? xs.slice().sort(by) : xs;
+}
+function drawWatchFilters(box, items, onChange){
+  const brands=[...new Set(items.map(x=>String(x.L.f.brand||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  const opt=(v,t)=>`<option value="${v.replace(/"/g,"&quot;")}">${t}</option>`;
+  box.innerHTML = `
+    <div class="wf-row"><input id="wfQ" type="search" placeholder="Search brand, model or reference (e.g. 126610)" autocomplete="off"></div>
+    <div class="wf-row">
+      <select id="wfBrand">${opt("","All brands")}${brands.map(b=>opt(b,b)).join("")}</select>
+      <select id="wfSort">${opt("featured","Sort: Featured")}${opt("price_asc","Price: low to high")}${opt("price_desc","Price: high to low")}${opt("newest","Newest listed")}${opt("year","Year: newest")}</select>
+    </div>
+    <details class="wf-more"><summary>More filters</summary>
+      <div class="wf-row"><input id="wfMin" inputmode="numeric" placeholder="Min price EGP"><input id="wfMax" inputmode="numeric" placeholder="Max price EGP"></div>
+      <div class="wf-row">
+        <select id="wfPapers">${opt("","Box & papers: any")}${opt("full","Full set only")}${opt("Box only","Box only")}${opt("Papers only","Papers only")}${opt("None","No box or papers")}</select>
+        <select id="wfCond">${opt("","New or used")}${opt("New","New")}${opt("Used","Used")}</select>
+      </div>
+      <div class="wf-row"><select id="wfMove">${opt("","Any movement")}${["Automatic","Manual winding","Quartz","Smart"].map(m=>opt(m,m)).join("")}</select>
+        <button type="button" class="btn ghost small" id="wfReset">Clear filters</button></div>
+    </details>
+    <div class="wf-count" id="wfCount"></div>`;
+  const map={wfQ:"q",wfBrand:"brand",wfSort:"sort",wfMin:"min",wfMax:"max",wfPapers:"papers",wfCond:"cond",wfMove:"move"};
+  for (const [id,k] of Object.entries(map)){ const el=box.querySelector("#"+id); el.value=WF[k];
+    el.addEventListener(el.tagName==="SELECT"?"change":"input", ()=>{ if (id==="wfMin"||id==="wfMax"){ const d=el.value.replace(/\D/g,""); el.value=d?fmt(d):""; } WF[k]=el.value; onChange(); }); }
+  if (WF.min||WF.max||WF.papers||WF.cond||WF.move) box.querySelector(".wf-more").open=true;
+  box.querySelector("#wfReset").onclick=()=>{ Object.assign(WF,{q:"",brand:"",min:"",max:"",papers:"",cond:"",move:"",sort:"featured"}); drawWatchFilters(box,items,onChange); onChange(); };
+}
+
+/* ===================== HD flyer (all photos + all details + QR) ===================== */
+// HD photo from the owner's original file (with the High End watermark), for the post page
+async function hdPhoto(file, edge){
+  const img = await loadImage(file); let mark=null; try{ mark=await loadSrc(watermarkSrc()); }catch(e){}
+  const s = Math.min(1, edge/Math.max(img.naturalWidth,img.naturalHeight));
+  const w=Math.round(img.naturalWidth*s), h=Math.round(img.naturalHeight*s);
+  const c=document.createElement("canvas"); c.width=w; c.height=h; const x=c.getContext("2d"); x.imageSmoothingQuality="high"; x.drawImage(img,0,0,w,h);
+  drawWatermark(x,w,h,mark);
+  return loadSrc(c.toDataURL("image/jpeg",0.9));
+}
+function dryPainter(){
+  const ctx=document.createElement("canvas").getContext("2d"), cp=canvasPainter(ctx,4);
+  return {dry:true, rect(){}, img(){}, text(){}, link(){}, width:cp.width};
+}
+async function drawFlyerHD(P, L, id, ph){
+  const SP = flyerSponsor();
+  const logo = P.dry ? null : await loadSrc(logoFor(L.type)), masar = P.dry ? null : await loadSrc(SP.image);
+  const M = 8, W = FW-2*M;
+  if (!P.dry){ P.rect(0,0,FW,9999,"#ffffff"); checker(P,0,0,FW,2); }
+  // header: logo, QR to the listing, reference
+  const lh = 30; if (logo){ const r=lh/logo.naturalHeight, lw=logo.naturalWidth*r; P.img(logo,(FW-lw)/2,6,lw,lh); }
+  if (!P.dry && drawQR(P, linkFor(id), FW-M-24, 6, 24)) P.text("Scan to open the listing", FW-M-12, 6+24+3, {size:5,color:"#77736b",align:"center"});
+  P.text("REF  HE-"+String(id||"").replace(/-/g,"").slice(0,8).toUpperCase(), M, 10, {size:6.5,bold:1,color:"#77736b"});
+  P.text(new Date(L.at||Date.now()).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}), M, 14, {size:6.5,color:"#77736b"});
+  let y = 6+lh+8;
+  // title + price
+  const badge = (LABELS[L.type] + (L.f.category?" - "+L.f.category:"") + (L.f.condition?" - "+L.f.condition:"")).toUpperCase();
+  P.text(badge,M,y,{size:7.5,bold:1,color:"#77736b"}); y+=7;
+  const tl = wrapText(P,titleOf(L),{size:17,bold:1,serif:1},W,3);
+  tl.forEach((l,i)=>P.text(l,M,y+i*7,{size:17,bold:1,serif:1})); y += tl.length*7;
+  P.text(priceStr(L.f),M,y+3,{size:22,bold:1,serif:1});
+  const eg = priceEGP(L.f);
+  if (eg){ const alt = L.f.price_unit==="USD" ? "≈ "+fmt(Math.round(eg))+" EGP" : "≈ $"+fmt(Math.round(eg/USD_TO_EGP)); P.text(alt, M+P.width(priceStr(L.f),{size:22,bold:1,serif:1})+4, y+3, {size:9,color:"#77736b"}); }
+  y += 10;
+  // photos: main big, the rest two per row
+  if (ph.length){ const h=W*0.72; await fitImg(P,ph[0],M,y,W,h); y+=h+3; }
+  const rest = ph.slice(1), tw=(W-3)/2, th=tw*0.75;
+  for (let i=0;i<rest.length;i+=2){
+    await fitImg(P,rest[i],M,y,tw,th);
+    if (rest[i+1]) await fitImg(P,rest[i+1],M+tw+3,y,tw,th);
+    y += th+3;
+  }
+  if (ph.length) P.text(ph.length+(ph.length===1?" photo":" photos"), FW-M, y+1, {size:6,color:"#9a958c",align:"right"});
+  y += 6;
+  // every detail the owner entered
+  P.text("DETAILS",M,y,{size:8,bold:1,color:"#2b2b2b"}); P.rect(M,y+2,W,0.3,"#dedad2"); y+=7;
+  const det = rows(L).filter(([k])=>k!=="Add-ons" && k!=="Options & extras");
+  const cw = W/2;
+  for (let i=0;i<det.length;i+=2){
+    let rh=0;
+    for (let j=0;j<2 && det[i+j];j++){
+      const [k,v]=det[i+j], cx=M+j*cw;
+      P.text(k,cx,y,{size:6.8,color:"#77736b"});
+      const vl=wrapText(P,String(v),{size:9.5,bold:1},cw-4,3);
+      vl.forEach((l,n)=>P.text(l,cx,y+4.4+n*4.2,{size:9.5,bold:1}));
+      rh=Math.max(rh, 4.4+vl.length*4.2);
+    }
+    y += rh+3;
+  }
+  if (L.f.addons){
+    P.text(L.type==="car"?"OPTIONS & EXTRAS":"ADD-ONS",M,y,{size:6.8,color:"#77736b"}); y+=4.4;
+    const al=wrapText(P,L.f.addons,{size:9.5},W,12); al.forEach((l,n)=>P.text(l,M,y+n*4.4,{size:9.5})); y+=al.length*4.4+2;
+  }
+  if (L.f.notes || L.f.desc){ const t=L.f.notes||L.f.desc; P.text("NOTES",M,y,{size:6.8,color:"#77736b"}); y+=4.4; const nl=wrapText(P,t,{size:9.5},W,14); nl.forEach((l,n)=>P.text(l,M,y+n*4.4,{size:9.5})); y+=nl.length*4.4+2; }
+  y += 4;
+  // contact + footer
+  P.rect(M,y,W,12,"#2b2b2b",2);
+  P.text("Call / WhatsApp   "+L.f.phone,FW/2,y+7.8,{size:12.5,bold:1,color:"#ffffff",align:"center"});
+  P.link(M,y,W,12,"https://wa.me/2"+String(L.f.phone).replace(/\D/g,""));
+  y += 17;
+  P.text("More listings: "+baseUrl().replace(/^https?:\/\//,""),FW/2,y,{size:7.5,bold:1,color:"#2b2b2b",align:"center"}); P.link(M,y-3.5,W,4.5,linkFor(id));
+  y += 4;
+  const dl = wrapText(P,DISCLAIMER,{size:5.6},W,3); dl.forEach((l,i)=>P.text(l,FW/2,y+i*2.6,{size:5.6,color:"#9a958c",align:"center"})); y += dl.length*2.6+2;
+  if (!P.dry) masarStrip(P,masar,M,y,W,11,SP);
+  y += 14;
+  if (!P.dry) checker(P,0,y-2,FW,1);
+  return y;
+}
+// sources: optional list of images (the owner's HD originals on the post page); otherwise the listing's photos
+async function exportHD(L, id, asPdf, sources){
+  if (asPdf && !window.jspdf){ toast("PDF tool didn't load - check your connection."); return; }
+  toast("Making your HD flyer…");
+  await ensureFonts();
+  let ph = sources;
+  if (!ph || !ph.length){ if (!L.photos || !L.photos.length) L.photos = await loadPhotos({id,L});
+    ph = await Promise.all((L.photos||[]).filter(p=>typeof p==="string"&&p.startsWith("data:image/")).map(loadSrc)); }
+  const H = Math.ceil(await drawFlyerHD(dryPainter(), L, id, ph));
+  const old = FILL_PXMM; FILL_PXMM = asPdf ? 9 : 14;
+  try{
+    if (asPdf){
+      const doc = new jspdf.jsPDF({unit:"mm",format:[FW,H],compress:true}); aliasMap.clear();
+      await drawFlyerHD(pdfPainter(doc), L, id, ph);
+      doc.setProperties({title:pdfSafe(titleOf(L))+" - "+MARKET_NAME});
+      await saveFile(fileBase(L)+"-HD.pdf", doc.output("blob"));
+    } else {
+      const k = 2160/FW, c=document.createElement("canvas"); c.width=2160; c.height=Math.round(H*k);
+      await drawFlyerHD(canvasPainter(c.getContext("2d"),k), L, id, ph);
+      const blob = await new Promise(r=>c.toBlob(r,"image/jpeg",0.9));
+      await saveFile(fileBase(L)+"-HD.jpg", blob);
+    }
+  } finally { FILL_PXMM = old; }
 }
