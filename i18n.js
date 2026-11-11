@@ -24,6 +24,18 @@ document.documentElement.lang = "ar";
 document.documentElement.dir = "rtl";
 
 var D = {
+/* search, wanted, payments */
+"Search brand, model, anything…":"ابحث بالماركة أو الموديل أو أي حاجة…","Search listings":"بحث في المعروضات","Min price":"أقل سعر","Max price":"أعلى سعر","Minimum price":"أقل سعر","Maximum price":"أعلى سعر","Clear":"مسح","Price range":"نطاق السعر",
+"Wanted":"مطلوب","1 result":"نتيجة واحدة","Post a request":"اطلب منتج","Can't find what you're looking for?":"مش لاقي اللي بتدور عليه؟","Nothing matches yet. Tell sellers what you're looking for.":"مفيش نتايج لسه. قول للبائعين إنت بتدور على إيه.",
+"Buyers looking for something. Have it? Send them an offer on WhatsApp.":"مشترين بيدوروا على حاجة. عندك؟ ابعتلهم عرض على واتساب.","No requests yet. Be the first to ask.":"مفيش طلبات لسه. كن أول واحد يطلب.",
+"Budget: open":"الميزانية: مفتوحة","I have it — WhatsApp":"عندي — واتساب","Requests open soon.":"الطلبات هتفتح قريب.",
+"Tell sellers what you want. It shows in \"Wanted\" after a quick review.":"قول للبائعين إنت عاوز إيه. الطلب هيظهر في \"مطلوب\" بعد مراجعة سريعة.","Category":"القسم","What are you looking for?":"بتدور على إيه؟",
+"Details (optional)":"تفاصيل (اختياري)","Budget up to (optional)":"الميزانية لحد (اختياري)","Your WhatsApp number":"رقم الواتساب بتاعك","Your name (optional)":"اسمك (اختياري)",
+"Your number shows on the request so sellers can contact you.":"رقمك هيظهر على الطلب عشان البائعين يكلموك.","Send request":"ابعت الطلب","Close":"إغلاق",
+"Write what you're looking for.":"اكتب إنت بتدور على إيه.","Sent. Your request shows in Wanted after review.":"اتبعت. طلبك هيظهر في مطلوب بعد المراجعة.",
+"⭐ Promote this listing":"⭐ ميّز إعلانك","Keep High End free":"خلّي High End مجاني","♥ Support High End — keep it free":"♥ ادعم High End — خليه مجاني",
+"High End is free for buyers and sellers. If it helped you, a small contribution keeps it running.":"High End مجاني للمشترين والبائعين. لو فادك، مساهمة صغيرة بتخليه مستمر.",
+"Pay online (card / wallet)":"ادفع أونلاين (كارت / محفظة)","InstaPay":"إنستاباي","Mobile wallet":"محفظة موبايل","Send the receipt on WhatsApp":"ابعت الإيصال على واتساب","Arrange it on WhatsApp":"اتفق معانا على واتساب",
 /* listing page */
 "‹ All listings":"‹ كل المعروضات","‹ Signature Bags & Accessories":"‹ شنط وإكسسوارات براندات","Details":"التفاصيل","Share & download":"مشاركة وتحميل",
 "Open photos full screen":"عرض الصور بملء الشاشة","This listing is no longer available.":"هذا الإعلان لم يعد متاحًا.","See all listings":"شوف كل المعروضات",
@@ -192,6 +204,10 @@ var MON = {Jan:"يناير",Feb:"فبراير",Mar:"مارس",Apr:"أبريل",M
 var CUR = {"EGP":"ج.م","USD":"دولار","SAR":"ر.س","AED":"د.إ","BHD":"د.ب","TRY":"ل.ت","EUR":"يورو","MAD":"د.م","TND":"د.ت","DZD":"د.ج","LYD":"د.ل"};
 function mk(n){ return D[n] || n; }
 var P = [
+  [/^(\d+) results$/, function(m){ return m[1] + " نتيجة"; }],
+  [/^Wanted in (.+)$/, function(m){ return "مطلوب في " + mk(m[1]); }],
+  [/^Budget up to ([\d,.]+) ([A-Z]{3})$/, function(m){ return "الميزانية لحد " + m[1] + " " + (CUR[m[2]]||m[2]); }],
+  [/^Featured listings show first in their category with a Featured mark\.(?: Price: (.+)\.)?$/, function(m){ return "الإعلانات المميزة بتظهر الأول في قسمها بعلامة مميز." + (m[1] ? " السعر: " + m[1] + "." : ""); }],
   [/^Posted (\d{1,2} \w{3} \d{4})( · Sold (\d{1,2} \w{3} \d{4}))?$/, function(m){ return "نُشر " + m[1] + (m[3] ? " · بيع " + m[3] : ""); }],
   [/^No partner listed in (.+) yet\. Ask High End and we'll suggest one\.$/, function(m){ return "لا يوجد شريك مسجل في " + mk(m[1]) + " بعد. اسأل High End وسنرشح لك واحدًا."; }],
   [/^Choose the (.+) model…$/, function(m){ return "اختر موديل " + m[1] + "…"; }],

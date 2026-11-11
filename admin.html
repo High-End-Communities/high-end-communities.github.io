@@ -16,10 +16,10 @@
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=ef486792">
+<link rel="stylesheet" href="common.css?v=b44dbe05">
 </head>
 <body>
-<script src="i18n.js?v=3281641c"></script>
+<script src="i18n.js?v=b5368ee5"></script>
 <header class="mast">
   <div class="checker"></div>
   <button type="button" class="langbtn" id="langBtn" lang="ar">العربية</button>
@@ -51,6 +51,7 @@
       <button type="button" data-tab="sponsors">Sponsors</button>
       <button type="button" data-tab="limits">🏍️ Limits</button>
       <button type="button" data-tab="inspect">🔧 Inspection</button>
+      <button type="button" data-tab="wanted">🔎 Wanted <span id="nWanted"></span></button>
       <button type="button" data-tab="stats">Stats</button>
     </div>
     <div class="toolbar"><span class="muted" id="who"></span><button type="button" class="btn ghost small" id="logout">Log out</button></div>
@@ -60,6 +61,11 @@
       <label class="showsold" style="color:var(--text);font-weight:600"><input type="checkbox" id="maintOn"> 🛠 Maintenance mode — visitors see "Website under maintenance"</label>
       <div class="unitrow" style="margin-top:8px"><input id="maintMsg" maxlength="200" placeholder="Message (optional), e.g. Back at 10 pm"><button type="button" class="btn ghost small" id="maintSave">Save</button></div>
       <div class="hint" id="maintHint">You can still use admin while it's on. The page also shows by itself if the database is down or overloaded.</div>
+    </div>
+    <div data-pane="wanted" hidden>
+      <div class="hint" style="margin-bottom:10px">Requests from buyers. Approve to show them under "Wanted" on the site (they hide by themselves after 60 days). Close one when the buyer found it.</div>
+      <div class="msg" id="wqMsg"></div>
+      <div id="wqList"></div>
     </div>
     <div data-pane="inspect" hidden>
       <div class="card" style="margin-bottom:12px">
@@ -238,6 +244,20 @@
         <div class="hint">When listings use more than this, the oldest are removed (sold first). 350 MB is safe on the free 500 MB plan.</div>
       </div>
       <div class="card" style="margin-bottom:12px">
+        <h3 style="margin:0 0 6px">💳 Payments &amp; value style</h3>
+        <label class="showsold" style="color:var(--text);font-weight:600;margin-bottom:8px"><input type="checkbox" id="payOn"> Payments switched on (visitors see "Promote this listing" and "Support High End")</label>
+        <div class="grid">
+          <div class="full"><label for="payLink">Payment page link (when the gateway is ready)</label><input id="payLink" type="url" placeholder="https://… (Paymob / Kashier / Fawry payment link)"></div>
+          <div><label for="payInsta">InstaPay address</label><input id="payInsta" maxlength="80" placeholder="e.g. highend@instapay"></div>
+          <div><label for="payWallet">Mobile wallet number</label><input id="payWallet" maxlength="40" placeholder="e.g. 010…"></div>
+          <div><label for="promoPrice">Promotion price (shown to sellers)</label><input id="promoPrice" maxlength="80" placeholder="e.g. 500 EGP for 2 weeks"></div>
+          <div><label for="valueMax">Lighter "value" style when max price is up to (EGP)</label><input id="valueMax" inputmode="numeric" placeholder="100000"></div>
+        </div>
+        <div class="actions"><button type="button" class="btn primary small" id="paySave">Save</button></div>
+        <div class="hint">While switched off, nothing about payments shows on the site. When on: sellers see "⭐ Promote this listing" and the footer shows "♥ Support High End". Until a payment link is saved, they pay by InstaPay / wallet or arrange it with you on WhatsApp.</div>
+        <div class="msg" id="payMsg"></div>
+      </div>
+      <div class="card" style="margin-bottom:12px">
         <h3 style="margin:0 0 6px">🖼️ Photo storage</h3>
         <div style="height:12px;background:#efece5;border-radius:999px;overflow:hidden"><div id="phBar" style="height:100%;width:0;background:#1f8a4c"></div></div>
         <div class="hint" id="phTxt">Loading…</div>
@@ -261,13 +281,13 @@
     </div>
   </section>
 </main>
-<footer><div class="checker"></div><p>High End Communities, est. 2024</p></footer>
+<footer><div class="checker"></div><p>High End Communities, est. 2024</p><p class="supportwrap" hidden><button type="button" class="supportbtn" data-support>♥ Support High End — keep it free</button></p></footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="config.js"></script>
-<script src="common.js?v=ef486792"></script>
+<script src="common.js?v=b44dbe05"></script>
 
 <script>
 initHeader();
@@ -288,7 +308,7 @@ async function enter(){
   countPage("admin");
   initCategoryPicker(); initPhotoInputs(); renderFields(); $("#terms").checked=true;
   $("#submitBtn").textContent = "Publish now";
-  await Promise.all([loadAll(), loadSponsorsAdmin(), loadSettings(), loadTrusted()]);
+  await Promise.all([loadAll(), loadSponsorsAdmin(), loadSettings(), loadTrusted()]); loadWanted();
   loadCodes();
   loadSponsors();
 }
@@ -310,6 +330,7 @@ function tab(t){
   if (t==="stats") loadStats();
   if (t==="codes") loadCodes();
   if (t==="inspect") loadExpertsAdmin();
+  if (t==="wanted") loadWanted();
 }
 document.querySelectorAll("#adminView .tabs button").forEach(b=>b.onclick=()=>tab(b.dataset.tab));
 
@@ -327,6 +348,8 @@ async function loadSettings(){
   if (data){ $("#maintOn").checked = !!data.maintenance; $("#maintMsg").value = data.maintenance_msg || ""; maintUi(); }
   if (data && data.report_wa) $("#repWa").value = data.report_wa;
   $("#bikeLim").value = (data && data.bike_monthly_limit) || 2;
+  if (data) $("#payOn").checked=!!data.pay_enabled;
+  if (data){ $("#payLink").value=data.pay_link||""; $("#payInsta").value=data.pay_instapay||""; $("#payWallet").value=data.pay_wallet||""; $("#promoPrice").value=data.promo_price||""; $("#valueMax").value=data.value_max_egp||""; }
   const on = !data || data.auto_approve!==false;
   $("#autoApprove").checked = on; autoHint(on);
 }
@@ -335,6 +358,42 @@ async function saveMaint(){
   const {error} = await sb.from("settings").update({maintenance:$("#maintOn").checked, maintenance_msg:$("#maintMsg").value.trim()||null}).eq("id",1);
   if (error){ showMsg(niceError(error),"err",$("#listMsg")); $("#maintOn").checked=!$("#maintOn").checked; }
   maintUi();
+}
+/* ---------- payments & value style ---------- */
+$("#paySave").onclick = async ()=>{
+  const link=$("#payLink").value.trim(), vm=parseInt(String($("#valueMax").value).replace(/\D/g,""),10);
+  if (link && !/^https:\/\//.test(link)){ showMsg("The payment link must start with https://","err",$("#payMsg")); return; }
+  const rec={pay_enabled:$("#payOn").checked, pay_link:link||null, pay_instapay:$("#payInsta").value.trim()||null, pay_wallet:$("#payWallet").value.trim()||null, promo_price:$("#promoPrice").value.trim()||null};
+  if (vm) rec.value_max_egp=vm;
+  const {error}=await sb.from("settings").update(rec).eq("id",1);
+  showMsg(error ? (/column/.test(error.message||"") ? "Run update11.sql in Supabase first." : niceError(error)) : "Saved.", error?"err":"ok", $("#payMsg"));
+};
+/* ---------- Wanted requests ---------- */
+let wantedAll=[];
+async function loadWanted(){
+  const {data,error}=await sb.from("requests").select("*").neq("status","rejected").order("created_at",{ascending:false}).limit(500);
+  if (error){ showMsg(/requests/.test(error.message||"") ? "Run update11.sql in Supabase to turn on Wanted." : niceError(error),"err",$("#wqMsg")); return; }
+  wantedAll=data||[]; renderWanted();
+}
+function renderWanted(){
+  const box=$("#wqList"); box.innerHTML="";
+  const pend=wantedAll.filter(r=>r.status==="pending").length; $("#nWanted").textContent = pend ? "("+pend+")" : "";
+  if (!wantedAll.length){ box.innerHTML='<div class="empty">No requests yet.</div>'; return; }
+  wantedAll.forEach(r=>{
+    const row=document.createElement("div"); row.className="sp-row";
+    const x=document.createElement("div"); x.className="x";
+    const b=document.createElement("b"); b.textContent=r.title+" ";
+    const pill=document.createElement("span"); pill.className="pill"+(r.status==="live"?"":" off"); pill.textContent={pending:"Waiting",live:"Showing",closed:"Closed"}[r.status]||r.status; b.appendChild(pill);
+    const sp=document.createElement("span"); sp.textContent=`${GROUP_NAMES[r.grp]||r.grp} · ${marketName(r.market)} · ${r.budget?fmt(r.budget)+" "+(r.budget_unit||""):"no budget"} · ${r.name||""} ${r.phone} · ${fmtDate(Date.parse(r.created_at))}`+(r.details?"\n"+r.details:"");
+    sp.style.whiteSpace="pre-line"; x.append(b,sp);
+    const tools=document.createElement("div"); tools.className="admin"; tools.style.border="0"; tools.style.margin="0"; tools.style.padding="0";
+    const set=st=>async()=>{ const {error}=await sb.from("requests").update({status:st}).eq("id",r.id); if(error) throw error; r.status=st; if (st==="rejected") wantedAll=wantedAll.filter(z=>z!==r); renderWanted(); };
+    if (r.status!=="live") tools.append(btn("✓ Approve","",set("live")));
+    if (r.status==="live") tools.append(btn("Close","",set("closed")));
+    if (r.status==="pending") tools.append(btn("✕","bad",set("rejected"),"Reject?"));
+    tools.append(btn("🗑","bad",async()=>{ const {error}=await sb.from("requests").delete().eq("id",r.id); if(error) throw error; wantedAll=wantedAll.filter(z=>z!==r); renderWanted(); },"Delete?"));
+    row.append(x,tools); box.appendChild(row);
+  });
 }
 /* ---------- motorcycle monthly limit + trusted numbers ---------- */
 $("#bikeLimSave").onclick = async ()=>{

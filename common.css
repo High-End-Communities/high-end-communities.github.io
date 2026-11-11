@@ -566,3 +566,53 @@ html[dir=rtl] a.moredetails .chev{transform:rotate(135deg)}
 html[dir=rtl] .ig-n{right:auto;left:10px}
 .itemdetail .tags{align-items:flex-start}
 .ig-n{direction:ltr;unicode-bidi:isolate}
+
+/* =====================================================================
+   Search, price range, Wanted, payments (v11)
+   ===================================================================== */
+.searchbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0 6px}
+.searchbar input[type=search]{flex:1 1 260px;min-width:0;padding:11px 14px;border:1px solid var(--line);background:#fff;font:400 15px var(--sans);border-radius:var(--radius)}
+.searchbar input[type=search]:focus{outline:none;border-color:var(--carbon)}
+.pricef{display:flex;align-items:center;gap:6px;flex:0 1 auto}
+.pricef input{width:108px;padding:10px 10px;border:1px solid var(--line);background:#fff;font:400 14px var(--sans);border-radius:var(--radius)}
+.pricef span{color:var(--muted);font-size:13px}
+.pcur{letter-spacing:.5px}
+.resultcount{color:var(--muted);font-size:13px;margin:6px 0 10px;letter-spacing:.3px}
+@media (max-width:560px){ .pricef{flex:1 1 100%} .pricef input{flex:1;width:auto} }
+
+.chip.wantedchip{border-style:dashed}
+.wantedhead{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;margin:14px 0 14px}
+.wantedhead h2{margin:0 0 4px;font:500 24px/1.2 var(--serif)}
+.wantedhead p{margin:0;font-size:14px}
+.wantedlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+article.wanted{background:#fff;border:1px solid var(--line);border-left:3px solid var(--brass);padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+article.wanted h3{margin:0;font:500 18px/1.3 var(--serif);color:var(--carbon)}
+article.wanted .budget{font-size:14px;color:var(--text)}
+article.wanted p{margin:0;font-size:13.5px;color:var(--muted);white-space:pre-line}
+article.wanted .btn{align-self:flex-start;margin-top:6px}
+.wantedcta{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px;margin:26px 0 6px;padding:18px;border:1px dashed var(--line);text-align:center}
+.wantedcta p{margin:0;color:var(--muted)}
+#reqModal textarea{min-height:70px}
+
+.payrow{display:flex;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid var(--line);margin:8px 0;font-size:14px}
+.payrow span{color:var(--muted)}
+#payModal .btn.primary{display:block;text-align:center;margin:10px 0}
+.supportbtn{background:none;border:1px solid #3a3b40;color:#cfc8b8;padding:8px 14px;font:400 13px var(--sans);letter-spacing:.3px;cursor:pointer;border-radius:2px}
+.supportbtn:hover{border-color:var(--brass2);color:#fff}
+.itemdetail .promote{display:block;margin-top:8px;color:var(--brass)}
+
+/* "Value" style: used when the visitor's price range is in the lower band (Admin sets the limit).
+   Same layout, lighter and friendlier: white cards, rounded corners, clear green prices. */
+body.value{--paper:#f6f7f8;--bg:#f6f7f8;--line:#e3e6ea;--brass:#1f8a5b;--brass2:#2fae76;--radius:10px;--muted:#66707a;
+  --serif:Jost,"Futura","Avenir Next",system-ui,sans-serif;background:var(--paper)}
+body.value .item{border-radius:12px;overflow:hidden;box-shadow:0 1px 2px rgba(20,30,40,.06)}
+body.value .item h3{font:600 16px/1.3 var(--sans);letter-spacing:0}
+body.value .price{font:700 20px/1.2 var(--sans);color:#1f8a5b}
+body.value .price small{color:#1f8a5b}
+body.value .chip.on{background:#1f8a5b;border-color:#1f8a5b;color:#fff}
+body.value .btn.primary{background:#1f8a5b;border-color:#1f8a5b}
+body.value .cathead h2,body.value .resultcount{font-family:var(--sans)}
+body.value .searchbar input,body.value .pricef input{border-radius:10px}
+body.value .masar{border-radius:12px}
+@media (max-width:560px){ .pricef input{flex:1 1 0;min-width:0;width:0} }
+article.wanted h3,article.wanted p{unicode-bidi:plaintext}

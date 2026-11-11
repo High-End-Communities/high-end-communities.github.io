@@ -1301,6 +1301,39 @@ function openDiscount(item){
 }
 
 
+/* ===================== Payments: promote a listing, support the site =====================
+   No gateway yet: shows the payment link / InstaPay / wallet the admin saved (Admin → Stats → Payments),
+   and always a WhatsApp message to the admin with the reference. When a gateway (Paymob, Kashier, Fawry…)
+   is ready, its payment page link goes in "Payment link" and appears here first. */
+function payModal(title, intro, waText){
+  const st = SITE_ST || {};
+  let m = document.getElementById("payModal");
+  if (!m){ m=document.createElement("div"); m.className="modal"; m.id="payModal"; document.body.appendChild(m);
+    m.addEventListener("click", e=>{ if (e.target===m || e.target.hasAttribute("data-close")) m.hidden=true; }); }
+  const opts = [];
+  if (st.pay_link && /^https:\/\//.test(st.pay_link)) opts.push(`<a class="btn primary" href="${esc(st.pay_link)}" target="_blank" rel="noopener">Pay online (card / wallet)</a>`);
+  if (st.pay_instapay) opts.push(`<div class="payrow"><span>InstaPay</span><b>${esc(st.pay_instapay)}</b></div>`);
+  if (st.pay_wallet) opts.push(`<div class="payrow"><span>Mobile wallet</span><b>${esc(st.pay_wallet)}</b></div>`);
+  m.innerHTML = `<div class="card"><h3>${esc(title)}</h3><p class="muted" style="font-size:14px">${esc(intro)}</p>
+    ${opts.join("")}
+    <div class="actions"><a class="btn wa" href="${adminHref(waText)}" target="_blank" rel="noopener">${opts.length ? "Send the receipt on WhatsApp" : "Arrange it on WhatsApp"}</a>
+    <button type="button" class="btn ghost" data-close>Close</button></div></div>`;
+  m.hidden = false;
+}
+function paymentsOn(){ return !!(SITE_ST && SITE_ST.pay_enabled); }
+function openPromote(item){
+  const st = SITE_ST || {};
+  payModal("⭐ Promote this listing",
+    "Featured listings show first in their category with a Featured mark." + (st.promo_price ? " Price: " + st.promo_price + "." : ""),
+    `⭐ *Promote my listing*\n\n${titleOf(item.L)}\nRef: ${item.id}\n${linkFor(item.id)}`);
+}
+function openSupport(){
+  payModal("Keep High End free",
+    "High End is free for buyers and sellers. If it helped you, a small contribution keeps it running.",
+    "♥ *Support High End*\n\nI'd like to support the site.");
+}
+document.addEventListener("click", e=>{ const b=e.target.closest && e.target.closest("[data-support]"); if (b && paymentsOn()){ e.preventDefault(); openSupport(); } });
+
 /* ===================== Maintenance page ===================== */
 // Shown when the admin switches maintenance on, or when the database can't be reached / is overloaded.
 function showMaintenance(kind, msg){
@@ -1325,6 +1358,8 @@ function showMaintenance(kind, msg){
   setInterval(async ()=>{ if (await siteCheck(null, true)) location.reload(); }, 60000);
 }
 // true = site is fine. Database down, overloaded (429/5xx) or too slow → maintenance page.
+let SITE_ST = null;   // public settings (value-style price, payment details…)
+function esc(t){ return String(t??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 async function siteCheck(page, quiet){
   if (!sb) return true;
   const slow = new Promise(r=>setTimeout(()=>r({slow:true}), 10000));
@@ -1335,6 +1370,8 @@ async function siteCheck(page, quiet){
                /Failed to fetch|NetworkError|Load failed|fetch failed|timed? ?out/i.test(String(res.error.message||res.error))));
   if (down){ if (!quiet) showMaintenance("down"); return false; }
   const st = res.data || {};
+  SITE_ST = st;
+  document.querySelectorAll(".supportwrap").forEach(e=>e.hidden=!st.pay_enabled);   // payments stay hidden until the admin switches them on
   if (st.maintenance && page!=="admin"){ if (!quiet) showMaintenance("manual", st.maintenance_msg); return false; }
   return true;
 }

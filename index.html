@@ -27,10 +27,10 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=ef486792">
+<link rel="stylesheet" href="common.css?v=b44dbe05">
 </head>
 <body>
-<script src="i18n.js?v=3281641c"></script>
+<script src="i18n.js?v=b5368ee5"></script>
 <header class="mast">
   <div class="checker"></div>
   <button type="button" class="langbtn" id="langBtn" lang="ar">العربية</button>
@@ -58,10 +58,21 @@
       <button class="chip" data-f="art">Modern & art</button>
       <button class="chip" data-f="estate">Real estate</button>
       <button class="chip" data-f="bag">Signature Bags</button>
+      <button class="chip wantedchip" data-f="wanted">Wanted</button>
     </div>
   </div>
   <div class="filters subfilters" id="subfilters" hidden></div>
   <div class="wfilters" id="wfilters" hidden></div>
+  <div class="searchbar" id="searchbar">
+    <input type="search" id="q" placeholder="Search brand, model, anything…" aria-label="Search listings" autocomplete="off">
+    <div class="pricef" aria-label="Price range">
+      <input id="pmin" inputmode="numeric" placeholder="Min price" aria-label="Minimum price">
+      <span>–</span>
+      <input id="pmax" inputmode="numeric" placeholder="Max price" aria-label="Maximum price">
+      <span class="pcur" id="pcur">EGP</span>
+    </div>
+    <button type="button" class="btn ghost small" id="qClear" hidden>Clear</button>
+  </div>
   <div class="toolbar">
     <label class="showsold"><input type="checkbox" id="showSold"> Show sold</label>
     <span>
@@ -84,13 +95,13 @@
   <div class="list" id="list"></div>
 </main>
 
-<footer><div class="checker"></div><p>High End Communities, est. 2024</p></footer>
+<footer><div class="checker"></div><p>High End Communities, est. 2024</p><p class="supportwrap" hidden><button type="button" class="supportbtn" data-support>♥ Support High End — keep it free</button></p></footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="config.js"></script>
-<script src="common.js?v=ef486792"></script>
+<script src="common.js?v=b44dbe05"></script>
 
 <script>
 if (/^#l-[A-Za-z0-9-]{1,60}$/.test(location.hash)) location.replace("item.html?id="+location.hash.slice(3));   // old shared links
@@ -151,7 +162,11 @@ function render(){
   if (adKey !== AD_CTX.key){ AD_CTX.key = adKey; AD_CTX.market = MARKET; AD_CTX.group = filter==="all" ? "" : filter; if (SPONSORS.length) startBannerRotation(); }
   const box = $("#list"); box.innerHTML = ""; box.className="sections";
   const showSold = $("#showSold").checked;
-  const inCat = all.filter(x=>x.L.f && SCHEMAS[x.L.type] && marketOf(x.L)===MARKET && (filter==="all" || GROUP[x.L.type]===filter) && (sub==="all" || x.L.type===sub));
+  if (filter==="wanted"){ renderWanted(box); return; }
+  $("#searchbar").hidden = false; $("#pcur").textContent = mainCur();
+  const Q = searchState();
+  document.body.classList.toggle("value", Q.value);
+  const inCat = all.filter(x=>x.L.f && SCHEMAS[x.L.type] && marketOf(x.L)===MARKET && (filter==="all" || GROUP[x.L.type]===filter) && (sub==="all" || x.L.type===sub) && matchesSearch(x.L, Q));
   CAT_TITLE = sub!=="all" ? (SECTION_NAMES[sub]||"") : (filter!=="all" ? (GROUP_NAMES[filter]||"") : "");
   $("#catPdf").textContent = (CAT_TITLE ? CAT_TITLE+" PDF" : "Catalogue PDF");
   $("#catShare").textContent = "Share " + (CAT_TITLE ? CAT_TITLE.toLowerCase() : "catalogue") + " on WhatsApp";
@@ -169,7 +184,15 @@ function render(){
   if (!live.length && !(showSold && sold.length)){ box.innerHTML = `<div class="empty">${isW && wbox.dataset.on ? "No watches match these filters." : MARKET!=="EG" && !all.some(x=>marketOf(x.L)===MARKET) ? `The ${marketName(MARKET)} marketplace is just opening.` : "No listings here yet."}</div>`+(MARKET!=="EG"?`<p class="empty-cta"><a class="btn primary" href="post.html">Be the first to list in ${marketName(MARKET)}</a></p>`:""); return; }
   let n=0;
   const addAd=(opt)=>{ const a=feedSponsorCard(n++, opt); if (a) box.appendChild(a); return !!a; };
-  if (filter==="all"){
+  if (Q.active){
+    // searching / price range: one list of results
+    const g=document.createElement("div"); g.className="list";
+    const h=document.createElement("p"); h.className="resultcount"; h.textContent = live.length===1 ? "1 result" : `${live.length} results`;
+    box.appendChild(h);
+    live.forEach((it,i)=>{ g.appendChild(cardFor(it)); if ((i+1)%8===0 && i<live.length-1){ const a=feedSponsorCard(n++); if (a) g.appendChild(a); } });
+    box.appendChild(g);
+    if (!live.length) box.appendChild(wantedCta(true));
+  } else if (filter==="all"){
     // home: one tidy row per category, newest/featured first, "See all" opens it.
     // Under each category row: that category's own ads for this country, one under the other.
     let general = false;
@@ -193,6 +216,115 @@ function render(){
     box.appendChild(g);
   }
   if (showSold && sold.length){ const s=section("sold","Sold","✅",sold,null); s.classList.add("soldsec"); box.appendChild(s); }
+  if (!Q.active && live.length) box.appendChild(wantedCta(false));
+}
+
+/* ---------- search & price range ---------- */
+function mainCur(){ return (MARKET_BY_ID[MARKET]||MARKET_BY_ID.EG).cur[0]; }
+function numIn(id){ const n=Number(String($(id).value||"").replace(/[^\d.]/g,"")); return n>0 ? n : null; }
+// Arabic words people type → the English words used in listings
+const AR_WORDS = {"رولكس":"rolex","اوميجا":"omega","اوميغا":"omega","باتيك":"patek","اوديمار":"audemars","كارتييه":"cartier","تاج هوير":"tag heuer","بريتلينج":"breitling","هوبلو":"hublot",
+  "هارلي":"harley","بي ام دبليو":"bmw","بي ام":"bmw","دوكاتي":"ducati","كاواساكي":"kawasaki","ياماها":"yamaha","هوندا":"honda","سوزوكي":"suzuki","كي تي ام":"ktm","تريومف":"triumph","فيسبا":"vespa","ابريليا":"aprilia",
+  "مرسيدس":"mercedes","بورش":"porsche","رنج روفر":"range rover","لاند روفر":"land rover","تويوتا":"toyota","اودي":"audi","فيراري":"ferrari","لامبورجيني":"lamborghini","جيب":"jeep","نيسان":"nissan","هيونداي":"hyundai","كيا":"kia",
+  "هيرمس":"hermes","شانيل":"chanel","لويس فيتون":"louis vuitton","ديور":"dior","جوتشي":"gucci","برادا":"prada",
+  "موتوسيكل":"motorcycle","موتوسيكلات":"motorcycle","ساعه":"watch","ساعات":"watch","عربيه":"car","عربيات":"car","سياره":"car","شنطه":"bag","شنط":"bag","خوذه":"helmet","يخت":"yacht","حصان":"horse","خيول":"equine","شقه":"apartment","فيلا":"villa"};
+function arToEn(q){ Object.keys(AR_WORDS).sort((a,b)=>b.length-a.length).forEach(k=>{ const nk=normText(k); if (q.includes(nk)) q=q.split(nk).join(" "+AR_WORDS[k]+" "); }); return q.replace(/\s+/g," ").trim(); }
+function searchState(){
+  const q=arToEn(normText($("#q").value)), min=numIn("#pmin"), max=numIn("#pmax"), cur=mainCur();
+  const valueMax = (SITE_ST && SITE_ST.value_max_egp) || 100000;
+  return { words: q ? q.split(/\s+/).filter(Boolean) : [], min: min!==null?toEGP(min,cur):null, max: max!==null?toEGP(max,cur):null,
+           active: !!(q || min!==null || max!==null), value: max!==null && toEGP(max,cur) <= valueMax };
+}
+function matchesSearch(L, Q){
+  if (!Q.active) return true;
+  if (Q.min!==null || Q.max!==null){ const p=priceEGP(L.f); if (!p) return false; if (Q.min!==null && p<Q.min) return false; if (Q.max!==null && p>Q.max) return false; }
+  if (!Q.words.length) return true;
+  const hay = normText([titleOf(L), LABELS[L.type]||"", GROUP_NAMES[GROUP[L.type]]||"", ...Object.entries(L.f).filter(([k])=>!/phone|^_/.test(k)).map(([,v])=>v)].join(" "));
+  return Q.words.every(w=>hay.includes(w));
+}
+function normText(t){ return String(t||"").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f\u064b-\u065f]/g,"").replace(/[أإآ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي").replace(/[^\p{L}\p{N}\s]/gu," ").replace(/\s+/g," ").trim(); }
+let _qT=null;
+["#q","#pmin","#pmax"].forEach(id=>$(id).addEventListener("input",()=>{ clearTimeout(_qT); _qT=setTimeout(()=>{ $("#qClear").hidden=!searchState().active; render(); },180); }));
+$("#qClear").onclick=()=>{ ["#q","#pmin","#pmax"].forEach(id=>$(id).value=""); $("#qClear").hidden=true; render(); };
+
+
+/* ---------- Wanted: requests from buyers (shown after the admin approves) ---------- */
+let WANTED=null, wantedFor=null;
+function wantedCta(empty){
+  const d=document.createElement("div"); d.className="wantedcta";
+  const p=document.createElement("p"); p.textContent = empty ? "Nothing matches yet. Tell sellers what you're looking for." : "Can't find what you're looking for?";
+  const b=document.createElement("button"); b.type="button"; b.className="btn ghost"; b.textContent="Post a request"; b.onclick=()=>openRequestForm();
+  d.append(p,b); return d;
+}
+async function renderWanted(box){
+  document.body.classList.remove("value");
+  $("#searchbar").hidden = true; $("#catPdf").hidden = true; $("#catShare").hidden = true;
+  const head=document.createElement("div"); head.className="wantedhead";
+  head.innerHTML = `<div><h2>Wanted in ${esc(marketName(MARKET))}</h2><p class="muted">Buyers looking for something. Have it? Send them an offer on WhatsApp.</p></div>`;
+  const b=document.createElement("button"); b.type="button"; b.className="btn primary"; b.textContent="Post a request"; b.onclick=()=>openRequestForm(); head.appendChild(b);
+  box.appendChild(head);
+  const g=document.createElement("div"); g.className="wantedlist"; box.appendChild(g);
+  if (wantedFor!==MARKET){
+    g.innerHTML='<p class="muted">Loading…</p>';
+    const {data,error}=await sb.from("requests").select("id,created_at,status,market,grp,title,details,budget,budget_unit,phone,name").eq("market",MARKET).eq("status","live").order("created_at",{ascending:false}).limit(200);
+    if (error){ g.innerHTML=""; showMsg(/requests/.test(error.message||"") ? "Requests open soon." : niceError(error),"info",$("#listMsg")); return; }
+    WANTED=data||[]; wantedFor=MARKET;
+  }
+  if (filter!=="wanted") return;
+  g.innerHTML="";
+  if (!WANTED.length){ g.innerHTML='<div class="empty">No requests yet. Be the first to ask.</div>'; return; }
+  WANTED.forEach(r=>{
+    const c=document.createElement("article"); c.className="wanted";
+    const t=document.createElement("div"); t.className="badge"; t.textContent=(GROUP_NAMES[r.grp]||r.grp)+" · "+fmtDate(Date.parse(r.created_at));
+    const h=document.createElement("h3"); h.textContent=r.title; h.dir="auto";
+    const bud=document.createElement("div"); bud.className="budget"; bud.textContent = r.budget ? `Budget up to ${fmt(r.budget)} ${r.budget_unit||mainCur()}` : "Budget: open";
+    c.append(t,h,bud);
+    if (r.details){ const p=document.createElement("p"); p.textContent=r.details; c.appendChild(p); }
+    const a=document.createElement("a"); a.className="btn wa small"; a.target="_blank"; a.rel="noopener";
+    a.href="https://wa.me/"+waNum(r.phone)+"?text="+encodeURIComponent(`Hello${r.name?" "+r.name:""}, I saw your request on ${MARKET_NAME}: "${r.title}". I have one — `);
+    a.textContent="I have it — WhatsApp"; c.appendChild(a);
+    g.appendChild(c);
+  });
+}
+function openRequestForm(){
+  let m=$("#reqModal");
+  if (!m){
+    m=document.createElement("div"); m.className="modal"; m.id="reqModal";
+    m.innerHTML=`<div class="card"><h3>Post a request</h3>
+      <p class="muted" style="font-size:14px">Tell sellers what you want. It shows in "Wanted" after a quick review.</p>
+      <label for="rq_grp">Category</label><select id="rq_grp">${GROUP_ORDER.map(g=>`<option value="${g}">${esc(GROUP_NAMES[g])}</option>`).join("")}</select>
+      <label for="rq_title">What are you looking for?</label><input id="rq_title" maxlength="80" placeholder="e.g. BMW R 1250 GS 2020 or newer">
+      <label for="rq_details">Details (optional)</label><textarea id="rq_details" maxlength="500" placeholder="Colour, year, condition, city…"></textarea>
+      <label for="rq_budget">Budget up to (optional)</label><div class="unitrow"><input id="rq_budget" inputmode="numeric"><select id="rq_unit"></select></div>
+      <label for="rq_phone">Your WhatsApp number</label><input id="rq_phone" type="tel" inputmode="tel">
+      <label for="rq_name">Your name (optional)</label><input id="rq_name" maxlength="40">
+      <div class="hint">Your number shows on the request so sellers can contact you.</div>
+      <div class="actions"><button type="button" class="btn primary" id="rq_go">Send request</button><button type="button" class="btn ghost" id="rq_close">Close</button></div>
+      <div class="msg" id="rq_msg"></div></div>`;
+    document.body.appendChild(m);
+    $("#rq_close").onclick=()=>{ m.hidden=true; };
+    $("#rq_go").onclick=async()=>{
+      const title=$("#rq_title").value.trim(), ph=anyPhone($("#rq_phone").value, MARKET);
+      if (title.length<3){ showMsg("Write what you're looking for.","err",$("#rq_msg")); return; }
+      if (!ph){ showMsg(PHONE_HELP,"err",$("#rq_msg")); return; }
+      const bud=Number(String($("#rq_budget").value).replace(/[^\d.]/g,""))||null;
+      $("#rq_go").disabled=true;
+      try{
+        const {error}=await sb.from("requests").insert({market:MARKET, grp:$("#rq_grp").value, title, details:$("#rq_details").value.trim()||null,
+          budget:bud, budget_unit:bud?$("#rq_unit").value:null, phone:ph, name:$("#rq_name").value.trim()||null});
+        if (error) throw error;
+        try{ localStorage.setItem("mm_phone", ph); }catch(e){}
+        showMsg("Sent. Your request shows in Wanted after review.","ok",$("#rq_msg"));
+        ["#rq_title","#rq_details","#rq_budget"].forEach(id=>$(id).value="");
+      }catch(e){ showMsg(/requests/.test(e.message||"")&&/exist|schema/i.test(e.message||"") ? "Requests open soon." : niceError(e),"err",$("#rq_msg")); }
+      finally{ $("#rq_go").disabled=false; }
+    };
+  }
+  $("#rq_unit").innerHTML=(MARKET_BY_ID[MARKET]||MARKET_BY_ID.EG).cur.map(c=>`<option>${c}</option>`).join("");
+  $("#rq_phone").placeholder=(MARKET_BY_ID[MARKET]||MARKET_BY_ID.EG).local;
+  try{ const p=localStorage.getItem("mm_phone"); if (p && !$("#rq_phone").value) $("#rq_phone").value=p; }catch(e){}
+  if (filter!=="all" && filter!=="wanted" && GROUP_ORDER.includes(filter)) $("#rq_grp").value=filter;
+  showMsg("","info",$("#rq_msg")); m.hidden=false;
 }
 document.querySelectorAll("#filters .chip").forEach(b=>b.onclick=()=>{
   filter=b.dataset.f; sub="all"; document.querySelectorAll("#filters .chip").forEach(x=>x.classList.toggle("on",x===b)); drawSubfilters(); render();
