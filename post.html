@@ -15,7 +15,7 @@
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=a4c2abaf">
+<link rel="stylesheet" href="common.css?v=77560519">
 </head>
 <body>
 <div class="checker"></div>
@@ -92,7 +92,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="config.js"></script>
-<script src="common.js?v=a4c2abaf"></script>
+<script src="common.js?v=77560519"></script>
 
 <script>
 initHeader();
@@ -149,7 +149,7 @@ function showDone(row, code, live, files){
     const box=document.createElement("div"); box.className="hdbox";
     const h=document.createElement("div"); h.className="hdtitle"; h.textContent=`⭐ HD flyer — all ${files.length} photo${files.length>1?"s":""}, every detail and the QR code`;
     const r3=document.createElement("div"); r3.className="hdrow";
-    let hd=null; const getHD=()=> hd || (hd=Promise.all(files.map(f=>hdPhoto(f,1800))));
+    let hd=null; const getHD=()=> hd || (hd=Promise.all(files.map((f,i)=>hdPhoto(f,1800,i===0))));
     const go=async(btn,pdf)=>{ const t=btn.textContent; btn.disabled=true; btn.textContent="Preparing…"; try{ await exportHD(L,row.id,pdf,await getHD()); }catch(e){ toast("Couldn't make the HD flyer: "+(e.message||e)); } btn.disabled=false; btn.textContent=t; };
     const hi=document.createElement("button"); hi.type="button"; hi.className="btn primary small"; hi.textContent="⭐ HD image"; hi.onclick=()=>go(hi,false);
     const hp=document.createElement("button"); hp.type="button"; hp.className="btn ghost small"; hp.textContent="⭐ HD PDF"; hp.onclick=()=>go(hp,true);
@@ -169,6 +169,7 @@ $("#form").addEventListener("submit", async e=>{
   $("#submitBtn").disabled = true; showMsg("Sending…","info");
   try{
     const pics = photos.slice(0, maxPhotos()).map(p=>p.url);   // main photo first
+    pics[0] = await watermarkUrl(pics[0]);                     // small see-through logo on the main photo only
     const files = photos.map(p=>p.file).filter(Boolean);
     f._np = pics.length;
     const code = newSellerCode();

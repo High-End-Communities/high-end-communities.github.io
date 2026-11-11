@@ -15,7 +15,7 @@
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=a4c2abaf">
+<link rel="stylesheet" href="common.css?v=77560519">
 </head>
 <body>
 <div class="checker"></div>
@@ -226,7 +226,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="config.js"></script>
-<script src="common.js?v=a4c2abaf"></script>
+<script src="common.js?v=77560519"></script>
 
 <script>
 initHeader();
@@ -469,7 +469,8 @@ $("#form").addEventListener("submit", async e=>{
   if (!f){ showMsg("Please fix the highlighted fields.","err"); return; }
   $("#submitBtn").disabled=true; showMsg("Saving…","info");
   try{
-    const pics=photos.map(p=>p.url); f._np=pics.length;
+    const pics=photos.slice(0, maxPhotos()).map(p=>p.url); f._np=pics.length;
+    if (pics.length && !/^https?:/.test(pics[0]) && photos[0] && photos[0].file) pics[0] = await watermarkUrl(pics[0]);
     const payload = {type, f, phone:f.phone, thumb: await makeThumb(pics[0]), photos:pics, reviewed:true, stock: f.stock?Number(f.stock):null};
     let id;
     if (editing){

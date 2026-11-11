@@ -471,24 +471,22 @@ function loadImage(file){
 function watermarkSrc(){ try{ return logoFor(type); }catch(e){ return MAIN_LOGO; } }
 function drawWatermark(ctx, w, h, mark){
   if (!mark || !mark.naturalWidth) return;
-  const mw = Math.round(Math.max(70, w*0.24)), mh = Math.round(mw*mark.naturalHeight/mark.naturalWidth);
+  const mw = Math.round(Math.max(44, w*0.13)), mh = Math.round(mw*mark.naturalHeight/mark.naturalWidth);   // small
   const pad = Math.round(mw*0.06), x = w - mw - Math.round(w*0.025) - pad, y = h - mh - Math.round(h*0.025) - pad;
   ctx.save();
-  ctx.globalAlpha = 0.82; ctx.fillStyle = "#ffffff";
+  ctx.globalAlpha = 0.30; ctx.fillStyle = "#ffffff";
   ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x-pad, y-pad, mw+2*pad, mh+2*pad, pad*1.5); else ctx.rect(x-pad, y-pad, mw+2*pad, mh+2*pad); ctx.fill();
-  ctx.globalAlpha = 0.95; ctx.drawImage(mark, x, y, mw, mh);
+  ctx.globalAlpha = 0.55; ctx.drawImage(mark, x, y, mw, mh);   // see-through
   ctx.restore();
 }
 async function shrink(file){
   const img = await loadImage(file);
-  let mark = null; try{ mark = await loadSrc(watermarkSrc()); }catch(e){}
   let edge = PHOTO_MAX_EDGE, q = 0.5, url;
   for (let i=0;i<8;i++){
     const s = Math.min(1, edge/Math.max(img.naturalWidth, img.naturalHeight));
     const w = Math.round(img.naturalWidth*s), h = Math.round(img.naturalHeight*s);
     const c = document.createElement("canvas"); c.width=w; c.height=h;
     const ctx = c.getContext("2d"); ctx.imageSmoothingQuality="medium"; ctx.drawImage(img,0,0,w,h);
-    drawWatermark(ctx, w, h, mark);
     url = c.toDataURL("image/jpeg", q);
     const bytes = Math.round((url.length - 23) * 3/4);
     if (bytes <= PHOTO_MAX_BYTES) return {url, bytes, w, h, orig: file.size, file, score: photoScore(img)};
@@ -1176,11 +1174,12 @@ function buildCard(item, mode){
   const np = Number(L.f._np)||0;
   if (np>0){
     const mb=document.createElement("button"); mb.type="button"; mb.className="morephotos"; mb.textContent = "📷 "+(np>1?np+" photos":"View photo");
-    mb.onclick=async()=>{ mb.textContent="Loading…"; const ps=await loadPhotos(item); gal.innerHTML="";
-      ps.forEach(src=>{ if(typeof src==="string"&&src.startsWith("data:image/")){ const im=document.createElement("img"); im.src=src; im.alt="listing photo"; gal.appendChild(im);} });
-      mb.remove(); queueView(id); };
+    mb.onclick=(e)=>{ e.stopPropagation(); openViewer(item, 0, mb); };
     gw.appendChild(mb);
   }
+  // tap the photo → full screen viewer with all photos
+  if (first){ gal.classList.add("tappable"); gal.onclick=()=>openViewer(item, 0);
+    const z=document.createElement("span"); z.className="zoomhint"; z.textContent="⤢"; z.setAttribute("aria-hidden","true"); gw.appendChild(z); }
   card.appendChild(gw);
   const body=document.createElement("div"); body.className="body";
   const badge=document.createElement("div"); badge.className="badge";
@@ -1214,7 +1213,7 @@ function buildCard(item, mode){
     const tl=titleOf(L).toLowerCase();
     spec.textContent = r.filter(x=>!tl.includes(String(x[1]).toLowerCase())).slice(0,3).map(x=>x[1]).join("  ·  ");
     const det=document.createElement("details"); det.className="more";
-    const sm=document.createElement("summary"); sm.textContent="Details"; det.append(sm, dl);
+    const sm=document.createElement("summary"); sm.innerHTML='<span>More details</span><i class="chev" aria-hidden="true"></i>'; det.append(sm, dl);
     const extra=[...c.querySelectorAll("a:not(.wa):not([href^='tel:']),button")];
     if (extra.length){ const tb=document.createElement("div"); tb.className="tools"; extra.forEach(e=>tb.appendChild(e)); det.appendChild(tb); }
     body.append(badge,h,pr); if (tags.childNodes.length) body.appendChild(tags);
@@ -1428,12 +1427,12 @@ function drawWatchFilters(box, items, onChange){
 
 /* ===================== HD flyer (all photos + all details + QR) ===================== */
 // HD photo from the owner's original file (with the High End watermark), for the post page
-async function hdPhoto(file, edge){
+async function hdPhoto(file, edge, withMark){
   const img = await loadImage(file); let mark=null; try{ mark=await loadSrc(watermarkSrc()); }catch(e){}
   const s = Math.min(1, edge/Math.max(img.naturalWidth,img.naturalHeight));
   const w=Math.round(img.naturalWidth*s), h=Math.round(img.naturalHeight*s);
   const c=document.createElement("canvas"); c.width=w; c.height=h; const x=c.getContext("2d"); x.imageSmoothingQuality="high"; x.drawImage(img,0,0,w,h);
-  drawWatermark(x,w,h,mark);
+  if (withMark) drawWatermark(x,w,h,mark);
   return loadSrc(c.toDataURL("image/jpeg",0.9));
 }
 function dryPainter(){
@@ -1527,4 +1526,85 @@ async function exportHD(L, id, asPdf, sources){
       await saveFile(fileBase(L)+"-HD.jpg", blob);
     }
   } finally { FILL_PXMM = old; }
+}
+
+/* ===================== Full screen photo viewer ===================== */
+async function openViewer(item, start, btn){
+  const old=btn?btn.textContent:null; if (btn) btn.textContent="Loading…";
+  let ps=[]; try{ ps=(await loadPhotos(item)).filter(x=>typeof x==="string"&&x.startsWith("data:image/")); }catch(e){}
+  if (btn) btn.textContent=old;
+  if (!ps.length && item.L.thumb) ps=[item.L.thumb];
+  if (!ps.length) return;
+  try{ queueView(item.id); }catch(e){}
+  const ov=document.createElement("div"); ov.className="viewer"; ov.setAttribute("role","dialog"); ov.setAttribute("aria-label","Photos");
+  ov.innerHTML=`<div class="v-top"><span class="v-title"></span><span class="v-count"></span><button type="button" class="v-close" aria-label="Close">×</button></div>
+    <div class="v-track"></div>
+    <button type="button" class="v-nav v-prev" aria-label="Previous photo">‹</button><button type="button" class="v-nav v-next" aria-label="Next photo">›</button>
+    <div class="v-dots"></div>`;
+  ov.querySelector(".v-title").textContent=titleOf(item.L);
+  const tr=ov.querySelector(".v-track"), dots=ov.querySelector(".v-dots");
+  ps.forEach((src,i)=>{ const f=document.createElement("figure"); const im=document.createElement("img"); im.src=src; im.alt=`photo ${i+1}`; f.appendChild(im); tr.appendChild(f);
+    const d=document.createElement("button"); d.type="button"; d.setAttribute("aria-label",`Photo ${i+1}`); d.onclick=()=>go(i); dots.appendChild(d); });
+  if (ps.length<2){ ov.querySelectorAll(".v-nav,.v-dots").forEach(e=>e.hidden=true); }
+  let cur=0;
+  const mark=()=>{ cur=Math.round(tr.scrollLeft/Math.max(1,tr.clientWidth)); ov.querySelector(".v-count").textContent=ps.length>1?`${cur+1} / ${ps.length}`:"";
+    [...dots.children].forEach((d,i)=>d.classList.toggle("on",i===cur)); ov.querySelector(".v-prev").disabled=cur===0; ov.querySelector(".v-next").disabled=cur===ps.length-1; };
+  const go=(i)=>{ i=Math.max(0,Math.min(ps.length-1,i)); tr.scrollTo({left:i*tr.clientWidth,behavior:"smooth"}); };
+  tr.addEventListener("scroll",()=>{ clearTimeout(tr._t); tr._t=setTimeout(mark,60); });
+  ov.querySelector(".v-prev").onclick=()=>go(cur-1); ov.querySelector(".v-next").onclick=()=>go(cur+1);
+  const close=()=>{ ov.remove(); document.body.style.overflow=""; document.removeEventListener("keydown",key); };
+  const key=(e)=>{ if(e.key==="Escape") close(); else if(e.key==="ArrowRight") go(cur+1); else if(e.key==="ArrowLeft") go(cur-1); };
+  ov.querySelector(".v-close").onclick=close;
+  tr.addEventListener("click",(e)=>{ if (e.target===tr || e.target.tagName==="FIGURE") close(); });
+  document.addEventListener("keydown",key);
+  document.body.appendChild(ov); document.body.style.overflow="hidden";
+  requestAnimationFrame(()=>{ tr.scrollLeft=(start||0)*tr.clientWidth; mark(); });
+}
+
+/* Watermark only the main photo (added when publishing, so the owner can still change the main photo) */
+async function watermarkUrl(url){
+  try{
+    const im=await loadSrc(url), mark=await loadSrc(watermarkSrc());
+    const c=document.createElement("canvas"); c.width=im.naturalWidth; c.height=im.naturalHeight;
+    const x=c.getContext("2d"); x.drawImage(im,0,0); drawWatermark(x,c.width,c.height,mark);
+    return c.toDataURL("image/jpeg",0.6);
+  }catch(e){ return url; }
+}
+
+/* ===================== Intro video + countdown (catalogue, once per visit) ===================== */
+function runIntro(key){ key = key || "he_intro";
+  try{
+    if (/[?&]nointro\b/.test(location.search) || /^#l-/.test(location.hash)) return;   // shared listing links go straight in
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key,"1");
+  }catch(e){}
+  const ov=document.createElement("div"); ov.className="intro"; ov.setAttribute("role","dialog"); ov.setAttribute("aria-label","Welcome");
+  ov.innerHTML=`<video class="intro-vid" playsinline muted autoplay preload="auto" poster="intro-poster.jpg"><source src="intro.mp4" type="video/mp4"></video>
+    <div class="intro-btns"><button type="button" class="intro-sound" aria-label="Sound on">🔇</button><button type="button" class="intro-skip">Skip ›</button></div>
+    <div class="intro-end" hidden>
+      <div class="intro-ring">
+        <svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="54" class="r-bg"/><circle cx="60" cy="60" r="54" class="r-fg"/></svg>
+        <img src="icon-192.png" alt="High End Communities">
+        <span class="intro-num">3</span>
+      </div>
+      <div class="intro-txt">Entering<b>HIGH END COMMUNITIES</b></div>
+    </div>`;
+  document.body.appendChild(ov); document.body.style.overflow="hidden";
+  const v=ov.querySelector("video"), snd=ov.querySelector(".intro-sound");
+  let done=false, counting=false;
+  const finish=()=>{ if (done) return; done=true; ov.classList.add("out"); setTimeout(()=>{ ov.remove(); document.body.style.overflow=""; },600); };
+  const countdown=()=>{
+    if (counting) return; counting=true;
+    try{ v.pause(); }catch(e){}
+    ov.querySelector(".intro-end").hidden=false; ov.classList.add("ending");
+    const num=ov.querySelector(".intro-num"); let n=3; num.textContent=n;
+    const t=setInterval(()=>{ n--; if (n>0){ num.textContent=n; num.classList.remove("pop"); void num.offsetWidth; num.classList.add("pop"); } else { clearInterval(t); finish(); } },1000);
+  };
+  v.addEventListener("ended", countdown);
+  v.addEventListener("error", countdown, true);
+  ov.querySelector(".intro-skip").onclick=finish;
+  snd.onclick=()=>{ v.muted=!v.muted; snd.textContent=v.muted?"🔇":"🔊"; snd.setAttribute("aria-label",v.muted?"Sound on":"Sound off"); if (v.paused && !counting) v.play().catch(()=>{}); };
+  const p=v.play(); if (p && p.catch) p.catch(()=>countdown());          // autoplay blocked (e.g. low-power mode) → straight to the countdown
+  setTimeout(()=>{ if (!counting && v.currentTime < 0.2) countdown(); }, 5000);   // slow connection
+  setTimeout(()=>{ if (!counting) countdown(); }, 22000);                       // never stay stuck
 }
