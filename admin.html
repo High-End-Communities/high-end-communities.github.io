@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script>try{var l=new URLSearchParams(location.search).get("lang")||localStorage.getItem("he_lang");if(l==="ar"){document.documentElement.lang="ar";document.documentElement.dir="rtl"}}catch(e){}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Admin — High End Communities</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#2b2b2b">
+<meta name="theme-color" content="#17181a">
 <link rel="icon" href="favicon.ico">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
@@ -14,17 +15,21 @@
 <meta name="apple-mobile-web-app-title" content="High End">
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=77560519">
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css?v=c58f9e47">
 </head>
 <body>
-<div class="checker"></div>
-<header>
-  <img id="mainLogo" alt="High End Communities" style="width:min(260px,70vw);height:auto;display:block;margin:0 auto">
-  <div class="brands" id="brands"></div>
-  <p class="sub">Buy and sell motorcycles, watches, cars, horses, yachts &amp; boats, modern &amp; art, and real estate — new and used.</p>
+<script src="i18n.js?v=3a9b5928"></script>
+<header class="mast">
+  <div class="checker"></div>
+  <button type="button" class="langbtn" id="langBtn" lang="ar">العربية</button>
+  <div class="mast-in">
+    <a class="mast-logo" href="./"><img id="mainLogo" alt="High End Communities"></a>
+    <p class="mast-line">Motorcycles, watches and cars, sold owner to owner.</p>
+    <p class="mast-sub">Also yachts, horses, art and real estate. New and used.</p>
+    <div class="brands" id="brands"></div>
+  </div>
 </header>
-<div class="checker"></div>
 <main>
   <section id="loginView">
     <div class="card" style="max-width:420px;margin:18px auto">
@@ -45,6 +50,7 @@
       <button type="button" data-tab="codes">🏷️ Codes <span id="nCodes"></span></button>
       <button type="button" data-tab="sponsors">Sponsors</button>
       <button type="button" data-tab="limits">🏍️ Limits</button>
+      <button type="button" data-tab="inspect">🔧 Inspection</button>
       <button type="button" data-tab="stats">Stats</button>
     </div>
     <div class="toolbar"><span class="muted" id="who"></span><button type="button" class="btn ghost small" id="logout">Log out</button></div>
@@ -54,6 +60,27 @@
       <label class="showsold" style="color:var(--text);font-weight:600"><input type="checkbox" id="maintOn"> 🛠 Maintenance mode — visitors see "Website under maintenance"</label>
       <div class="unitrow" style="margin-top:8px"><input id="maintMsg" maxlength="200" placeholder="Message (optional), e.g. Back at 10 pm"><button type="button" class="btn ghost small" id="maintSave">Save</button></div>
       <div class="hint" id="maintHint">You can still use admin while it's on. The page also shows by itself if the database is down or overloaded.</div>
+    </div>
+    <div data-pane="inspect" hidden>
+      <div class="card" style="margin-bottom:12px">
+        <h3 style="margin:0 0 6px">Inspection partners</h3>
+        <div class="hint" style="margin-bottom:10px">Workshops do the technical check for motorcycles, cars and boats. Experts authenticate watches, bags, art, horses and property. Buyers see the ones that match the item's category and country.</div>
+        <input type="hidden" id="exId">
+        <div class="grid">
+          <div><label for="exKind">Type</label><select id="exKind"><option value="workshop">Workshop (technical check)</option><option value="expert">Expert (authentication)</option></select></div>
+          <div><label for="exMarket">Country</label><select id="exMarket"></select></div>
+          <div><label for="exName">Name</label><input id="exName" maxlength="80" placeholder="e.g. workshop or expert name"></div>
+          <div><label for="exPhone">WhatsApp number</label><input id="exPhone" type="tel" inputmode="tel" placeholder="01xxxxxxxxx or +9665…"></div>
+          <div><label for="exCity">City / area</label><input id="exCity" maxlength="60" placeholder="e.g. New Cairo"></div>
+          <div><label for="exSort">Order</label><input id="exSort" type="number" inputmode="numeric" value="0"></div>
+          <div class="full"><label for="exNote">Short note (optional)</label><input id="exNote" maxlength="200" placeholder="e.g. Harley and BMW specialist · fee from 1,500 EGP"></div>
+          <div class="full"><label>Categories</label><div class="checks" id="exGroups"></div></div>
+          <div class="full"><label class="showsold"><input type="checkbox" id="exActive" checked> Show to buyers</label></div>
+        </div>
+        <div class="actions"><button type="button" class="btn primary small" id="exSave">Save partner</button><button type="button" class="btn ghost small" id="exClear">Clear</button></div>
+        <div class="msg" id="exMsg"></div>
+      </div>
+      <div id="exList"></div>
     </div>
     <div data-pane="limits" hidden>
       <div class="card" style="margin-bottom:12px">
@@ -92,15 +119,16 @@
       <div class="hint" id="dumpHint">The form below fills itself. Check it, add your photos, tick the terms and send.</div>
     </div>
       <form id="form" class="card" novalidate>
+      <div class="mktpick"><label for="f_market">Where are you selling?</label><select id="f_market"></select><div class="hint">Your listing appears in this country's marketplace, with its currency and phone code.</div></div>
       <div class="types" id="mains">
         <button type="button" data-m="moto" class="on"><img class="lg" alt="" data-brand="moto">Motorcycles</button>
         <button type="button" data-m="watch"><img class="lg" alt="" data-brand="watch">Watches</button>
         <button type="button" data-m="car"><img class="lg" alt="" data-brand="car">Cars</button>
-        <button type="button" data-m="equine"><span class="ic">🐎</span>Equine</button>
+        <button type="button" data-m="equine"><img class="lg" alt="" data-brand="equine">Equine</button>
         <button type="button" data-m="boat"><img class="lg" alt="" data-brand="boat">Yachts & boats</button>
         <button type="button" data-m="art"><span class="ic">🎨</span>Modern & art</button>
         <button type="button" data-m="estate"><span class="ic">🏠</span>Real estate</button>
-        <button type="button" data-m="bag"><span class="ic">👜</span>Women's bags</button>
+        <button type="button" data-m="bag"><span class="ic">👜</span>Signature Bags</button>
       </div>
       <div class="types sub" id="types">
         <button type="button" data-t="bike" class="on"><span class="ic">🏍️</span>Motorcycle</button>
@@ -220,13 +248,13 @@
     </div>
   </section>
 </main>
-<footer>High End Communities · Estd 2024</footer>
+<footer><div class="checker"></div><p>High End Communities, est. 2024</p></footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="config.js"></script>
-<script src="common.js?v=77560519"></script>
+<script src="common.js?v=c58f9e47"></script>
 
 <script>
 initHeader();
@@ -268,6 +296,7 @@ function tab(t){
   document.querySelectorAll("[data-pane]").forEach(p=>p.hidden = p.dataset.pane!==t);
   if (t==="stats") loadStats();
   if (t==="codes") loadCodes();
+  if (t==="inspect") loadExpertsAdmin();
 }
 document.querySelectorAll("#adminView .tabs button").forEach(b=>b.onclick=()=>tab(b.dataset.tab));
 
@@ -318,12 +347,53 @@ async function loadTrusted(){
   });
 }
 $("#trAdd").onclick = async ()=>{
-  const ph=$("#trPhone").value.replace(/[\s-]/g,"").replace(/^\+?20/,"0"), n=parseInt($("#trLim").value,10);
-  if (!/^01[0125]\d{8}$/.test(ph)){ showMsg("Enter an Egyptian mobile number (11 digits).","err",$("#trMsg")); return; }
+  const ph=anyPhone($("#trPhone").value,"EG"), n=parseInt($("#trLim").value,10);
+  if (!ph){ showMsg(PHONE_HELP,"err",$("#trMsg")); return; }
   if (!(n>=1&&n<=500)){ showMsg("Enter how many per month (1–500).","err",$("#trMsg")); return; }
   const {error}=await sb.from("trusted_sellers").upsert({phone:ph, monthly_limit:n, note:$("#trNote").value.trim()||null});
   if (error){ showMsg(niceError(error),"err",$("#trMsg")); return; }
   showMsg(`Saved — ${ph} can post ${n} motorcycles a month.`,"ok",$("#trMsg")); $("#trPhone").value=$("#trLim").value=$("#trNote").value=""; loadTrusted();
+};
+/* ---------- inspection partners ---------- */
+(function(){
+  const ms=$("#exMarket"); MARKETS.forEach(m=>{ const o=document.createElement("option"); o.value=m.id; o.textContent=m.name; ms.appendChild(o); });
+  const gb=$("#exGroups"); INSPECT_GROUPS.forEach(([k,n])=>{ const l=document.createElement("label"); l.innerHTML=`<input type="checkbox" value="${k}"> ${n}`; gb.appendChild(l); });
+  $("#exKind").onchange=()=>{ const w=$("#exKind").value==="workshop"; gb.querySelectorAll("input").forEach(i=>{ if(!$("#exId").value) i.checked = w ? ["moto","car"].includes(i.value) : ["watch","bag","art"].includes(i.value); }); };
+  $("#exKind").onchange();
+})();
+function exClear(){ $("#exId").value=""; ["exName","exPhone","exCity","exNote"].forEach(i=>$("#"+i).value=""); $("#exSort").value=0; $("#exActive").checked=true; $("#exKind").onchange(); }
+$("#exClear").onclick=exClear;
+async function loadExpertsAdmin(){
+  const box=$("#exList"); box.innerHTML='<div class="muted">Loading…</div>';
+  const {data,error}=await sb.from("experts").select("*").order("market").order("kind").order("sort").order("name");
+  if (error){ box.innerHTML='<div class="muted">Run update8.sql in Supabase to turn this on.</div>'; return; }
+  EXPERTS=null; box.innerHTML="";
+  if (!data.length){ box.innerHTML='<div class="muted">No partners yet. Add your trusted workshops and experts above.</div>'; return; }
+  data.forEach(e=>{
+    const r=document.createElement("div"); r.className="sp-row"+(e.active?"":" off");
+    const x=document.createElement("div"); x.className="x";
+    const b=document.createElement("b"); b.textContent=e.name+(e.active?"":" (hidden)");
+    const sp=document.createElement("span"); sp.textContent=`${e.kind==="workshop"?"Workshop":"Expert"} · ${marketName(e.market)}${e.city?" · "+e.city:""} · ${e.phone} · `+(e.groups||[]).map(g=>(INSPECT_GROUPS.find(x=>x[0]===g)||[g,g])[1]).join(", ");
+    x.append(b,sp);
+    const ed=document.createElement("button"); ed.type="button"; ed.className="btn ghost small"; ed.textContent="Edit";
+    ed.onclick=()=>{ $("#exId").value=e.id; $("#exKind").value=e.kind; $("#exMarket").value=e.market; $("#exName").value=e.name; $("#exPhone").value=e.phone; $("#exCity").value=e.city||""; $("#exNote").value=e.note||""; $("#exSort").value=e.sort||0; $("#exActive").checked=e.active;
+      $("#exGroups").querySelectorAll("input").forEach(i=>i.checked=(e.groups||[]).includes(i.value)); window.scrollTo({top:0,behavior:"smooth"}); };
+    const del=document.createElement("button"); del.type="button"; del.className="btn ghost small"; del.textContent="🗑";
+    del.onclick=async()=>{ if(!confirm("Remove "+e.name+"?")) return; const {error}=await sb.from("experts").delete().eq("id",e.id); if(error) showMsg(niceError(error),"err",$("#exMsg")); loadExpertsAdmin(); };
+    r.append(x,ed,del); box.appendChild(r);
+  });
+}
+$("#exSave").onclick = async ()=>{
+  const mk=$("#exMarket").value, ph=anyPhone($("#exPhone").value, mk), name=$("#exName").value.trim();
+  const groups=[...$("#exGroups").querySelectorAll("input:checked")].map(i=>i.value);
+  if (name.length<2){ showMsg("Enter the partner's name.","err",$("#exMsg")); return; }
+  if (!ph){ showMsg(PHONE_HELP,"err",$("#exMsg")); return; }
+  if (!groups.length){ showMsg("Pick at least one category.","err",$("#exMsg")); return; }
+  const row={kind:$("#exKind").value, market:mk, name, phone:ph, city:$("#exCity").value.trim()||null, note:$("#exNote").value.trim()||null, sort:parseInt($("#exSort").value,10)||0, active:$("#exActive").checked, groups};
+  const id=$("#exId").value;
+  const {error} = id ? await sb.from("experts").update(row).eq("id",id) : await sb.from("experts").insert(row);
+  if (error){ showMsg(niceError(error),"err",$("#exMsg")); return; }
+  showMsg(`Saved — ${name}.`,"ok",$("#exMsg")); exClear(); loadExpertsAdmin();
 };
 $("#maintOn").onchange = saveMaint; $("#maintSave").onclick = saveMaint;
 function autoHint(on){ $("#autoHint").textContent = on ? "New listings go live at once and appear here for you to check." : "New listings wait here until you approve them."; }
@@ -359,7 +429,7 @@ function adminTools(item){
   const sel=document.createElement("select"); REASONS.forEach(r=>{ const o=document.createElement("option"); o.textContent=r; sel.appendChild(o); });
   const ask=document.createElement("a"); ask.className="btn ghost small"; ask.target="_blank"; ask.rel="noopener";
   const upd=()=>{ ask.textContent = L.status==="pending"?"✏️ Ask for changes":"✉️ Tell seller";
-    ask.href="https://wa.me/2"+phone+"?text="+encodeURIComponent(reasonMsg(L, sel.value, L.status==="pending"?"changes":"removed")); };
+    ask.href="https://wa.me/"+waNum(phone)+"?text="+encodeURIComponent(reasonMsg(L, sel.value, L.status==="pending"?"changes":"removed")); };
   sel.onchange=upd; upd();
   ask.addEventListener("click",()=>{ if (L.status==="pending") sb.from("listings").update({note:"Changes requested: "+sel.value}).eq("id",item.id).then(()=>{ L.note="Changes requested: "+sel.value; renderAll(); }); });
   const edit=btn("✎ Edit","",()=>startEdit(item));

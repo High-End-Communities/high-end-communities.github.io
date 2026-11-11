@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script>try{var l=new URLSearchParams(location.search).get("lang")||localStorage.getItem("he_lang");if(l==="ar"){document.documentElement.lang="ar";document.documentElement.dir="rtl"}}catch(e){}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Post a listing — High End Communities</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#2b2b2b">
+<meta name="theme-color" content="#17181a">
 <link rel="icon" href="favicon.ico">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
@@ -14,17 +15,21 @@
 <meta name="apple-mobile-web-app-title" content="High End">
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=77560519">
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css?v=c58f9e47">
 </head>
 <body>
-<div class="checker"></div>
-<header>
-  <img id="mainLogo" alt="High End Communities" style="width:min(260px,70vw);height:auto;display:block;margin:0 auto">
-  <div class="brands" id="brands"></div>
-  <p class="sub">Buy and sell motorcycles, watches, cars, horses, yachts &amp; boats, modern &amp; art, and real estate — new and used.</p>
+<script src="i18n.js?v=3a9b5928"></script>
+<header class="mast">
+  <div class="checker"></div>
+  <button type="button" class="langbtn" id="langBtn" lang="ar">العربية</button>
+  <div class="mast-in">
+    <a class="mast-logo" href="./"><img id="mainLogo" alt="High End Communities"></a>
+    <p class="mast-line">Motorcycles, watches and cars, sold owner to owner.</p>
+    <p class="mast-sub">Also yachts, horses, art and real estate. New and used.</p>
+    <div class="brands" id="brands"></div>
+  </div>
 </header>
-<div class="checker"></div>
 <main>
   <div class="topnav"><a class="btn ghost small" href="./">← Browse the catalogue</a></div>
   <aside class="masar sponsor-banner"></aside>
@@ -35,15 +40,16 @@
       <div class="hint" id="dumpHint">The form below fills itself. Check it, add your photos, tick the terms and send.</div>
     </div>
   <form id="form" class="card" novalidate>
+      <div class="mktpick"><label for="f_market">Where are you selling?</label><select id="f_market"></select><div class="hint">Your listing appears in this country's marketplace, with its currency and phone code.</div></div>
       <div class="types" id="mains">
         <button type="button" data-m="moto" class="on"><img class="lg" alt="" data-brand="moto">Motorcycles</button>
         <button type="button" data-m="watch"><img class="lg" alt="" data-brand="watch">Watches</button>
         <button type="button" data-m="car"><img class="lg" alt="" data-brand="car">Cars</button>
-        <button type="button" data-m="equine"><span class="ic">🐎</span>Equine</button>
+        <button type="button" data-m="equine"><img class="lg" alt="" data-brand="equine">Equine</button>
         <button type="button" data-m="boat"><img class="lg" alt="" data-brand="boat">Yachts & boats</button>
         <button type="button" data-m="art"><span class="ic">🎨</span>Modern & art</button>
         <button type="button" data-m="estate"><span class="ic">🏠</span>Real estate</button>
-        <button type="button" data-m="bag"><span class="ic">👜</span>Women's bags</button>
+        <button type="button" data-m="bag"><span class="ic">👜</span>Signature Bags</button>
       </div>
       <div class="types sub" id="types">
         <button type="button" data-t="bike" class="on"><span class="ic">🏍️</span>Motorcycle</button>
@@ -86,19 +92,20 @@
       <div class="done" id="done"></div>
     </form>
 </main>
-<footer>High End Communities · Estd 2024</footer>
+<footer><div class="checker"></div><p>High End Communities, est. 2024</p></footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="config.js"></script>
-<script src="common.js?v=77560519"></script>
+<script src="common.js?v=c58f9e47"></script>
 
 <script>
 initHeader();
 siteCheck("post");
 initCategoryPicker();
 initPhotoInputs();
+initMarketPicker();
 renderFields();
 startBannerRotation();
 loadSponsors().then(startBannerRotation);
@@ -128,7 +135,7 @@ function showDone(row, code, live, files){
   const cp = document.createElement("button"); cp.type="button"; cp.className="btn ghost small"; cp.textContent="Copy code";
   cp.onclick = async ()=>{ try{ await navigator.clipboard.writeText(code); cp.textContent="Copied ✓"; }catch(e){ cp.textContent=code; } };
   const me = document.createElement("a"); me.className="btn ghost small"; me.target="_blank"; me.rel="noopener"; me.textContent="Save code in my WhatsApp";
-  me.href = "https://wa.me/2"+row.phone+"?text="+encodeURIComponent(`${MARKET_NAME} — seller code for "${titleOf(L)}": ${code}`);
+  me.href = "https://wa.me/"+waNum(row.phone)+"?text="+encodeURIComponent(`${MARKET_NAME} — seller code for "${titleOf(L)}": ${code}`);
   row1.append(cp, me);
   d.append(p, t, c, row1);
   if (live){

@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script>try{var l=new URLSearchParams(location.search).get("lang")||localStorage.getItem("he_lang");if(l==="ar"){document.documentElement.lang="ar";document.documentElement.dir="rtl"}}catch(e){}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Women's Bags & Accessories — High End Communities</title>
+<title>Signature Bags & Accessories — High End Communities</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#2b2b2b">
+<meta name="theme-color" content="#17181a">
 <link rel="icon" href="favicon.ico">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
@@ -15,7 +16,7 @@
 <meta name="description" content="Buy and sell motorcycles, watches, cars, horses, yachts, art and real estate — new and used.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="High End Communities">
-<meta property="og:title" content="High End — Women's Bags &amp; Accessories">
+<meta property="og:title" content="High End — Signature Bags &amp; Accessories">
 <meta property="og:description" content="Motorcycles • Watches • Cars • Equine • Yachts &amp; boats • Modern &amp; art • Real estate. New and used, with photos, prices and seller numbers.">
 <meta property="og:url" content="https://high-end-communities.github.io/bags.html">
 <meta property="og:image" content="https://high-end-communities.github.io/logo.jpeg">
@@ -25,35 +26,40 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=77560519">
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css?v=c58f9e47">
 </head>
 <body>
-<div class="checker"></div>
-<header>
-  <img id="mainLogo" alt="High End Communities" style="width:min(260px,70vw);height:auto;display:block;margin:0 auto">
-  <div class="brands" id="brands"></div>
-  <p class="sub">Buy and sell motorcycles, watches, cars, horses, yachts &amp; boats, modern &amp; art, and real estate — new and used.</p>
+<script src="i18n.js?v=3a9b5928"></script>
+<header class="mast">
+  <div class="checker"></div>
+  <button type="button" class="langbtn" id="langBtn" lang="ar">العربية</button>
+  <div class="mast-in">
+    <a class="mast-logo" href="./"><img id="mainLogo" alt="High End Communities"></a>
+    <p class="mast-line">Motorcycles, watches and cars, sold owner to owner.</p>
+    <p class="mast-sub">Also yachts, horses, art and real estate. New and used.</p>
+    <div class="brands" id="brands"></div>
+  </div>
 </header>
-<div class="checker"></div>
 <main>
-  <h1 class="slab" style="text-align:center;margin:14px 0 0">👜 Women's Bags &amp; Accessories</h1>
-  <p class="sub" style="text-align:center;margin:4px auto 0">Luxury handbags, wallets, belts, scarves, sunglasses and jewelry — new and used.</p>
+  <h1 class="pagetitle">Signature Bags &amp; Accessories</h1>
+  <p class="pagesub">Luxury handbags, wallets, belts, scarves, sunglasses and jewelry — new and used.</p>
+  <div class="markets" id="markets" aria-label="Marketplace"></div>
   <div class="topnav">
-    <a class="btn primary" href="post.html#bag">➕ Sell a bag or accessory</a> <a class="btn ghost" href="./">All categories</a>
+    <a class="btn primary" href="post.html#bag">Sell a bag or accessory</a> <a class="btn ghost" href="./">All categories</a>
   </div>
   <aside class="masar sponsor-banner"></aside>
   <div class="toolbar">
     <div class="filters" id="filters">
       <button class="chip on" data-f="all">All</button>
-      <button class="chip" data-f="moto">🏍️ Motorcycles</button>
-      <button class="chip" data-f="watch">⌚ Watches</button>
-      <button class="chip" data-f="car">🚗 Cars</button>
-      <button class="chip" data-f="equine">🐎 Equine</button>
-      <button class="chip" data-f="boat">🛥️ Yachts & boats</button>
-      <button class="chip" data-f="art">🎨 Modern & art</button>
-      <button class="chip" data-f="estate">🏠 Real estate</button>
-      <button class="chip" data-f="bag">👜 Women's bags</button>
+      <button class="chip" data-f="moto">Motorcycles</button>
+      <button class="chip" data-f="watch">Watches</button>
+      <button class="chip" data-f="car">Cars</button>
+      <button class="chip" data-f="equine">Equine</button>
+      <button class="chip" data-f="boat">Yachts & boats</button>
+      <button class="chip" data-f="art">Modern & art</button>
+      <button class="chip" data-f="estate">Real estate</button>
+      <button class="chip" data-f="bag">Signature Bags</button>
     </div>
   </div>
   <div class="filters subfilters" id="subfilters" hidden></div>
@@ -65,7 +71,7 @@
       <a class="btn wa small" id="catShare" href="#" target="_blank" rel="noopener" hidden>Share catalogue on WhatsApp</a>
     </span>
   </div>
-  <div class="disc">⚠️ High End Communities only lists items and is not responsible for any product promoted. Buyers must do their own due diligence and check ownership papers with a lawyer.<details class="tx"><summary>Read the full terms</summary>
+  <div class="disc">High End Communities only lists items and is not responsible for any product promoted. Buyers must do their own due diligence and check ownership papers with a lawyer.<details class="tx"><summary>Read the full terms</summary>
         <ol>
           <li><b>Listing platform only.</b> High End Communities is a place where members advertise items. We do not own, inspect, verify, value or guarantee any item, and we are not a party to any sale.</li>
           <li><b>No responsibility.</b> High End Communities, its admins and sponsors are not responsible for any product promoted here, its condition, legality, ownership, description or price, or for any loss or dispute arising from a sale.</li>
@@ -118,19 +124,27 @@
     <div class="msg" id="discMsg"></div>
   </div>
 </div>
-<footer>High End Communities · Estd 2024</footer>
+<footer><div class="checker"></div><p>High End Communities, est. 2024</p></footer>
 
 <script>window.FIXED_GROUP="bag";</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="config.js"></script>
-<script src="common.js?v=77560519"></script>
+<script src="common.js?v=c58f9e47"></script>
 
 <script>
 const FIXED = window.FIXED_GROUP || null;     // bags.html shows one category only
 runIntro(FIXED ? "he_intro_"+FIXED : "he_intro");   // the bags page has its own intro too
-let all = [], filter = FIXED || "all", sub = "all";
+let all = [], filter = FIXED || "all", sub = "all", MARKET = getMarket();
+function drawMarkets(){
+  const box=$("#markets"); if (!box) return;
+  const n = id => all.filter(x=>marketOf(x.L)===id && x.L.status==="live" && (!FIXED || GROUP[x.L.type]===FIXED)).length;
+  box.innerHTML = '<span class="mk-label">Marketplace</span>';
+  MARKETS.forEach(m=>{ const b=document.createElement("button"); b.type="button"; b.className="mk"+(m.id===MARKET?" on":""); b.dataset.m=m.id;
+    const c=n(m.id); b.innerHTML=`<span>${m.name}</span>`+(c?`<small>${c}</small>`:"");
+    b.onclick=()=>{ MARKET=m.id; setMarket(m.id,true); drawMarkets(); render(); }; box.appendChild(b); });
+}
 function drawSubfilters(){
   const box=$("#subfilters"); const subs = SUBTYPES[filter];
   box.hidden = !subs; if (!subs) return; box.innerHTML="";
@@ -186,9 +200,10 @@ function openDiscount(item){
   $("#discTitle").textContent = `${titleOf(item.L)} — ${item.L.discount}% off`;
   $("#discAsk").hidden=false; $("#discDone").hidden=true; showMsg("","info",$("#discMsg"));
   try{ const p=localStorage.getItem("mm_phone"); if (p) $("#discPhone").value=p; }catch(e){}
+  $("#discPhone").placeholder = MARKET_BY_ID[MARKET].local;
   $("#discGo").onclick = async ()=>{
-    const ph = $("#discPhone").value.replace(/[\s-]/g,"").replace(/^\+?20/,"0");
-    if (!/^01[0125]\d{8}$/.test(ph)){ showMsg("Enter an Egyptian mobile number (11 digits, 010/011/012/015).","err",$("#discMsg")); return; }
+    const ph = anyPhone($("#discPhone").value, MARKET);
+    if (!ph){ showMsg(PHONE_HELP,"err",$("#discMsg")); return; }
     $("#discGo").disabled=true;
     try{
       const {data, error} = await sb.rpc("request_discount",{p_id:item.id, p_phone:ph});
@@ -230,8 +245,8 @@ function cardFor(item){
 function section(key, title, icon, items, onAll){
   const sec=document.createElement("section"); sec.className="catsec";
   const h=document.createElement("div"); h.className="cathead";
-  h.innerHTML=`<h2>${icon?icon+" ":""}${title}</h2><span class="cnt">${items.length}</span>`;
-  if (onAll){ const a=document.createElement("button"); a.type="button"; a.className="seeall"; a.textContent="See all ›"; a.onclick=onAll; h.appendChild(a); }
+  h.innerHTML=`<h2>${title}</h2><span class="cnt">${items.length}</span>`;
+  if (onAll){ const a=document.createElement("button"); a.type="button"; a.className="seeall"; a.textContent="See all"; a.onclick=onAll; h.appendChild(a); }
   const g=document.createElement("div"); g.className="list";
   items.forEach(it=>g.appendChild(cardFor(it)));
   sec.append(h,g); return sec;
@@ -243,9 +258,9 @@ function pickSub(t){ sub=t; drawSubfilters(); render(); }
 function render(){
   const box = $("#list"); box.innerHTML = ""; box.className="sections";
   const showSold = $("#showSold").checked;
-  const inCat = all.filter(x=>x.L.f && SCHEMAS[x.L.type] && (filter==="all" || GROUP[x.L.type]===filter) && (sub==="all" || x.L.type===sub));
+  const inCat = all.filter(x=>x.L.f && SCHEMAS[x.L.type] && marketOf(x.L)===MARKET && (filter==="all" || GROUP[x.L.type]===filter) && (sub==="all" || x.L.type===sub));
   CAT_TITLE = sub!=="all" ? (SECTION_NAMES[sub]||"") : (filter!=="all" ? (GROUP_NAMES[filter]||"") : "");
-  $("#catPdf").textContent = "📄 " + (CAT_TITLE ? CAT_TITLE+" PDF" : "Catalogue PDF");
+  $("#catPdf").textContent = (CAT_TITLE ? CAT_TITLE+" PDF" : "Catalogue PDF");
   $("#catShare").textContent = "Share " + (CAT_TITLE ? CAT_TITLE.toLowerCase() : "catalogue") + " on WhatsApp";
   let live = sortListings(inCat.filter(x=>x.L.status!=="sold")), sold = inCat.filter(x=>x.L.status==="sold");
   const wbox=$("#wfilters"), isW = filter==="watch";
@@ -258,7 +273,7 @@ function render(){
   shownItems = live;
   $("#catShare").hidden = !live.length; $("#catPdf").hidden = !live.length;
   $("#catShare").href = waHref(catalogueText(live));
-  if (!live.length && !(showSold && sold.length)){ box.innerHTML = `<div class="empty">${isW && wbox.dataset.on ? "No watches match these filters." : "No listings here yet."}</div>`; return; }
+  if (!live.length && !(showSold && sold.length)){ box.innerHTML = `<div class="empty">${isW && wbox.dataset.on ? "No watches match these filters." : MARKET!=="EG" && !all.some(x=>marketOf(x.L)===MARKET) ? `The ${marketName(MARKET)} marketplace is just opening.` : "No listings here yet."}</div>`+(MARKET!=="EG"?`<p class="empty-cta"><a class="btn primary" href="post.html">Be the first to list in ${marketName(MARKET)}</a></p>`:""); return; }
   let n=0;
   const addAd=()=>{ box.appendChild(feedSponsorCard(n++)); };
   if (filter==="all"){
@@ -290,6 +305,8 @@ $("#catPdf").onclick = ()=>exportCatalogue();
 
 function goToHash(){
   const h=(location.hash||"").slice(1); if (!h.startsWith("l-")) return;
+  const it=all.find(x=>"l-"+x.id===h);
+  if (it && marketOf(it.L)!==MARKET){ MARKET=marketOf(it.L); drawMarkets(); render(); }
   const el=document.getElementById(h);
   if (el){ el.scrollIntoView({behavior:"smooth",block:"start"}); el.classList.add("hl"); setTimeout(()=>el.classList.remove("hl"),2500); }
 }
@@ -306,7 +323,8 @@ window.addEventListener("hashchange", goToHash);
   if (error){ if (!(await siteCheck("catalogue"))) return; showMsg(niceError(error),"err",$("#listMsg")); return; }
   showMsg("","info",$("#listMsg"));
   all = (data||[]).map(rowToItem);
-  render(); goToHash();
+  drawMarkets(); render(); goToHash();
+  if (!location.hash.startsWith("#l-")) detectMarketByIP().then(id=>{ if (id && id!==MARKET){ MARKET=id; drawMarkets(); render(); } });
 })();
 </script>
 </body>

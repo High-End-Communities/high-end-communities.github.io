@@ -308,3 +308,211 @@ details.more{border-top:0;padding-top:4px}
 @keyframes pop{0%{transform:scale(1.35)}100%{transform:scale(1)}}
 @keyframes introIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.intro-ring .r-fg{animation:none;stroke-dashoffset:0}}
+
+/* =====================================================================
+   LUXE — private showroom look (v8)
+   carbon masthead · gallery paper · brushed brass · Bodoni + Jost
+   ===================================================================== */
+:root{
+  --carbon:#17181a; --carbon2:#222326; --paper:#f1f0ec; --ivory:#ecebe6; --brass:#a8875a; --brass2:#c5a676;
+  --bg:var(--paper); --panel:#fff; --panel2:#f6f5f2; --line:#e1dfd9; --text:#2a2b2e; --muted:#77736c;
+  --accent:var(--carbon); --radius:3px;
+  --serif:"Bodoni Moda",Didot,"Bodoni 72",Georgia,serif; --sans:Jost,"Futura","Avenir Next",system-ui,sans-serif;
+}
+body{font:400 15px/1.5 var(--sans);letter-spacing:.1px;background:var(--paper);-webkit-font-smoothing:antialiased}
+h1,h2,.slab{font-family:var(--serif)}
+button,input,select,textarea,.btn,.chip,.tag,.badge,.seeall,.morephotos,.contact a,.contact button,details.more summary,.admin button,.tabs button,.types button{font-family:var(--sans)!important}
+::selection{background:var(--brass2);color:#fff}
+:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+
+/* masthead */
+.checker{height:6px;background:repeating-conic-gradient(var(--carbon) 0 25%,#d9d6cf 0 50%) 0 0/6px 6px;opacity:.9}
+header.mast{background:var(--carbon);color:var(--ivory);text-align:center;padding:0}
+header.mast .checker{background:repeating-conic-gradient(#e8e5de 0 25%,var(--carbon) 0 50%) 0 0/6px 6px;opacity:.55}
+.mast-in{max-width:760px;margin:0 auto;padding:30px 20px 26px}
+.mast-logo{display:inline-block}
+.mast-logo img{width:min(230px,58vw);height:auto;display:block;margin:0 auto;filter:grayscale(1) invert(1) contrast(1.15);mix-blend-mode:screen}
+.mast-line{font:400 clamp(21px,4.2vw,30px)/1.25 var(--serif);margin:18px auto 6px;max-width:22ch;color:#f4f2ec;letter-spacing:.2px}
+.mast-sub{margin:0 auto;color:#a9a59c;font-size:13.5px;font-weight:300;letter-spacing:.3px}
+header.mast .brands{gap:22px;margin-top:20px;padding-top:18px;border-top:1px solid #34353a;display:flex;justify-content:center}
+header.mast .brands img{height:34px;width:auto;border-radius:0;filter:grayscale(1) invert(1) contrast(1.1);mix-blend-mode:screen;opacity:.7}
+
+main{max-width:1120px;padding:0 20px 70px}
+.topnav{margin:22px 0 6px}
+.btn{border-radius:2px;font-weight:500;letter-spacing:.3px;padding:12px 20px}
+.btn.primary{background:var(--carbon);color:#f4f2ec}
+.btn.primary:hover{background:#000}
+.btn.ghost{background:transparent;border:1px solid #c9c5bc;color:var(--text)}
+.btn.ghost:hover{border-color:var(--carbon)}
+.btn.wa{background:transparent;color:var(--text);border:1px solid #c9c5bc}
+.btn.wa::before{content:"";width:7px;height:7px;border-radius:50%;background:#25d366;display:inline-block}
+
+/* sponsor */
+.masar{border-radius:2px;background:var(--carbon2);border:0;margin:22px 0;padding:16px 18px}
+.masar img{border-radius:6px}
+.masar .t{font:500 20px var(--serif)}
+.masar .tag{background:none;padding:0;color:var(--brass2);font:500 11px var(--sans)!important;letter-spacing:.6px;text-transform:none}
+.masar a{border-radius:2px}
+
+/* category tabs */
+.toolbar{margin:4px 0 14px}
+.toolbar .filters{gap:2px;border-bottom:1px solid var(--line);width:100%;margin:0}
+.chip{background:none;border:0;border-radius:0;color:var(--muted);padding:12px 14px 11px;font-weight:400;font-size:14.5px;letter-spacing:.2px;border-bottom:2px solid transparent;margin-bottom:-1px}
+.chip:hover{color:var(--text)}
+.chip.on,.toolbar .filters .chip.on{background:none;color:var(--carbon);border-color:var(--brass);box-shadow:none;font-weight:500}
+.subfilters{gap:6px;margin:0 0 14px}
+.subfilters .chip{border:1px solid var(--line);border-radius:2px;padding:7px 12px;margin:0;font-size:13px}
+.subfilters .chip.on{background:var(--carbon);color:#f4f2ec;border-color:var(--carbon)}
+.showsold{font-size:13px}
+.disc{background:none;border:0;border-left:2px solid var(--brass);border-radius:0;padding:4px 0 4px 14px;color:var(--muted);font-size:12.5px;margin:6px 0 26px}
+details.tx summary{color:var(--text);font-weight:500}
+
+/* sections */
+.sections{gap:46px}
+.catsec .cathead{border-bottom:1px solid #cfccc4;padding-bottom:10px;margin:0 0 18px;align-items:flex-end}
+.catsec h2{font:400 clamp(24px,3.4vw,32px)/1.1 var(--serif);letter-spacing:.1px}
+.catsec .cnt{background:none;color:var(--muted);font:400 13px var(--sans);padding:0 0 3px}
+.catsec .seeall{font-weight:500;font-size:13.5px;border-bottom:1px solid var(--brass);padding:0 0 1px;margin-bottom:3px;border-radius:0}
+.list{grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:30px 22px}
+
+/* listing card: a catalogue plate */
+.item{background:var(--panel);border:1px solid #e6e4df;border-radius:2px;box-shadow:none;transition:border-color .25s}
+.item:hover{border-color:#c9c5bc}
+.item.featured{box-shadow:none;border-color:var(--brass)}
+.item.hl{box-shadow:0 0 0 2px var(--brass)}
+.gallery{background:#e9e7e2;aspect-ratio:4/3}
+.zoomhint{display:none}
+.morephotos{left:10px;bottom:10px;background:rgba(23,24,26,.62);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-radius:2px;padding:5px 9px;font-weight:400;font-size:12px;letter-spacing:.3px}
+.item .body{padding:16px 18px 14px;gap:5px}
+.badge{text-transform:none;letter-spacing:.2px;font-size:12.5px;font-weight:400;color:var(--muted)}
+.item h3{font:500 20px/1.25 var(--serif);letter-spacing:.1px;color:var(--carbon)}
+.price{font:400 23px/1.2 var(--serif);color:var(--carbon);margin-top:4px;font-variant-numeric:lining-nums}
+.price small{font:400 12px var(--sans);letter-spacing:.6px;color:var(--muted);margin-left:3px}
+.usd{font:400 12.5px var(--sans);color:var(--muted)}
+.spec{color:#5f5c56;font-size:13px}
+.tags{margin:3px 0}
+.tag{background:none;border:1px solid var(--line);border-radius:2px;font:400 11.5px var(--sans);padding:2px 7px;color:var(--muted)}
+.tag.feat{border-color:var(--brass);color:#8a6c40;background:none}
+.tag.disc{border-color:#d9b0ab;color:#9b3a30;background:none}
+.tag.stock{border-color:#bcd6c5;color:#2f6b47;background:none}
+.tag.stock.low{border-color:#e2c79c;color:#8a6200}
+.wspec{background:none;border-top:1px solid var(--line);border-bottom:1px solid var(--line);border-radius:0;padding:8px 0;margin:6px 0 4px}
+.wspec span{text-transform:none;letter-spacing:.2px;font:400 11px var(--sans)}
+.wspec b{font:500 12.5px var(--sans)}
+details.more summary{border:0;border-top:1px solid var(--line);border-radius:0;background:none;padding:10px 0 4px;margin-top:6px;font:500 13px var(--sans);color:var(--text)}
+details.more .chev{width:7px;height:7px;border-width:0 1.5px 1.5px 0}
+details.more dl{font-size:13px;padding:4px 0 6px}
+details.more .tools a,details.more .tools button{background:none;border:1px solid var(--line);border-radius:2px;font:400 12px var(--sans)}
+.item .contact{gap:8px;padding-top:12px}
+.item .contact a,.item .contact button{border-radius:2px;font:500 13px var(--sans);padding:10px 12px}
+.item .contact a.wa{background:var(--carbon);border-color:var(--carbon);color:#f4f2ec;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.item .contact a.wa::before{content:"";width:7px;height:7px;border-radius:50%;background:#25d366;flex:none}
+.item .contact a.wa:hover{background:#000}
+.item .contact a.tel{background:none;border:1px solid #c9c5bc;color:var(--text)}
+.seller{font-weight:400;color:var(--muted)}
+.meta{color:#9a968e;font-size:11.5px;padding:0 18px 14px}
+.ribbon{left:0;top:14px;background:var(--carbon);font:500 11.5px var(--sans);letter-spacing:1.5px;padding:6px 14px;border-radius:0;box-shadow:none}
+.ribbon.pend{background:#8a6c40}
+.item.sold .gallery{filter:grayscale(1) opacity(.6)}
+.soldsec{opacity:.75}
+.empty{font:400 20px var(--serif);color:var(--muted);padding:60px 10px}
+
+/* watch filters, forms, cards on post page */
+.wfilters{border-radius:2px;border-color:var(--line)}
+.card{border-radius:2px;border-color:#e6e4df}
+input,select,textarea{border-radius:2px;background:#fff;font-family:var(--sans)}
+input:focus,select:focus,textarea:focus{border-color:var(--carbon)}
+.types button{border-radius:2px;background:#fff;font-weight:500}
+.types button.on{border:1px solid var(--carbon);box-shadow:inset 0 0 0 1px var(--carbon)}
+.photos{border-radius:2px}
+.terms{border-radius:2px}
+.msg{border-radius:2px}
+.done{border-radius:2px}
+.pagetitle{font:400 clamp(28px,5vw,40px)/1.15 var(--serif);text-align:center;margin:30px 0 4px}
+.pagesub{text-align:center;color:var(--muted);margin:0 auto 4px;max-width:52ch}
+
+footer{background:var(--carbon);color:#8f8b83;padding:0 0 30px;margin-top:20px;font-size:12.5px;letter-spacing:.4px}
+footer .checker{background:repeating-conic-gradient(#e8e5de 0 25%,var(--carbon) 0 50%) 0 0/6px 6px;opacity:.45;margin-bottom:26px}
+footer p{margin:0}
+
+@media (max-width:560px){
+  main{padding:0 14px 60px}
+  .mast-in{padding:24px 16px 20px}
+  header.mast .brands{gap:14px}
+  header.mast .brands img{height:26px}
+  .list{grid-template-columns:1fr 1fr;gap:18px 12px}
+  .item .body{padding:11px 11px 10px;gap:3px}
+  .item h3{font-size:15.5px}
+  .price{font-size:18px}
+  .price small{font-size:10.5px}
+  .badge{font-size:11.5px}
+  .item .contact{gap:6px}
+  .item .contact a{padding:9px 8px;font-size:12.5px}
+  .item .contact a.tel{font-size:0;padding:9px 12px}
+  .item .contact a.tel::before{content:"Call";font-size:12.5px}
+  .meta{padding:0 11px 10px}
+  .catsec h2{font-size:24px}
+  .chip{padding:11px 11px 10px;font-size:14px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.masar .tag{border:0}
+header.mast .brands img{filter:grayscale(1) contrast(1.05);mix-blend-mode:normal;opacity:1;background:#ecebe6;padding:5px 7px;height:44px;border-radius:2px}
+.views{font:400 11.5px var(--sans)!important;color:inherit}
+.catsec .seeall{white-space:nowrap}
+@media (max-width:560px){
+  header.mast .brands img{height:34px;padding:4px 5px}
+  .item .contact{flex-wrap:nowrap}
+  .item .contact a.wa{flex:1;min-width:0;padding:9px 6px;gap:6px}
+  .item .contact a.tel{flex:none;padding:9px 10px}
+  .toolbar .btn.small{padding:8px 12px;font-size:12.5px}
+}
+main:has(#form){max-width:800px}
+.dump{background:#fff;border-color:#e6e4df}
+.types button .ic,.types button img.lg{filter:grayscale(1)}
+.types.sub{background:none;padding:0}
+
+/* ---- language switch + Arabic (RTL) ---- */
+:root{--serif:"Bodoni Moda",Didot,"Bodoni 72","Amiri",Georgia,serif;--sans:Jost,"IBM Plex Sans Arabic","Futura","Avenir Next",system-ui,sans-serif}
+header.mast{position:relative}
+.langbtn{position:absolute;top:18px;inset-inline-end:16px;background:transparent;color:#e8e5de;border:1px solid #4a4b50;border-radius:2px;padding:6px 12px;font:400 13px "IBM Plex Sans Arabic",var(--sans);cursor:pointer;letter-spacing:0}
+.langbtn:hover{border-color:var(--brass2);color:#fff}
+html[lang=ar] body{font-size:15.5px}
+html[lang=ar] *{letter-spacing:0!important}
+html[lang=ar] .mast-line{font-size:clamp(22px,4.4vw,32px);line-height:1.5;max-width:24ch}
+html[lang=ar] .item h3,html[lang=ar] .catsec h2,html[lang=ar] .pagetitle{line-height:1.45}
+html[dir=rtl] .ribbon{left:auto;right:0}
+html[dir=rtl] .morephotos{left:auto;right:10px}
+html[dir=rtl] .disc{border-left:0;border-right:2px solid var(--brass);padding:4px 14px 4px 0}
+html[dir=rtl] .catsec .seeall{margin-left:0;margin-right:auto}
+html[dir=rtl] .gallery,html[dir=rtl] .viewer,html[dir=rtl] .v-track,html[dir=rtl] .thumbs{direction:ltr}
+html[dir=rtl] .contact a[href^="tel:"],html[dir=rtl] input[type=tel],html[dir=rtl] .meta{unicode-bidi:plaintext}
+html[dir=rtl] details.more summary{text-align:right}
+html[dir=rtl] .intro-btns{right:auto;left:12px}
+@media (max-width:560px){html[lang=ar] .item .contact a.tel::before{content:"اتصال"}.langbtn{top:14px;inset-inline-end:10px;padding:5px 10px;font-size:12.5px}}
+
+/* ---- marketplace (country) switch ---- */
+.markets{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:22px 0 0;padding:4px 0}
+.markets::-webkit-scrollbar{display:none}
+.mk-label{font:400 13px var(--sans);color:var(--muted);margin-inline-end:6px;white-space:nowrap}
+.mk{flex:none;display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid #cfccc4;border-radius:2px;padding:7px 12px;font:400 13.5px var(--sans);color:var(--text);cursor:pointer;white-space:nowrap}
+.mk:hover{border-color:var(--carbon)}
+.mk.on{background:var(--carbon);border-color:var(--carbon);color:#f4f2ec}
+.mk small{font-size:11px;color:var(--muted)}
+.mk.on small{color:var(--brass2)}
+.empty-cta{text-align:center;margin:-30px 0 20px}
+.mktpick{margin:0 0 16px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.mktpick select{margin-top:2px;font-weight:500}
+
+/* ---- inspection before buying ---- */
+.item .inspect{margin-top:8px;align-self:flex-start;background:none;border:0;border-bottom:1px solid var(--brass);padding:2px 0;font:400 12.5px var(--sans);color:var(--text);cursor:pointer;border-radius:0}
+.item .inspect::before{content:"";display:inline-block;width:6px;height:6px;border:1px solid var(--brass);transform:rotate(45deg);margin-inline-end:8px;vertical-align:1px}
+.item .inspect:hover{color:#000;border-color:var(--carbon)}
+.inspect-modal .card{max-width:460px}
+.inspect-modal h3{font:400 24px var(--serif);margin:0 0 6px}
+.inspect-intro{color:var(--muted);font-size:14px;margin:0 0 14px}
+.inspect-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.inspect-row{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:2px;padding:10px 12px}
+.inspect-row .x{flex:1;min-width:0}
+.inspect-row .x b{display:block;font-weight:500}
+.inspect-row .x span{font-size:12.5px;color:var(--muted)}
+.sp-row.off{opacity:.55}
