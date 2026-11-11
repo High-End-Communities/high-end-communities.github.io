@@ -148,6 +148,8 @@ table.mini td.n{text-align:right;font-variant-numeric:tabular-nums}
 .sp-row{display:flex;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:8px}
 .sp-row img{width:54px;height:54px;object-fit:contain;border-radius:8px;background:#f6f5f2}
 .sp-row .x{flex:1;min-width:0}
+.sp-h1{font-weight:700;font-size:15px;margin:16px 0 6px;padding-bottom:4px;border-bottom:2px solid var(--line)}
+.sp-h2{font-size:12.5px;color:var(--muted,#6b6b6b);margin:8px 0 6px 2px}
 .sp-row .x b{display:block}
 .sp-row .x span{font-size:12px;color:var(--muted)}
 .pill{display:inline-block;font:700 11px Inter;padding:2px 8px;border-radius:999px;background:#e3f4ea;color:#1f8a4c}
@@ -516,3 +518,51 @@ html[dir=rtl] .intro-btns{right:auto;left:12px}
 .inspect-row .x b{display:block;font-weight:500}
 .inspect-row .x span{font-size:12.5px;color:var(--muted)}
 .sp-row.off{opacity:.55}
+
+/* =====================================================================
+   Listing page (item.html) + "More details" link on cards (v10)
+   ===================================================================== */
+a.moredetails{display:flex;align-items:center;justify-content:space-between;gap:8px;border-top:1px solid var(--line);padding:10px 0 4px;margin-top:6px;font:500 13px var(--sans);color:var(--text);text-decoration:none}
+a.moredetails:hover{color:var(--brass)}
+a.moredetails .chev{width:7px;height:7px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(-45deg)}
+html[dir=rtl] a.moredetails .chev{transform:rotate(135deg)}
+.item h3 a.tlink{color:inherit;text-decoration:none}
+.item h3 a.tlink:hover{text-decoration:underline;text-decoration-color:var(--brass);text-underline-offset:3px}
+
+.itempage{max-width:1120px}
+.crumbs{margin:14px 0 10px;font-size:13px}
+.crumbs a{color:var(--muted);text-decoration:none;letter-spacing:.3px}
+.crumbs a:hover{color:var(--carbon)}
+.item.itemdetail{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:28px;align-items:start;padding:0;background:transparent;border:0;box-shadow:none}
+.itemdetail .body{background:#fff;border:1px solid var(--line);padding:22px 22px 16px;position:sticky;top:12px}
+.itemdetail h1{font:500 clamp(24px,3.2vw,32px)/1.2 var(--serif);color:var(--carbon);margin:6px 0 8px;letter-spacing:.1px}
+.itemdetail .price{font-size:clamp(24px,3vw,30px);margin:0 0 10px}
+.itemdetail h2.sub{font:500 12px var(--sans);letter-spacing:1.6px;color:var(--muted);margin:22px 0 8px;padding-top:14px;border-top:1px solid var(--line)}
+.itemdetail dl{display:grid;grid-template-columns:auto 1fr;gap:7px 18px;font-size:14px;margin:0}
+.itemdetail dt{color:var(--muted)}
+.itemdetail dd{margin:0;color:var(--text)}
+.itemdetail .contact{display:flex;gap:8px;margin:14px 0 4px}
+.itemdetail .contact a{flex:1;justify-content:center;text-align:center;padding:12px 10px;font-size:15px}
+.itemdetail .tools{display:flex;flex-wrap:wrap;gap:6px}
+.itemdetail .tools a,.itemdetail .tools button{color:var(--text);text-decoration:none;background:none;border:1px solid var(--line);padding:7px 11px;border-radius:2px;font:400 13px var(--sans);cursor:pointer}
+.itemdetail .discbtn,.itemdetail .inspect{width:100%;margin-top:8px}
+.itemdetail .seller{margin-top:16px}
+.itemdetail .meta,.itemdetail .muted{margin-top:12px;font-size:12px}
+.ig{display:flex;flex-direction:column;gap:10px;min-width:0}
+.ig-main{position:relative;display:block;width:100%;padding:0;border:0;background:#e9e7e1;cursor:zoom-in;aspect-ratio:4/3;overflow:hidden}
+.ig-main img{width:100%;height:100%;object-fit:contain;display:block}
+.ig-n{position:absolute;right:10px;bottom:10px;background:rgba(23,24,26,.72);color:#fff;font:400 12px var(--sans);padding:3px 9px;letter-spacing:.5px}
+.ig-thumbs{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+.ig-thumbs button{flex:0 0 78px;height:62px;padding:0;border:1px solid var(--line);background:#e9e7e1;cursor:pointer;opacity:.65}
+.ig-thumbs button.on{opacity:1;outline:1.5px solid var(--carbon);outline-offset:1px}
+.ig-thumbs img{width:100%;height:100%;object-fit:cover;display:block}
+.itempage .sponsor-banner{margin-top:26px}
+.itempage .ribbon{z-index:2}
+@media (max-width:820px){
+  .item.itemdetail{grid-template-columns:1fr;gap:14px}
+  .itemdetail .body{position:static;padding:16px}
+  .ig-main{aspect-ratio:1/1}
+}
+html[dir=rtl] .ig-n{right:auto;left:10px}
+.itemdetail .tags{align-items:flex-start}
+.ig-n{direction:ltr;unicode-bidi:isolate}

@@ -16,10 +16,10 @@
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=c58f9e47">
+<link rel="stylesheet" href="common.css?v=ef486792">
 </head>
 <body>
-<script src="i18n.js?v=3a9b5928"></script>
+<script src="i18n.js?v=3281641c"></script>
 <header class="mast">
   <div class="checker"></div>
   <button type="button" class="langbtn" id="langBtn" lang="ar">العربية</button>
@@ -214,6 +214,9 @@
             <label><input type="checkbox" value="banner" checked> Top banner</label>
             <label><input type="checkbox" value="feed" checked> Between listings</label>
             <label><input type="checkbox" value="flyer" checked> Flyers &amp; PDFs</label></div></div>
+          <div class="full"><label>Countries <span class="hint">(none ticked = every country)</span></label><div class="days" id="spMarkets"></div></div>
+          <div class="full"><label>Categories <span class="hint">(none ticked = every category)</span></label><div class="days" id="spGroups"></div>
+            <div class="hint">An ad for one category shows under that category on the home page, and inside it. Several ads for the same category show one under the other.</div></div>
           <div class="full"><label class="showsold" style="color:var(--text)"><input type="checkbox" id="spActive" checked> Active</label></div>
         </div>
         <div class="actions">
@@ -233,6 +236,16 @@
         <div class="hint" id="dbTxt">Loading…</div>
         <div class="unitrow" style="margin-top:8px"><input id="dbBudget" type="number" min="50" max="450" inputmode="numeric"><button type="button" class="btn ghost small" id="dbBudgetSave">Save MB</button></div>
         <div class="hint">When listings use more than this, the oldest are removed (sold first). 350 MB is safe on the free 500 MB plan.</div>
+      </div>
+      <div class="card" style="margin-bottom:12px">
+        <h3 style="margin:0 0 6px">🖼️ Photo storage</h3>
+        <div style="height:12px;background:#efece5;border-radius:999px;overflow:hidden"><div id="phBar" style="height:100%;width:0;background:#1f8a4c"></div></div>
+        <div class="hint" id="phTxt">Loading…</div>
+        <div class="actions" style="margin-top:8px">
+          <button type="button" class="btn primary small" id="phMove" hidden>Move photos to storage</button>
+          <button type="button" class="btn ghost small" id="phClean" hidden>Delete photos of removed listings</button>
+        </div>
+        <div class="msg" id="phMsg"></div>
       </div>
       <div class="stats">
         <div class="stat"><b id="stToday">–</b><span>Site views today</span></div>
@@ -254,7 +267,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="config.js"></script>
-<script src="common.js?v=c58f9e47"></script>
+<script src="common.js?v=ef486792"></script>
 
 <script>
 initHeader();
@@ -413,6 +426,7 @@ async function setStatus(item, patch){
 async function removeItem(item){
   const {error} = await sb.from("listings").delete().eq("id",item.id);
   if (error) throw error;
+  const paths = photoPaths(item.L); if (paths.length && sb.storage) sb.storage.from(PHOTO_BUCKET).remove(paths).then(()=>{},()=>{});
   items = items.filter(x=>x!==item); renderAll();
 }
 function btn(label, cls, fn, confirmText){
@@ -571,6 +585,8 @@ const DAY_N=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
   const hh=h=> h===0?"12 am":h<12?h+" am":h===12?"12 pm":h===24?"12 am (midnight)":(h-12)+" pm";
   for (let h=0;h<=23;h++) $("#spH1").insertAdjacentHTML("beforeend",`<option value="${h}">${hh(h)}</option>`);
   for (let h=1;h<=24;h++) $("#spH2").insertAdjacentHTML("beforeend",`<option value="${h}">${hh(h)}</option>`);
+  $("#spMarkets").innerHTML = MARKETS.map(m=>`<label><input type="checkbox" value="${m.id}"> ${m.name}</label>`).join("");
+  $("#spGroups").innerHTML = GROUP_ORDER.map(g=>`<label><input type="checkbox" value="${g}"> ${GROUP_NAMES[g]}</label>`).join("");
   for (let w=1;w<=10;w++) $("#spWeight").insertAdjacentHTML("beforeend",`<option value="${w}">${w}${w===1?" (normal)":""}</option>`);
   document.querySelectorAll("[data-preset]").forEach(b=>b.onclick=()=>{ const [a,z]=b.dataset.preset.split(",").map(Number); $("#spH1").value=a; $("#spH2").value=z; });
   spReset();
@@ -581,6 +597,7 @@ function spReset(){
   $("#spFrom").value = new Date().toISOString().slice(0,10);
   $("#spH1").value=0; $("#spH2").value=24; $("#spWeight").value=1; $("#spActive").checked=true;
   document.querySelectorAll("#spDays input,#spSlots input").forEach(c=>c.checked=true);
+  document.querySelectorAll("#spMarkets input,#spGroups input").forEach(c=>c.checked=false);
   $("#spImgPrev").style.display="none"; showMsg("","info",$("#spMsg"));
 }
 $("#spReset").onclick = spReset;
@@ -607,7 +624,23 @@ function renderSponsors(){
   const box=$("#spList"); box.innerHTML="";
   if (!sponsorsAll.length){ box.innerHTML='<div class="empty">No sponsors yet — MASAR shows by default.</div>'; return; }
   const today=new Date(new Date().toLocaleString("en-US",{timeZone:"Africa/Cairo"})).toISOString().slice(0,10);
-  sponsorsAll.forEach(s=>{
+  // one block per country, and inside it one block per category — ads listed one under the other
+  const mk = s=>(s.markets||[]).length ? s.markets : ["*"], gr = s=>(s.groups||[]).length ? s.groups : ["*"];
+  const mOrder = ["*", ...MARKETS.map(m=>m.id)], gOrder = ["*", ...GROUP_ORDER];
+  const head=(txt,cls)=>{ const h=document.createElement("div"); h.className=cls; h.textContent=txt; box.appendChild(h); };
+  mOrder.forEach(m=>{
+    const inM = sponsorsAll.filter(s=>mk(s).includes(m)); if (!inM.length) return;
+    head(m==="*" ? "All countries" : marketName(m), "sp-h1");
+    gOrder.forEach(g=>{
+      const inG = inM.filter(s=>gr(s).includes(g)); if (!inG.length) return;
+      head(g==="*" ? "All categories" : GROUP_NAMES[g], "sp-h2");
+      inG.forEach(s=>spRow(s, today));
+    });
+  });
+}
+function spRow(s, today){
+  const box=$("#spList");
+  {
     const inDates = s.starts_on<=today && (!s.ends_on || s.ends_on>=today);
     const on = s.active && inDates && sponsorOnNow(s);
     const row=document.createElement("div"); row.className="sp-row";
@@ -624,7 +657,7 @@ function renderSponsors(){
       btn(s.active?"⏸":"▶","",async()=>{ const {error}=await sb.from("sponsors").update({active:!s.active}).eq("id",s.id); if(error) throw error; await loadSponsorsAdmin(); }),
       btn("🗑","bad",async()=>{ const {error}=await sb.from("sponsors").delete().eq("id",s.id); if(error) throw error; await loadSponsorsAdmin(); },"Delete?"));
     row.append(im,x,tools); box.appendChild(row);
-  });
+  }
 }
 function spLoad(s){
   spEditing=s; spImage=s.image; $("#spTitle").textContent="Edit sponsor";
@@ -633,6 +666,8 @@ function spLoad(s){
   $("#spH1").value=s.hour_from; $("#spH2").value=s.hour_to; $("#spWeight").value=s.weight; $("#spActive").checked=s.active;
   document.querySelectorAll("#spDays input").forEach(c=>c.checked=(s.days||[]).includes(+c.value));
   document.querySelectorAll("#spSlots input").forEach(c=>c.checked=(s.slots||[]).includes(c.value));
+  document.querySelectorAll("#spMarkets input").forEach(c=>c.checked=(s.markets||[]).includes(c.value));
+  document.querySelectorAll("#spGroups input").forEach(c=>c.checked=(s.groups||[]).includes(c.value));
   $("#spImgPrev").src=s.image; $("#spImgPrev").style.display="block";
   $("#spName").scrollIntoView({behavior:"smooth",block:"center"});
 }
@@ -645,7 +680,9 @@ $("#spSave").onclick = async ()=>{
   const slots=[...document.querySelectorAll("#spSlots input:checked")].map(c=>c.value);
   if (!days.length||!slots.length){ showMsg("Pick at least one day and one place to show it.","err",$("#spMsg")); return; }
   const rec={name, link:link||null, tagline:$("#spTag").value.trim()||null, image:spImage, starts_on:$("#spFrom").value||new Date().toISOString().slice(0,10),
-    ends_on:$("#spTo").value||null, days, hour_from:+$("#spH1").value, hour_to:+$("#spH2").value, weight:+$("#spWeight").value, slots, active:$("#spActive").checked};
+    ends_on:$("#spTo").value||null, days, hour_from:+$("#spH1").value, hour_to:+$("#spH2").value, weight:+$("#spWeight").value, slots, active:$("#spActive").checked,
+    markets:[...document.querySelectorAll("#spMarkets input:checked")].map(c=>c.value),
+    groups:[...document.querySelectorAll("#spGroups input:checked")].map(c=>c.value)};
   if (rec.hour_from===rec.hour_to){ showMsg("Start and end hour can't be the same.","err",$("#spMsg")); return; }
   $("#spSave").disabled=true;
   try{
@@ -727,8 +764,47 @@ async function loadDbUsage(){
 }
 $("#dbBudgetSave").onclick=async()=>{ const n=parseInt($("#dbBudget").value,10); if(!(n>=50&&n<=450)) return toast("Enter 50–450 MB");
   const {error}=await sb.from("settings").update({max_data_mb:n}).eq("id",1); if(error) return toast(niceError(error)); toast("Saved"); loadDbUsage(); };
+async function loadPhotoUsage(){
+  const {data,error}=await sb.rpc("photo_storage");
+  if (error||!data){ $("#phTxt").textContent="Run update10.sql in Supabase to turn on photo storage."; return; }
+  const pct=Math.min(100,Math.round(data.mb/1024*100));
+  $("#phBar").style.width=pct+"%"; $("#phBar").style.background = pct>85?"#c0392b":pct>65?"#b7791f":"#1f8a4c";
+  $("#phTxt").textContent=`${data.files} photo files use ${data.mb} MB of the free 1 GB (${pct}%).`
+    + (data.inline ? ` ${data.inline} older listing${data.inline===1?" still keeps its":"s still keep their"} photos inside the database.` : " All listings use photo storage.");
+  $("#phMove").hidden = !data.inline; $("#phClean").hidden = !(data.orphans||[]).length;
+  $("#phClean").textContent = `Delete photos of removed listings (${(data.orphans||[]).length})`;
+  $("#phClean").onclick = async ()=>{
+    $("#phClean").disabled=true;
+    const {error}=await sb.storage.from(PHOTO_BUCKET).remove(data.orphans);
+    $("#phClean").disabled=false; showMsg(error?niceError(error):"Done.", error?"err":"ok", $("#phMsg")); loadPhotoUsage();
+  };
+}
+// one listing at a time: upload its photos as files, then save the links in the listing
+$("#phMove").onclick = async ()=>{
+  const b=$("#phMove"); b.disabled=true; let done=0, failed=0;
+  try{
+    const {data:list,error} = await sb.from("listings").select("id,thumb").order("created_at",{ascending:false}).limit(5000);
+    if (error) throw error;
+    for (const r of list){
+      const {data:row} = await sb.from("listings").select("id,thumb,photos").eq("id",r.id).maybeSingle();
+      if (!row) continue;
+      const pics = Array.isArray(row.photos)?row.photos:[];
+      if (!pics.some(p=>/^data:/.test(p)) && !/^data:/.test(row.thumb||"")) continue;
+      try{
+        const ids = row.id, out=[];
+        for (let i=0;i<pics.length;i++) out.push(/^data:/.test(pics[i]) ? await storePhoto(`${ids}/${i}.jpg`, pics[i]) : pics[i]);
+        const t = /^data:/.test(row.thumb||"") ? await storePhoto(`${ids}/t.jpg`, row.thumb) : row.thumb;
+        const {error:e2} = await sb.from("listings").update({photos:out, thumb:t}).eq("id",ids);
+        if (e2) throw e2; done++;
+      }catch(e){ failed++; console.warn(e); }
+      showMsg(`Moving photos… ${done} done${failed?`, ${failed} failed`:""}`,"info",$("#phMsg"));
+    }
+    showMsg(`Finished: ${done} listing${done===1?"":"s"} moved${failed?`, ${failed} failed (try again)`:""}.`, failed?"err":"ok", $("#phMsg"));
+  }catch(e){ showMsg(niceError(e),"err",$("#phMsg")); }
+  finally{ b.disabled=false; loadPhotoUsage(); loadDbUsage(); }
+};
 async function loadStats(){
-  loadDbUsage();
+  loadDbUsage(); loadPhotoUsage();
   const since = new Date(Date.now()-30*864e5).toISOString().slice(0,10);
   const {data,error} = await sb.from("site_stats").select("day,page,views").gte("day",since).order("day");
   if (error){ showMsg(niceError(error),"err",$("#listMsg")); return; }

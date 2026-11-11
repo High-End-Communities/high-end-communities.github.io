@@ -747,7 +747,8 @@ function listingText(L){
 function safeId(id){ return /^[A-Za-z0-9-]{1,60}$/.test(id) ? id : null; }
 let SHORT_URL = "", INCLUDE_LINK = true;
 function baseUrl(){ return (SHORT_URL || SITE_URL).replace(/\/$/,""); }
-function linkFor(id){ const s=safeId(id); return s ? baseUrl()+"/#l-"+s : baseUrl()+"/"; }
+function linkFor(id){ const s=safeId(id); return s ? baseUrl()+"/item.html?id="+s : baseUrl()+"/"; }
+function itemHref(id){ const s=safeId(id); return s ? "item.html?id="+s : "./"; }
 function waHref(text){ return "https://wa.me/?text="+encodeURIComponent(text); }
 function shareText(L,id){
   const icon = ICONS[L.type] || "🏷️";
@@ -786,7 +787,7 @@ function logoFor(type){ return BRAND_LOGOS[GROUP[type]] || LOGO_SRC(); }
 
 const imgCache = {};
 function loadSrc(src){
-  if (!imgCache[src]) imgCache[src] = new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=src; });
+  if (!imgCache[src]) imgCache[src] = new Promise((res,rej)=>{ const i=new Image(); if (/^https?:/.test(src)) i.crossOrigin="anonymous"; i.onload=()=>res(i); i.onerror=rej; i.src=src; });
   return imgCache[src];
 }
 function pdfSafe(s){ return String(s).normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[–—]/g,"-").replace(/[^\x20-\x7E\xA0-\xFF]/g,"").trim(); }
@@ -797,7 +798,7 @@ function pdfPainter(doc){
   const setF = o => { doc.setFont(o.serif?"times":"helvetica", o.bold?"bold":"normal"); doc.setFontSize(o.size); };
   return {
     rect(x,y,w,h,c,r){ doc.setFillColor(c); if(r) doc.roundedRect(x,y,w,h,r,r,"F"); else doc.rect(x,y,w,h,"F"); },
-    img(im,x,y,w,h){ const fmt = im.src.startsWith("data:image/png")?"PNG":"JPEG"; doc.addImage(im.src,fmt,x,y,w,h,aliasOf(im.src),fmt==="PNG"?"FAST":"NONE"); },
+    img(im,x,y,w,h){ const fmt = (im.src.startsWith("data:image/png")||/\.png(\?|$)/i.test(im.src))?"PNG":"JPEG"; doc.addImage(im.src.startsWith("data:")?im.src:im,fmt,x,y,w,h,aliasOf(im.src),fmt==="PNG"?"FAST":"NONE"); },
     text(s,x,y,o){ setF(o); doc.setTextColor(o.color||"#2b2b2b"); doc.text(pdfSafe(s),x,y,{align:o.align||"left"}); },
     width(s,o){ setF(o); return doc.getTextWidth(pdfSafe(s)); },
     link(x,y,w,h,url){ doc.link(x,y,w,h,{url}); }
@@ -878,7 +879,7 @@ function drawQR(P, text, x, y, size){
 }
 const FW = 150, FH = 228; // flyer size in mm (portrait, phone friendly)
 async function drawFlyer(P, L, id){
-  const SP = flyerSponsor(); const logo = await loadSrc(logoFor(L.type)), masar = await loadSrc(SP.image);
+  const SP = flyerSponsor({market:marketOf(L), group:GROUP[L.type]||""}); const logo = await loadSrc(logoFor(L.type)), masar = await loadSrc(SP.image);
   const ph = await Promise.all((L.photos||[]).filter(p=>typeof p==="string"&&p.startsWith("data:image/")).slice(0,MAX_PHOTOS).map(loadSrc));
   const M = 8, W = FW-2*M;
   P.rect(0,0,FW,FH,"#ffffff");
@@ -940,6 +941,25 @@ async function loadPhotos(item){
   if (!error && data && Array.isArray(data.photos)) item.L.photos = data.photos;
   return item.L.photos || (item.L.thumb ? [item.L.thumb] : []);
 }
+/* ---------- photos as files in Supabase Storage (fast, cached); the database keeps only the links ---------- */
+const PHOTO_BUCKET = "listing-photos";
+function dataUrlBlob(u){ const [h,b]=u.split(","); const bin=atob(b); const a=new Uint8Array(bin.length); for (let i=0;i<bin.length;i++) a[i]=bin.charCodeAt(i); return new Blob([a],{type:(h.match(/data:([^;]+)/)||[])[1]||"image/jpeg"}); }
+async function storePhoto(path, dataUrl){
+  const {error} = await sb.storage.from(PHOTO_BUCKET).upload(path, dataUrlBlob(dataUrl), {contentType:"image/jpeg", cacheControl:"31536000", upsert:false});
+  if (error && !/exists|Duplicate/i.test(error.message||"")) throw error;
+  return sb.storage.from(PHOTO_BUCKET).getPublicUrl(path).data.publicUrl;
+}
+// returns {photos:[urls], thumb:url}, or null if the photo folder isn't ready (then photos stay inside the listing as before)
+async function storeListingPhotos(id, pics, thumb){
+  if (!sb || !sb.storage || !safeId(id)) return null;
+  try{
+    const photos = [];
+    for (let i=0;i<pics.length;i++) photos.push(/^data:/.test(pics[i]) ? await storePhoto(`${id}/${i}.jpg`, pics[i]) : pics[i]);
+    const t = thumb && /^data:/.test(thumb) ? await storePhoto(`${id}/t.jpg`, thumb) : thumb;
+    return {photos, thumb:t};
+  }catch(e){ console.warn("photo storage not available", e); return null; }
+}
+function photoPaths(L){ return [...(L.photos||[]), L.thumb||""].map(u=>{ const m=String(u).match(/\/object\/public\/listing-photos\/(.+)$/); return m?decodeURIComponent(m[1]):null; }).filter(Boolean); }
 function isSold(id,L){ return L.status==="sold"; }
 function isFeatured(L){ return !!L.promoted && (!L.promotedUntil || L.promotedUntil > Date.now()) && L.status==="live"; }
 function sortListings(list){ return list.slice().sort((a,b)=>(isFeatured(b.L)-isFeatured(a.L)) || ((b.L.at||0)-(a.L.at||0))); }
@@ -1149,10 +1169,20 @@ function sponsorOnNow(s, now){
   const a = s.hour_from ?? 0, b = s.hour_to ?? 24;
   return a <= b ? (now.hour >= a && now.hour < b) : (now.hour >= a || now.hour < b);   // overnight windows like 20 → 2
 }
-function sponsorsFor(slot){
-  const now = cairoNow();
-  const list = SPONSORS.filter(s=>(!s.slots || s.slots.includes(slot)) && sponsorOnNow(s,now));
-  return list.length ? list : [DEFAULT_SPONSOR];
+// Which country and category the visitor is looking at (set by the catalogue page).
+// A sponsor with no countries / no categories ticked shows everywhere.
+const AD_CTX = { market:"", group:"" };
+function sponsorFits(s, market, group){
+  const mk = s.markets||[], gr = s.groups||[];
+  return (!market || !mk.length || mk.includes(market)) && (!group || !gr.length || gr.includes(group));
+}
+function sponsorsFor(slot, opt){
+  opt = opt || {};
+  const now = cairoNow(), market = opt.market ?? AD_CTX.market, group = opt.group ?? AD_CTX.group;
+  let list = SPONSORS.filter(s=>(!s.slots || s.slots.includes(slot)) && sponsorOnNow(s,now) && sponsorFits(s, market, group));
+  if (opt.only) list = list.filter(s=>(s.groups||[]).includes(group));       // just the ads made for this category
+  if (opt.general) list = list.filter(s=>!(s.groups||[]).length);           // ads not tied to one category
+  return list.length || opt.only ? list : [DEFAULT_SPONSOR];
 }
 function pickWeighted(list, seed){
   const total = list.reduce((a,s)=>a+(s.weight||1),0);
@@ -1188,13 +1218,88 @@ function startBannerRotation(){
   };
   clearInterval(bannerTimer); tick(); bannerTimer=setInterval(tick, 8000);
 }
-function feedSponsorCard(i){
-  const list = sponsorsFor("feed");
+function feedSponsorCard(i, opt){
+  const list = sponsorsFor("feed", opt);
+  if (!list.length) return null;
   const seq = list.flatMap(s=>Array(s.weight||1).fill(s));
-  const s = seq[i % seq.length];
-  const box=document.createElement("aside"); box.className="masar feedad"; fillSponsorBox(box,s); return box;
+  return sponsorCard(seq[i % seq.length]);
 }
-function flyerSponsor(){ return pickWeighted(sponsorsFor("flyer")); }
+function sponsorCard(s){ const box=document.createElement("aside"); box.className="masar feedad"; fillSponsorBox(box,s); return box; }
+function flyerSponsor(opt){ return pickWeighted(sponsorsFor("flyer", opt)); }
+
+
+/* ===================== Seller tools & discount codes (catalogue and listing pages) ===================== */
+const SELLER_MODALS = "<div class=\"modal\" id=\"soldModal\" hidden>\n  <div class=\"card\">\n    <h3>Seller tools</h3>\n    <p class=\"muted\" id=\"soldTitle\" style=\"font-size:14px\"></p>\n    <label for=\"soldCode\">Your 6-digit seller code</label>\n    <input id=\"soldCode\" inputmode=\"numeric\" maxlength=\"12\" placeholder=\"e.g. 482913\">\n    <div class=\"hint\">You got it when you posted. Lost it? Ask the admin on WhatsApp.</div>\n    <div id=\"stockBox\" hidden style=\"margin-top:10px\">\n      <label for=\"stockIn\">Quantity in stock now</label>\n      <div class=\"unitrow\"><input id=\"stockIn\" inputmode=\"numeric\" placeholder=\"e.g. 12\"><button type=\"button\" class=\"btn ghost small\" id=\"stockGo\">Update stock</button></div>\n      <div class=\"hint\">Put 0 when everything is sold.</div>\n    </div>\n    <div class=\"actions\">\n      <button type=\"button\" class=\"btn primary\" id=\"soldGo\">Mark as sold</button>\n      <a class=\"btn ghost\" id=\"soldAsk\" target=\"_blank\" rel=\"noopener\">Ask the admin</a>\n      <button type=\"button\" class=\"btn ghost\" id=\"soldClose\">Close</button>\n    </div>\n    <div class=\"msg\" id=\"soldMsg\"></div>\n  </div>\n</div>\n<div class=\"modal\" id=\"discModal\" hidden>\n  <div class=\"card\">\n    <h3>\ud83c\udff7\ufe0f Get your discount code</h3>\n    <p class=\"muted\" id=\"discTitle\" style=\"font-size:14px\"></p>\n    <div id=\"discAsk\">\n      <label for=\"discPhone\">Your mobile number</label>\n      <input id=\"discPhone\" type=\"tel\" inputmode=\"tel\" placeholder=\"01xxxxxxxxx\">\n      <div class=\"actions\"><button type=\"button\" class=\"btn primary\" id=\"discGo\">Get my code</button><button type=\"button\" class=\"btn ghost\" id=\"discClose\">Close</button></div>\n    </div>\n    <div id=\"discDone\" hidden style=\"text-align:center\">\n      <div class=\"code\" id=\"discCode\"></div>\n      <p style=\"font-size:14px;margin:6px 0 10px\">Send this code to High End on WhatsApp to get <b id=\"discPct\"></b> off. The code works once and only for this item.</p>\n      <a class=\"btn wa\" id=\"discSend\" target=\"_blank\" rel=\"noopener\">Send code on WhatsApp</a>\n      <div class=\"actions\" style=\"justify-content:center\"><button type=\"button\" class=\"btn ghost small\" id=\"discClose2\">Close</button></div>\n    </div>\n    <div class=\"msg\" id=\"discMsg\"></div>\n  </div>\n</div>";
+function ensureSellerModals(){
+  if (document.getElementById("soldModal")) return;
+  const w=document.createElement("div"); w.innerHTML=SELLER_MODALS; while (w.firstElementChild) document.body.appendChild(w.firstElementChild);
+  $("#discClose").onclick = $("#discClose2").onclick = ()=>{ $("#discModal").hidden = true; };
+  $("#soldClose").onclick = ()=>{ $("#soldModal").hidden = true; };
+}
+function openSold(item){
+  ensureSellerModals();
+  $("#soldTitle").textContent = titleOf(item.L);
+  $("#soldCode").value = ""; showMsg("","info",$("#soldMsg"));
+  $("#soldAsk").href = adminHref(`✅ *Please mark as SOLD*\n\n${titleOf(item.L)}\nRef: ${item.id}\n\nI'm the seller (listed number ${item.L.f.phone}). I lost my seller code.`);
+  $("#soldGo").onclick = async ()=>{
+    const code = $("#soldCode").value.replace(/\D/g,"");
+    if (code.length<4){ showMsg("Enter your seller code.","err",$("#soldMsg")); return; }
+    $("#soldGo").disabled = true;
+    try{
+      const {data, error} = await sb.rpc("seller_mark_sold",{p_id:item.id, p_code:code});
+      if (error) throw error;
+      const m = {ok:"Done — your listing is marked as sold. Thank you!", wrong:"That code is not right. Please check it.", locked:"Too many wrong tries. Ask the admin to mark it sold.", no_code:"This listing has no seller code. Ask the admin.", not_found:"This listing can't be changed any more."}[data] || "Something went wrong.";
+      showMsg(m, data==="ok"?"ok":"err", $("#soldMsg"));
+      if (data==="ok"){ item.L.status="sold"; item.L.soldAt=Date.now(); (window.onItemChanged||(()=>{}))(item); setTimeout(()=>$("#soldModal").hidden=true, 1500); }
+    }catch(e){ showMsg(niceError(e),"err",$("#soldMsg")); }
+    finally{ $("#soldGo").disabled = false; }
+  };
+  const hasStock = item.L.stock!==null && item.L.stock!==undefined;
+  $("#stockBox").hidden = !hasStock; if (hasStock) $("#stockIn").value = item.L.stock;
+  $("#stockGo").onclick = async ()=>{
+    const code = $("#soldCode").value.replace(/\D/g,""), n = parseInt($("#stockIn").value,10);
+    if (code.length<4){ showMsg("Enter your seller code.","err",$("#soldMsg")); return; }
+    if (isNaN(n) || n<0){ showMsg("Enter the quantity (0 or more).","err",$("#soldMsg")); return; }
+    $("#stockGo").disabled = true;
+    try{
+      const {data, error} = await sb.rpc("seller_update_stock",{p_id:item.id, p_code:code, p_stock:n});
+      if (error) throw error;
+      const m = {ok:"Stock updated. Thank you!", wrong:"That code is not right.", locked:"Too many wrong tries. Ask the admin.", no_code:"This listing has no seller code. Ask the admin.", not_found:"This listing can't be changed.", bad_number:"Enter a number between 0 and 99,999."}[data] || "Something went wrong.";
+      showMsg(m, data==="ok"?"ok":"err", $("#soldMsg"));
+      if (data==="ok"){ item.L.stock=n; if (n===0){ item.L.status="sold"; item.L.soldAt=Date.now(); } (window.onItemChanged||(()=>{}))(item); }
+    }catch(e){ showMsg(niceError(e),"err",$("#soldMsg")); }
+    finally{ $("#stockGo").disabled = false; }
+  };
+  $("#soldModal").hidden = false;
+}
+function openDiscount(item){
+  ensureSellerModals();
+  $("#discTitle").textContent = `${titleOf(item.L)} — ${item.L.discount}% off`;
+  $("#discAsk").hidden=false; $("#discDone").hidden=true; showMsg("","info",$("#discMsg"));
+  try{ const p=localStorage.getItem("mm_phone"); if (p) $("#discPhone").value=p; }catch(e){}
+  $("#discPhone").placeholder = MARKET_BY_ID[marketOf(item.L)].local;
+  $("#discGo").onclick = async ()=>{
+    const ph = anyPhone($("#discPhone").value, marketOf(item.L));
+    if (!ph){ showMsg(PHONE_HELP,"err",$("#discMsg")); return; }
+    $("#discGo").disabled=true;
+    try{
+      const {data, error} = await sb.rpc("request_discount",{p_id:item.id, p_phone:ph});
+      if (error) throw error;
+      if (data && data.code){
+        try{ localStorage.setItem("mm_phone", ph); }catch(e){}
+        $("#discCode").textContent=data.code; $("#discPct").textContent=data.pct+"%";
+        $("#discSend").href = adminHref(`🏷️ *Discount code request*\n\n${titleOf(item.L)}\nPrice: ${priceStr(item.L.f)}\nDiscount: ${data.pct}%\nMy code: *${data.code}*\nMy number: ${ph}\nRef: ${item.id}`);
+        $("#discAsk").hidden=true; $("#discDone").hidden=false; showMsg("","info",$("#discMsg"));
+      } else {
+        const m={no_discount:"This item has no discount right now.", sold_out:"Sorry, this item is sold out.", too_many:"You already asked for codes for this item today. Use the one you have.", bad_phone:"Check your mobile number.", try_again:"Please try again."}[(data||{}).error] || "Something went wrong.";
+        showMsg(m,"err",$("#discMsg"));
+      }
+    }catch(e){ showMsg(niceError(e),"err",$("#discMsg")); }
+    finally{ $("#discGo").disabled=false; }
+  };
+  $("#discModal").hidden = false;
+}
+
 
 /* ===================== Maintenance page ===================== */
 // Shown when the admin switches maintenance on, or when the database can't be reached / is overloaded.
@@ -1333,10 +1438,11 @@ function buildCard(item, mode){
     const r = rows(L), spec=document.createElement("div"); spec.className="spec";
     const tl=titleOf(L).toLowerCase();
     spec.textContent = r.filter(x=>!tl.includes(String(x[1]).toLowerCase())).slice(0,3).map(x=>x[1]).join("  ·  ");
-    const det=document.createElement("details"); det.className="more";
-    const sm=document.createElement("summary"); sm.innerHTML='<span>More details</span><i class="chev" aria-hidden="true"></i>'; det.append(sm, dl);
-    const extra=[...c.querySelectorAll("a:not(.wa):not([href^='tel:']),button")];
-    if (extra.length){ const tb=document.createElement("div"); tb.className="tools"; extra.forEach(e=>tb.appendChild(e)); det.appendChild(tb); }
+    // full details, photos and tools open on the listing's own page
+    const det=document.createElement("a"); det.className="more moredetails"; det.href=itemHref(id);
+    det.innerHTML='<span>More details</span><i class="chev" aria-hidden="true"></i>';
+    [...c.querySelectorAll("a:not(.wa):not([href^='tel:']),button")].forEach(e=>e.remove());
+    const ha=document.createElement("a"); ha.href=itemHref(id); ha.className="tlink"; ha.textContent=h.textContent; h.textContent=""; h.appendChild(ha);
     body.append(badge,h,pr); if (tags.childNodes.length) body.appendChild(tags);
     if (L.type==="watch"){
       const ws=watchSpecs(L).slice(0,4);
@@ -1346,7 +1452,7 @@ function buildCard(item, mode){
       if (L.f.price_unit!=="USD" && priceEGP(L.f)) { const u=document.createElement("div"); u.className="usd"; u.textContent="≈ $"+fmt(Math.round(priceEGP(L.f)/USD_TO_EGP)); pr.after(u); }
       else if (L.f.price_unit==="USD") { const u=document.createElement("div"); u.className="usd"; u.textContent="≈ "+fmt(Math.round(priceEGP(L.f)))+" EGP"; pr.after(u); }
     } else if (spec.textContent) body.appendChild(spec);
-    if (r.length || extra.length) body.appendChild(det);
+    body.appendChild(det);
     body.appendChild(c);
     if (!sold && INSPECT_TYPES.includes(L.type)){ const ib=document.createElement("button"); ib.type="button"; ib.className="inspect"; ib.textContent=inspectLabel(L); ib.onclick=()=>openInspect(item); body.appendChild(ib); }
     card.appendChild(body);
@@ -1562,7 +1668,7 @@ function dryPainter(){
   return {dry:true, rect(){}, img(){}, text(){}, link(){}, width:cp.width};
 }
 async function drawFlyerHD(P, L, id, ph){
-  const SP = flyerSponsor();
+  const SP = flyerSponsor({market:marketOf(L), group:GROUP[L.type]||""});
   const logo = P.dry ? null : await loadSrc(logoFor(L.type)), masar = P.dry ? null : await loadSrc(SP.image);
   const M = 8, W = FW-2*M;
   if (!P.dry){ P.rect(0,0,FW,9999,"#ffffff"); checker(P,0,0,FW,2); }

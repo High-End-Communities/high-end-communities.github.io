@@ -16,10 +16,10 @@
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=c58f9e47">
+<link rel="stylesheet" href="common.css?v=ef486792">
 </head>
 <body>
-<script src="i18n.js?v=3a9b5928"></script>
+<script src="i18n.js?v=3281641c"></script>
 <header class="mast">
   <div class="checker"></div>
   <button type="button" class="langbtn" id="langBtn" lang="ar">العربية</button>
@@ -98,7 +98,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="config.js"></script>
-<script src="common.js?v=c58f9e47"></script>
+<script src="common.js?v=ef486792"></script>
 
 <script>
 initHeader();
@@ -182,6 +182,10 @@ $("#form").addEventListener("submit", async e=>{
     const code = newSellerCode();
     const row = { id: uuid(), type, f, phone: f.phone, thumb: await makeThumb(pics[0]), photos: pics, terms: true, seller_code: code };
     if (f.stock) row.stock = Number(f.stock);
+    showMsg("Uploading photos…","info");
+    const st = await storeListingPhotos(row.id, row.photos, row.thumb);   // photos as files; falls back to inside the listing
+    if (st){ row.photos = st.photos; row.thumb = st.thumb; }
+    showMsg("Sending…","info");
     const {error} = await sb.from("listings").insert(row);
     if (error) throw error;
     // live straight away (auto-approve) if the public can already read it

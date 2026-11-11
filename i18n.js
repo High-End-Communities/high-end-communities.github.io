@@ -24,6 +24,10 @@ document.documentElement.lang = "ar";
 document.documentElement.dir = "rtl";
 
 var D = {
+/* listing page */
+"‹ All listings":"‹ كل المعروضات","‹ Signature Bags & Accessories":"‹ شنط وإكسسوارات براندات","Details":"التفاصيل","Share & download":"مشاركة وتحميل",
+"Open photos full screen":"عرض الصور بملء الشاشة","This listing is no longer available.":"هذا الإعلان لم يعد متاحًا.","See all listings":"شوف كل المعروضات",
+"This link is not complete.":"الرابط ده مش كامل.","Uploading photos…":"جارٍ رفع الصور…",
 /* masthead & home */
 "Motorcycles, watches and cars, sold owner to owner.":"موتوسيكلات وساعات وسيارات، من المالك إلى المالك مباشرة.",
 "Also yachts, horses, art and real estate. New and used.":"وأيضًا يخوت وخيول وفنون وعقارات. جديد ومستعمل.",
@@ -188,6 +192,7 @@ var MON = {Jan:"يناير",Feb:"فبراير",Mar:"مارس",Apr:"أبريل",M
 var CUR = {"EGP":"ج.م","USD":"دولار","SAR":"ر.س","AED":"د.إ","BHD":"د.ب","TRY":"ل.ت","EUR":"يورو","MAD":"د.م","TND":"د.ت","DZD":"د.ج","LYD":"د.ل"};
 function mk(n){ return D[n] || n; }
 var P = [
+  [/^Posted (\d{1,2} \w{3} \d{4})( · Sold (\d{1,2} \w{3} \d{4}))?$/, function(m){ return "نُشر " + m[1] + (m[3] ? " · بيع " + m[3] : ""); }],
   [/^No partner listed in (.+) yet\. Ask High End and we'll suggest one\.$/, function(m){ return "لا يوجد شريك مسجل في " + mk(m[1]) + " بعد. اسأل High End وسنرشح لك واحدًا."; }],
   [/^Choose the (.+) model…$/, function(m){ return "اختر موديل " + m[1] + "…"; }],
   [/^The (.+) marketplace is just opening\.$/, function(m){ return "سوق " + mk(m[1]) + " في بدايته."; }],

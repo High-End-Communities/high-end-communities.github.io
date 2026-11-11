@@ -27,10 +27,10 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=c58f9e47">
+<link rel="stylesheet" href="common.css?v=ef486792">
 </head>
 <body>
-<script src="i18n.js?v=3a9b5928"></script>
+<script src="i18n.js?v=3281641c"></script>
 <header class="mast">
   <div class="checker"></div>
   <button type="button" class="langbtn" id="langBtn" lang="ar">العربية</button>
@@ -84,53 +84,16 @@
   <div class="list" id="list"></div>
 </main>
 
-<div class="modal" id="soldModal" hidden>
-  <div class="card">
-    <h3>Seller tools</h3>
-    <p class="muted" id="soldTitle" style="font-size:14px"></p>
-    <label for="soldCode">Your 6-digit seller code</label>
-    <input id="soldCode" inputmode="numeric" maxlength="12" placeholder="e.g. 482913">
-    <div class="hint">You got it when you posted. Lost it? Ask the admin on WhatsApp.</div>
-    <div id="stockBox" hidden style="margin-top:10px">
-      <label for="stockIn">Quantity in stock now</label>
-      <div class="unitrow"><input id="stockIn" inputmode="numeric" placeholder="e.g. 12"><button type="button" class="btn ghost small" id="stockGo">Update stock</button></div>
-      <div class="hint">Put 0 when everything is sold.</div>
-    </div>
-    <div class="actions">
-      <button type="button" class="btn primary" id="soldGo">Mark as sold</button>
-      <a class="btn ghost" id="soldAsk" target="_blank" rel="noopener">Ask the admin</a>
-      <button type="button" class="btn ghost" id="soldClose">Close</button>
-    </div>
-    <div class="msg" id="soldMsg"></div>
-  </div>
-</div>
-<div class="modal" id="discModal" hidden>
-  <div class="card">
-    <h3>🏷️ Get your discount code</h3>
-    <p class="muted" id="discTitle" style="font-size:14px"></p>
-    <div id="discAsk">
-      <label for="discPhone">Your mobile number</label>
-      <input id="discPhone" type="tel" inputmode="tel" placeholder="01xxxxxxxxx">
-      <div class="actions"><button type="button" class="btn primary" id="discGo">Get my code</button><button type="button" class="btn ghost" id="discClose">Close</button></div>
-    </div>
-    <div id="discDone" hidden style="text-align:center">
-      <div class="code" id="discCode"></div>
-      <p style="font-size:14px;margin:6px 0 10px">Send this code to High End on WhatsApp to get <b id="discPct"></b> off. The code works once and only for this item.</p>
-      <a class="btn wa" id="discSend" target="_blank" rel="noopener">Send code on WhatsApp</a>
-      <div class="actions" style="justify-content:center"><button type="button" class="btn ghost small" id="discClose2">Close</button></div>
-    </div>
-    <div class="msg" id="discMsg"></div>
-  </div>
-</div>
 <footer><div class="checker"></div><p>High End Communities, est. 2024</p></footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="config.js"></script>
-<script src="common.js?v=c58f9e47"></script>
+<script src="common.js?v=ef486792"></script>
 
 <script>
+if (/^#l-[A-Za-z0-9-]{1,60}$/.test(location.hash)) location.replace("item.html?id="+location.hash.slice(3));   // old shared links
 const FIXED = window.FIXED_GROUP || null;     // bags.html shows one category only
 runIntro(FIXED ? "he_intro_"+FIXED : "he_intro");   // the bags page has its own intro too
 let all = [], filter = FIXED || "all", sub = "all", MARKET = getMarket();
@@ -158,70 +121,6 @@ startBannerRotation();
 loadSponsors().then(startBannerRotation);
 countPage("catalogue");
 
-function openSold(item){
-  $("#soldTitle").textContent = titleOf(item.L);
-  $("#soldCode").value = ""; showMsg("","info",$("#soldMsg"));
-  $("#soldAsk").href = adminHref(`✅ *Please mark as SOLD*\n\n${titleOf(item.L)}\nRef: ${item.id}\n\nI'm the seller (listed number ${item.L.f.phone}). I lost my seller code.`);
-  $("#soldGo").onclick = async ()=>{
-    const code = $("#soldCode").value.replace(/\D/g,"");
-    if (code.length<4){ showMsg("Enter your seller code.","err",$("#soldMsg")); return; }
-    $("#soldGo").disabled = true;
-    try{
-      const {data, error} = await sb.rpc("seller_mark_sold",{p_id:item.id, p_code:code});
-      if (error) throw error;
-      const m = {ok:"Done — your listing is marked as sold. Thank you!", wrong:"That code is not right. Please check it.", locked:"Too many wrong tries. Ask the admin to mark it sold.", no_code:"This listing has no seller code. Ask the admin.", not_found:"This listing can't be changed any more."}[data] || "Something went wrong.";
-      showMsg(m, data==="ok"?"ok":"err", $("#soldMsg"));
-      if (data==="ok"){ item.L.status="sold"; item.L.soldAt=Date.now(); render(); setTimeout(()=>$("#soldModal").hidden=true, 1500); }
-    }catch(e){ showMsg(niceError(e),"err",$("#soldMsg")); }
-    finally{ $("#soldGo").disabled = false; }
-  };
-  const hasStock = item.L.stock!==null && item.L.stock!==undefined;
-  $("#stockBox").hidden = !hasStock; if (hasStock) $("#stockIn").value = item.L.stock;
-  $("#stockGo").onclick = async ()=>{
-    const code = $("#soldCode").value.replace(/\D/g,""), n = parseInt($("#stockIn").value,10);
-    if (code.length<4){ showMsg("Enter your seller code.","err",$("#soldMsg")); return; }
-    if (isNaN(n) || n<0){ showMsg("Enter the quantity (0 or more).","err",$("#soldMsg")); return; }
-    $("#stockGo").disabled = true;
-    try{
-      const {data, error} = await sb.rpc("seller_update_stock",{p_id:item.id, p_code:code, p_stock:n});
-      if (error) throw error;
-      const m = {ok:"Stock updated. Thank you!", wrong:"That code is not right.", locked:"Too many wrong tries. Ask the admin.", no_code:"This listing has no seller code. Ask the admin.", not_found:"This listing can't be changed.", bad_number:"Enter a number between 0 and 99,999."}[data] || "Something went wrong.";
-      showMsg(m, data==="ok"?"ok":"err", $("#soldMsg"));
-      if (data==="ok"){ item.L.stock=n; if (n===0){ item.L.status="sold"; item.L.soldAt=Date.now(); } render(); }
-    }catch(e){ showMsg(niceError(e),"err",$("#soldMsg")); }
-    finally{ $("#stockGo").disabled = false; }
-  };
-  $("#soldModal").hidden = false;
-}
-function openDiscount(item){
-  $("#discTitle").textContent = `${titleOf(item.L)} — ${item.L.discount}% off`;
-  $("#discAsk").hidden=false; $("#discDone").hidden=true; showMsg("","info",$("#discMsg"));
-  try{ const p=localStorage.getItem("mm_phone"); if (p) $("#discPhone").value=p; }catch(e){}
-  $("#discPhone").placeholder = MARKET_BY_ID[MARKET].local;
-  $("#discGo").onclick = async ()=>{
-    const ph = anyPhone($("#discPhone").value, MARKET);
-    if (!ph){ showMsg(PHONE_HELP,"err",$("#discMsg")); return; }
-    $("#discGo").disabled=true;
-    try{
-      const {data, error} = await sb.rpc("request_discount",{p_id:item.id, p_phone:ph});
-      if (error) throw error;
-      if (data && data.code){
-        try{ localStorage.setItem("mm_phone", ph); }catch(e){}
-        $("#discCode").textContent=data.code; $("#discPct").textContent=data.pct+"%";
-        $("#discSend").href = adminHref(`🏷️ *Discount code request*\n\n${titleOf(item.L)}\nPrice: ${priceStr(item.L.f)}\nDiscount: ${data.pct}%\nMy code: *${data.code}*\nMy number: ${ph}\nRef: ${item.id}`);
-        $("#discAsk").hidden=true; $("#discDone").hidden=false; showMsg("","info",$("#discMsg"));
-      } else {
-        const m={no_discount:"This item has no discount right now.", sold_out:"Sorry, this item is sold out.", too_many:"You already asked for codes for this item today. Use the one you have.", bad_phone:"Check your mobile number.", try_again:"Please try again."}[(data||{}).error] || "Something went wrong.";
-        showMsg(m,"err",$("#discMsg"));
-      }
-    }catch(e){ showMsg(niceError(e),"err",$("#discMsg")); }
-    finally{ $("#discGo").disabled=false; }
-  };
-  $("#discModal").hidden = false;
-}
-$("#discClose").onclick = $("#discClose2").onclick = ()=>{ $("#discModal").hidden = true; };
-$("#soldClose").onclick = ()=>{ $("#soldModal").hidden = true; };
-
 function cardFor(item){
   const {card, body, meta, more} = buildCard(item, "public");
   const live = item.L.status!=="sold";
@@ -229,11 +128,6 @@ function cardFor(item){
     const d=document.createElement("button"); d.type="button"; d.className="btn primary small discbtn";
     d.textContent=`🏷️ Get ${item.L.discount}% discount code`; d.onclick=()=>openDiscount(item);
     body.insertBefore(d, body.querySelector(".contact"));
-  }
-  if (live){
-    const s=document.createElement("button"); s.type="button"; s.className="seller";
-    s.textContent = (item.L.stock!==null && item.L.stock!==undefined) ? "Seller? Update stock / mark sold" : "Seller? Mark as sold";
-    s.onclick = ()=>openSold(item); (more||body).appendChild(s);
   }
   body.appendChild(meta);
   if (viewObserver) viewObserver.observe(card);
@@ -253,6 +147,8 @@ const PER_SECTION=6;
 function pick(f){ filter=f; sub="all"; document.querySelectorAll("#filters .chip").forEach(x=>x.classList.toggle("on",x.dataset.f===f)); drawSubfilters(); render(); window.scrollTo({top:$("#filters").getBoundingClientRect().top+scrollY-10,behavior:"smooth"}); }
 function pickSub(t){ sub=t; drawSubfilters(); render(); }
 function render(){
+  const adKey = MARKET+"|"+(filter==="all" ? "" : filter);
+  if (adKey !== AD_CTX.key){ AD_CTX.key = adKey; AD_CTX.market = MARKET; AD_CTX.group = filter==="all" ? "" : filter; if (SPONSORS.length) startBannerRotation(); }
   const box = $("#list"); box.innerHTML = ""; box.className="sections";
   const showSold = $("#showSold").checked;
   const inCat = all.filter(x=>x.L.f && SCHEMAS[x.L.type] && marketOf(x.L)===MARKET && (filter==="all" || GROUP[x.L.type]===filter) && (sub==="all" || x.L.type===sub));
@@ -272,13 +168,17 @@ function render(){
   $("#catShare").href = waHref(catalogueText(live));
   if (!live.length && !(showSold && sold.length)){ box.innerHTML = `<div class="empty">${isW && wbox.dataset.on ? "No watches match these filters." : MARKET!=="EG" && !all.some(x=>marketOf(x.L)===MARKET) ? `The ${marketName(MARKET)} marketplace is just opening.` : "No listings here yet."}</div>`+(MARKET!=="EG"?`<p class="empty-cta"><a class="btn primary" href="post.html">Be the first to list in ${marketName(MARKET)}</a></p>`:""); return; }
   let n=0;
-  const addAd=()=>{ box.appendChild(feedSponsorCard(n++)); };
+  const addAd=(opt)=>{ const a=feedSponsorCard(n++, opt); if (a) box.appendChild(a); return !!a; };
   if (filter==="all"){
-    // home: one tidy row per category, newest/featured first, "See all" opens it
+    // home: one tidy row per category, newest/featured first, "See all" opens it.
+    // Under each category row: that category's own ads for this country, one under the other.
+    let general = false;
     GROUP_ORDER.forEach((g,i)=>{
       const its = live.filter(x=>GROUP[x.L.type]===g); if (!its.length) return;
       box.appendChild(section(g, GROUP_NAMES[g], GROUP_ICON[g], its.slice(0,PER_SECTION), its.length>PER_SECTION||SUBTYPES[g] ? ()=>pick(g) : null));
-      if (box.children.length===2) addAd();
+      const own = sponsorsFor("feed", {group:g, only:true});
+      own.forEach(s=>box.appendChild(sponsorCard(s)));
+      if (!own.length && !general){ general = true; addAd({group:"", general:true}); }
     });
   } else if (sub==="all" && SUBTYPES[filter]){
     // a category with sub-sections: one block per sub-section
@@ -300,8 +200,10 @@ document.querySelectorAll("#filters .chip").forEach(b=>b.onclick=()=>{
 $("#showSold").onchange = render;
 $("#catPdf").onclick = ()=>exportCatalogue();
 
+window.onItemChanged = ()=>render();
 function goToHash(){
   const h=(location.hash||"").slice(1); if (!h.startsWith("l-")) return;
+  if (safeId(h.slice(2))){ location.replace(itemHref(h.slice(2))); return; }     // old shared links open the listing's own page
   const it=all.find(x=>"l-"+x.id===h);
   if (it && marketOf(it.L)!==MARKET){ MARKET=marketOf(it.L); drawMarkets(); render(); }
   const el=document.getElementById(h);

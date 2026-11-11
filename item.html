@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script>try{var l=new URLSearchParams(location.search).get("lang")||localStorage.getItem("he_lang");if(l==="ar"){document.documentElement.lang="ar";document.documentElement.dir="rtl"}}catch(e){}</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Listing — High End Communities</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#17181a">
+<link rel="icon" href="favicon.ico">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="High End">
+<meta name="description" content="Buy and sell motorcycles, watches, cars, horses, yachts, art and real estate — new and used.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="High End Communities">
+<meta property="og:title" content="High End Communities — Listing">
+<meta property="og:description" content="Motorcycles • Watches • Cars • Equine • Yachts &amp; boats • Modern &amp; art • Real estate. New and used, with photos, prices and seller numbers.">
+<meta property="og:url" content="https://high-end-communities.github.io/item.html">
+<meta property="og:image" content="https://high-end-communities.github.io/logo.jpeg">
+<meta property="og:image:secure_url" content="https://high-end-communities.github.io/logo.jpeg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css?v=ef486792">
+</head>
+<body>
+<script src="i18n.js?v=3281641c"></script>
+<header class="mast">
+  <div class="checker"></div>
+  <button type="button" class="langbtn" id="langBtn" lang="ar">العربية</button>
+  <div class="mast-in">
+    <a class="mast-logo" href="./"><img id="mainLogo" alt="High End Communities"></a>
+    <p class="mast-line">Motorcycles, watches and cars, sold owner to owner.</p>
+    <p class="mast-sub">Also yachts, horses, art and real estate. New and used.</p>
+    <div class="brands" id="brands"></div>
+  </div>
+</header>
+<main class="itempage">
+  <nav class="crumbs"><a href="./" id="backLink">‹ All listings</a></nav>
+  <div class="msg" id="listMsg"></div>
+  <div id="itemBox"></div>
+  <aside class="masar sponsor-banner"></aside>
+  <div class="disc">High End Communities only lists items and is not responsible for any product promoted. Buyers must do their own due diligence and check ownership papers with a lawyer.<details class="tx"><summary>Read the full terms</summary>
+        <ol>
+          <li><b>Listing platform only.</b> High End Communities is a place where members advertise items. We do not own, inspect, verify, value or guarantee any item, and we are not a party to any sale.</li>
+          <li><b>No responsibility.</b> High End Communities, its admins and sponsors are not responsible for any product promoted here, its condition, legality, ownership, description or price, or for any loss or dispute arising from a sale.</li>
+          <li><b>Due diligence is yours.</b> Buyers must inspect the item, verify the seller's identity, and confirm the seller owns it and can legally sell it.</li>
+          <li><b>Check the papers with a lawyer.</b> Before paying, consult a lawyer or the relevant authority for the ownership and transfer papers the item needs, for example: vehicle or motorcycle licence and traffic records; boat registration and marina papers; property title deed, registration and contract; horse passport, pedigree and vet certificate; watch box &amp; papers, or a certificate of authenticity for art.</li>
+          <li><b>Seller's responsibility.</b> Sellers confirm they own the item or are authorised to sell it, that the description and photos are true, and that the item is legal to sell.</li>
+          <li><b>Payments and meetings</b> are arranged directly between buyer and seller at their own risk. Meet in safe places and never pay before checking the item and its papers.</li>
+          <li>Admins may remove any listing at any time.</li>
+        </ol>
+      </details></div>
+</main>
+<footer><div class="checker"></div><p>High End Communities, est. 2024</p></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<script src="config.js"></script>
+<script src="common.js?v=ef486792"></script>
+
+<script>
+initHeader();
+const ID = (new URLSearchParams(location.search).get("id")||"").trim();
+let ITEM = null;
+
+function setMeta(name, val, prop){
+  const sel = prop ? `meta[property="${name}"]` : `meta[name="${name}"]`;
+  let m = document.head.querySelector(sel);
+  if (!m){ m=document.createElement("meta"); m.setAttribute(prop?"property":"name", name); document.head.appendChild(m); }
+  m.setAttribute("content", val);
+}
+function describe(L){
+  const r = rows(L).filter(x=>!/phone|mobile/i.test(x[0])).slice(0,5).map(x=>x[1]).join(", ");
+  return `${titleOf(L)} for sale in ${marketName(marketOf(L))}${L.status==="sold"?" (sold)":" — "+priceStr(L.f)}. ${r}`.slice(0,300);
+}
+function seo(item, photos){
+  const L=item.L, t=titleOf(L), url=linkFor(item.id);
+  document.title = `${t} — ${L.status==="sold"?"Sold":priceStr(L.f)} | High End Communities`;
+  setMeta("description", describe(L));
+  setMeta("og:title", t, 1); setMeta("og:description", describe(L), 1); setMeta("og:url", url, 1);
+  if (photos[0] && /^https:/.test(photos[0])) setMeta("og:image", photos[0], 1);
+  let c=document.head.querySelector('link[rel=canonical]'); if (!c){ c=document.createElement("link"); c.rel="canonical"; document.head.appendChild(c); } c.href=url;
+  const pe=priceEGP(L.f), cur=(L.f.price_unit||"EGP");
+  const ld={"@context":"https://schema.org","@type":"Product","name":t,"description":describe(L),"url":url,
+    "category":LABELS[L.type]||"", "image":photos.filter(p=>/^https:/.test(p)),
+    "brand": L.f.brand ? {"@type":"Brand","name":L.f.brand} : undefined,
+    "offers":{"@type":"Offer","url":url,"priceCurrency":cur,"price":String(L.f.price||"").replace(/[^\d.]/g,"")||undefined,
+      "availability": L.status==="sold" ? "https://schema.org/SoldOut" : "https://schema.org/InStock",
+      "itemCondition": /new/i.test(L.f.condition||"") ? "https://schema.org/NewCondition" : "https://schema.org/UsedCondition"}};
+  let s=document.getElementById("ld"); if (!s){ s=document.createElement("script"); s.type="application/ld+json"; s.id="ld"; document.head.appendChild(s); }
+  s.textContent = JSON.stringify(ld);
+}
+
+function gallery(item, photos){
+  const g=document.createElement("div"); g.className="ig";
+  const main=document.createElement("button"); main.type="button"; main.className="ig-main"; main.setAttribute("aria-label","Open photos full screen");
+  const im=document.createElement("img"); im.alt=titleOf(item.L); im.src=photos[0]||item.L.thumb||""; main.appendChild(im);
+  if (photos.length>1){ const n=document.createElement("span"); n.className="ig-n"; n.textContent=`1 / ${photos.length}`; main.appendChild(n); }
+  let cur=0;
+  const show=i=>{ cur=i; im.src=photos[i]; const n=main.querySelector(".ig-n"); if (n) n.textContent=`${i+1} / ${photos.length}`; th.querySelectorAll("button").forEach((b,k)=>b.classList.toggle("on",k===i)); };
+  main.onclick=()=>openViewer(item, cur, main);
+  g.appendChild(main);
+  const th=document.createElement("div"); th.className="ig-thumbs";
+  if (photos.length>1) photos.forEach((p,i)=>{ const b=document.createElement("button"); b.type="button"; b.setAttribute("aria-label","Photo "+(i+1)); if(!i) b.classList.add("on");
+    const t=document.createElement("img"); t.src=p; t.alt=""; t.loading="lazy"; b.appendChild(t); b.onclick=()=>show(i); th.appendChild(b); });
+  g.appendChild(th);
+  return g;
+}
+
+function draw(){
+  const item=ITEM, L=item.L, live=L.status!=="sold";
+  const photos = (L.photos && L.photos.length) ? L.photos : (L.thumb ? [L.thumb] : []);
+  const box=$("#itemBox"); box.innerHTML="";
+  const {card, body, meta} = buildCard(item, "detail");
+  card.classList.add("itemdetail");
+  card.querySelector(".gwrap")?.remove();
+  card.insertBefore(gallery(item, photos), card.firstChild);
+  const h=body.querySelector("h3"); if (h){ const h1=document.createElement("h1"); h1.textContent=h.textContent; h.replaceWith(h1); }
+  const contact=body.querySelector(".contact");
+  if (contact){
+    const tools=document.createElement("div"); tools.className="tools";
+    [...contact.querySelectorAll("a:not(.wa):not([href^='tel:']),button")].forEach(e=>tools.appendChild(e));
+    const dl=body.querySelector("dl"); if (dl) body.insertBefore(contact, dl);
+    if (tools.childNodes.length){ const t=document.createElement("h2"); t.className="sub"; t.textContent="Share & download"; body.append(t, tools); }
+  }
+  const dl=body.querySelector("dl"); if (dl){ const t=document.createElement("h2"); t.className="sub"; t.textContent="Details"; dl.before(t); }
+  if (live && L.discount && (L.stock===null || L.stock>0)){
+    const d=document.createElement("button"); d.type="button"; d.className="btn primary small discbtn";
+    d.textContent=`🏷️ Get ${L.discount}% discount code`; d.onclick=()=>openDiscount(item);
+    (contact||body).after(d);
+  }
+  if (live && INSPECT_TYPES.includes(L.type)){
+    const ib=document.createElement("button"); ib.type="button"; ib.className="inspect"; ib.textContent=inspectLabel(L); ib.onclick=()=>openInspect(item);
+    (body.querySelector(".discbtn")||contact||body).after(ib);
+  }
+  if (live){
+    const s=document.createElement("button"); s.type="button"; s.className="seller";
+    s.textContent = (L.stock!==null && L.stock!==undefined) ? "Seller? Update stock / mark sold" : "Seller? Mark as sold";
+    s.onclick = ()=>openSold(item); body.appendChild(s);
+  }
+  body.appendChild(meta);
+  box.appendChild(card);
+  seo(item, photos);
+}
+window.onItemChanged = ()=>draw();
+
+(async ()=>{
+  if (!sb){ showMsg("This page isn't connected to its database yet (config.js).","err",$("#listMsg")); return; }
+  if (!safeId(ID)){ showMsg("This link is not complete.","err",$("#listMsg")); $("#itemBox").innerHTML='<p class="empty-cta"><a class="btn primary" href="./">See all listings</a></p>'; return; }
+  if (!(await siteCheck("catalogue"))) return;
+  showMsg("Loading…","info",$("#listMsg"));
+  const {data, error} = await sb.from("listings").select(LIST_COLS+",photos").eq("id", ID).in("status",["live","sold"]).maybeSingle();
+  showMsg("","info",$("#listMsg"));
+  if (error){ if (!(await siteCheck("catalogue"))) return; showMsg(niceError(error),"err",$("#listMsg")); return; }
+  if (!data){
+    $("#itemBox").innerHTML='<div class="empty">This listing is no longer available.</div><p class="empty-cta"><a class="btn primary" href="./">See all listings</a></p>';
+    setMeta("robots","noindex"); return;
+  }
+  ITEM = rowToItem(data);
+  const g = GROUP[ITEM.L.type]||"";
+  if (g==="bag"){ $("#backLink").href="bags.html"; $("#backLink").textContent="‹ Signature Bags & Accessories"; }
+  AD_CTX.market = marketOf(ITEM.L); AD_CTX.group = g;
+  draw();
+  queueView(ID);
+  loadSponsors().then(startBannerRotation);
+})();
+</script>
+</body>
+</html>
