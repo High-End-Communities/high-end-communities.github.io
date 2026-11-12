@@ -27,10 +27,10 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=b44dbe05">
+<link rel="stylesheet" href="common.css?v=4477a7e8">
 </head>
 <body>
-<script src="i18n.js?v=b5368ee5"></script>
+<script src="i18n.js?v=2f9a0d2b"></script>
 <header class="mast">
   <div class="checker"></div>
   <button type="button" class="langbtn" id="langBtn" lang="ar">العربية</button>
@@ -101,7 +101,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="config.js"></script>
-<script src="common.js?v=b44dbe05"></script>
+<script src="common.js?v=4477a7e8"></script>
 
 <script>
 if (/^#l-[A-Za-z0-9-]{1,60}$/.test(location.hash)) location.replace("item.html?id="+location.hash.slice(3));   // old shared links
@@ -254,14 +254,18 @@ function wantedCta(empty){
   const d=document.createElement("div"); d.className="wantedcta";
   const p=document.createElement("p"); p.textContent = empty ? "Nothing matches yet. Tell sellers what you're looking for." : "Can't find what you're looking for?";
   const b=document.createElement("button"); b.type="button"; b.className="btn ghost"; b.textContent="Post a request"; b.onclick=()=>openRequestForm();
-  d.append(p,b); return d;
+  const i=document.createElement("button"); i.type="button"; i.className="btn ghost"; i.textContent="🌍 Order from abroad"; i.onclick=()=>openImportForm();
+  d.append(p,b,i); return d;
 }
 async function renderWanted(box){
   document.body.classList.remove("value");
   $("#searchbar").hidden = true; $("#catPdf").hidden = true; $("#catShare").hidden = true;
   const head=document.createElement("div"); head.className="wantedhead";
   head.innerHTML = `<div><h2>Wanted in ${esc(marketName(MARKET))}</h2><p class="muted">Buyers looking for something. Have it? Send them an offer on WhatsApp.</p></div>`;
-  const b=document.createElement("button"); b.type="button"; b.className="btn primary"; b.textContent="Post a request"; b.onclick=()=>openRequestForm(); head.appendChild(b);
+  const hb=document.createElement("div"); hb.className="row";
+  const b=document.createElement("button"); b.type="button"; b.className="btn primary"; b.textContent="Post a request"; b.onclick=()=>openRequestForm();
+  const ib=document.createElement("button"); ib.type="button"; ib.className="btn ghost"; ib.textContent="🌍 Order from abroad"; ib.onclick=()=>openImportForm();
+  hb.append(b,ib); head.appendChild(hb);
   box.appendChild(head);
   const g=document.createElement("div"); g.className="wantedlist"; box.appendChild(g);
   if (wantedFor!==MARKET){
@@ -285,6 +289,45 @@ async function renderWanted(box){
     a.textContent="I have it — WhatsApp"; c.appendChild(a);
     g.appendChild(c);
   });
+}
+/* ---------- Order from abroad: the buyer asks for a price, the admin replies on WhatsApp ---------- */
+function openImportForm(){
+  let m=$("#impModal");
+  if (!m){
+    m=document.createElement("div"); m.className="modal"; m.id="impModal";
+    m.innerHTML=`<div class="card"><h3>🌍 Order from abroad</h3>
+      <p class="muted" style="font-size:14px">Tyres, parts, gear or anything special from the USA, Europe and more. Tell us what you need and we reply on WhatsApp with a price delivered to you.</p>
+      <label for="im_title">What do you need?</label><input id="im_title" maxlength="80" placeholder="e.g. Michelin Road 6 tyres 120/70 + 190/55">
+      <label for="im_link">Product link (optional)</label><input id="im_link" type="url" maxlength="500" placeholder="https://…">
+      <label for="im_src">From</label><select id="im_src"><option>USA</option><option>Europe</option><option>UK</option><option>UAE</option><option>China</option><option>Japan</option><option>Other</option></select>
+      <label for="im_details">Size, quantity, colour… (optional)</label><textarea id="im_details" maxlength="500"></textarea>
+      <label for="im_phone">Your WhatsApp number</label><input id="im_phone" type="tel" inputmode="tel">
+      <label for="im_name">Your name (optional)</label><input id="im_name" maxlength="40">
+      <div class="hint">Only the High End team sees this request.</div>
+      <div class="actions"><button type="button" class="btn primary" id="im_go">Ask for a price</button><button type="button" class="btn ghost" id="im_close">Close</button></div>
+      <div class="msg" id="im_msg"></div></div>`;
+    document.body.appendChild(m);
+    $("#im_close").onclick=()=>{ m.hidden=true; };
+    $("#im_go").onclick=async()=>{
+      const title=$("#im_title").value.trim(), ph=anyPhone($("#im_phone").value, MARKET), link=$("#im_link").value.trim();
+      if (title.length<3){ showMsg("Write what you need.","err",$("#im_msg")); return; }
+      if (link && !/^https?:\/\//i.test(link)){ showMsg("The link must start with https://","err",$("#im_msg")); return; }
+      if (!ph){ showMsg(PHONE_HELP,"err",$("#im_msg")); return; }
+      $("#im_go").disabled=true;
+      try{
+        const {error}=await sb.from("requests").insert({kind:"import", market:MARKET, grp:"other", title, link:link||null, source:$("#im_src").value,
+          details:$("#im_details").value.trim()||null, phone:ph, name:$("#im_name").value.trim()||null});
+        if (error) throw error;
+        try{ localStorage.setItem("mm_phone", ph); }catch(e){}
+        showMsg("Sent. We'll reply on WhatsApp with a price.","ok",$("#im_msg"));
+        ["#im_title","#im_link","#im_details"].forEach(id=>$(id).value="");
+      }catch(e){ showMsg(/kind|requests/.test(e.message||"") ? "Orders from abroad open soon." : niceError(e),"err",$("#im_msg")); }
+      finally{ $("#im_go").disabled=false; }
+    };
+  }
+  $("#im_phone").placeholder=(MARKET_BY_ID[MARKET]||MARKET_BY_ID.EG).local;
+  try{ const p=localStorage.getItem("mm_phone"); if (p && !$("#im_phone").value) $("#im_phone").value=p; }catch(e){}
+  showMsg("","info",$("#im_msg")); m.hidden=false;
 }
 function openRequestForm(){
   let m=$("#reqModal");

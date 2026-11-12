@@ -616,3 +616,16 @@ body.value .searchbar input,body.value .pricef input{border-radius:10px}
 body.value .masar{border-radius:12px}
 @media (max-width:560px){ .pricef input{flex:1 1 0;min-width:0;width:0} }
 article.wanted h3,article.wanted p{unicode-bidi:plaintext}
+
+/* engraved crest in the masthead (v12) */
+.mast-logo img.crest{width:min(270px,66vw);filter:grayscale(1) invert(1) contrast(1.25) brightness(1.05)}
+.maint img{mix-blend-mode:multiply;filter:grayscale(1) contrast(1.15);width:min(260px,64vw);height:auto}
+/* masthead on the crest's own paper colour: brown engraving on warm ivory (v12b) */
+header.mast{background:rgb(248,243,232);color:#2f2114;border-bottom:1px solid #e4dccb}
+header.mast .checker{background:repeating-conic-gradient(#2f2114 0 25%,#f8f3e8 0 50%) 0 0/6px 6px;opacity:.85}
+.mast-logo img.crest{filter:none;mix-blend-mode:normal;width:min(290px,70vw)}
+.mast-line{color:#2f2114}
+.mast-sub{color:#7a6a55}
+header.mast .brands{border-top-color:#e4dccb}
+header.mast .brands img{filter:grayscale(1) contrast(1.05);mix-blend-mode:multiply;opacity:.85}
+header.mast .langbtn,header.mast #langBtn{color:#2f2114;border-color:#cdbfa6;background:transparent}

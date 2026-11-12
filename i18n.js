@@ -24,6 +24,10 @@ document.documentElement.lang = "ar";
 document.documentElement.dir = "rtl";
 
 var D = {
+"🌍 Order from abroad":"🌍 اطلب من بره","Tyres, parts, gear or anything special from the USA, Europe and more. Tell us what you need and we reply on WhatsApp with a price delivered to you.":"كاوتش، قطع غيار، معدات أو أي حاجة مخصوص من أمريكا وأوروبا وغيرهم. قولنا محتاج إيه وهنرد عليك على واتساب بالسعر لحد عندك.",
+"What do you need?":"محتاج إيه؟","Product link (optional)":"لينك المنتج (اختياري)","From":"من","Size, quantity, colour… (optional)":"المقاس، الكمية، اللون… (اختياري)",
+"Only the High End team sees this request.":"فريق High End بس هو اللي بيشوف الطلب ده.","Ask for a price":"اطلب السعر","Write what you need.":"اكتب إنت محتاج إيه.",
+"Sent. We'll reply on WhatsApp with a price.":"اتبعت. هنرد عليك على واتساب بالسعر.","Orders from abroad open soon.":"الطلب من بره هيفتح قريب.","USA":"أمريكا","Europe":"أوروبا","UK":"بريطانيا","China":"الصين","Japan":"اليابان","Other":"أخرى",
 /* search, wanted, payments */
 "Search brand, model, anything…":"ابحث بالماركة أو الموديل أو أي حاجة…","Search listings":"بحث في المعروضات","Min price":"أقل سعر","Max price":"أعلى سعر","Minimum price":"أقل سعر","Maximum price":"أعلى سعر","Clear":"مسح","Price range":"نطاق السعر",
 "Wanted":"مطلوب","1 result":"نتيجة واحدة","Post a request":"اطلب منتج","Can't find what you're looking for?":"مش لاقي اللي بتدور عليه؟","Nothing matches yet. Tell sellers what you're looking for.":"مفيش نتايج لسه. قول للبائعين إنت بتدور على إيه.",
@@ -185,7 +189,7 @@ var D = {
 "Price: high to low":"السعر: من الأعلى للأقل","Year: newest":"السنة: الأحدث","Clear filters":"مسح الفلاتر","Clear":"مسح","Filters":"فلاتر",
 "No watches match these filters.":"لا توجد ساعات مطابقة لهذه الفلاتر.",
 /* marketplaces */
-"Marketplace":"السوق","Egypt":"مصر","Saudi Arabia":"السعودية","UAE":"الإمارات","Bahrain":"البحرين","North Africa":"شمال أفريقيا","Turkey":"تركيا",
+"Marketplace":"السوق","Egypt":"مصر","Saudi Arabia":"السعودية","UAE":"الإمارات","Bahrain":"البحرين","North Africa":"شمال أفريقيا","Morocco":"المغرب","Algeria":"الجزائر","Tunisia":"تونس","Libya":"ليبيا","Turkey":"تركيا",
 "Where are you selling?":"أين تبيع؟",
 "Your listing appears in this country's marketplace, with its currency and phone code.":"يظهر منتجك في سوق هذه الدولة، بعملتها وكود هاتفها.",
 "SAR":"ر.س","AED":"د.إ","BHD":"د.ب","TRY":"ل.ت","MAD":"د.م","TND":"د.ت","DZD":"د.ج","LYD":"د.ل",

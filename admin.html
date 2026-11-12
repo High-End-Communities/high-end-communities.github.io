@@ -16,10 +16,10 @@
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=b44dbe05">
+<link rel="stylesheet" href="common.css?v=4477a7e8">
 </head>
 <body>
-<script src="i18n.js?v=b5368ee5"></script>
+<script src="i18n.js?v=2f9a0d2b"></script>
 <header class="mast">
   <div class="checker"></div>
   <button type="button" class="langbtn" id="langBtn" lang="ar">العربية</button>
@@ -36,8 +36,13 @@
       <h2 class="slab" style="margin:0 0 10px">Admin login</h2>
       <label for="email">Email</label><input id="email" type="email" autocomplete="username">
       <label for="pass" style="margin-top:10px">Password</label><input id="pass" type="password" autocomplete="current-password">
-      <div class="actions"><button class="btn primary" id="loginBtn" type="button">Log in</button></div>
+      <div class="actions"><button class="btn primary" id="loginBtn" type="button">Log in</button>
+        <button class="btn ghost small" id="forgotBtn" type="button">Forgot password?</button></div>
       <div class="msg" id="loginMsg"></div>
+      <div id="newPassBox" hidden style="margin-top:14px">
+        <label for="newPass">Choose a new password (at least 8 characters)</label><input id="newPass" type="password" autocomplete="new-password">
+        <div class="actions"><button class="btn primary" id="newPassBtn" type="button">Save new password</button></div>
+      </div>
     </div>
   </section>
 
@@ -63,7 +68,7 @@
       <div class="hint" id="maintHint">You can still use admin while it's on. The page also shows by itself if the database is down or overloaded.</div>
     </div>
     <div data-pane="wanted" hidden>
-      <div class="hint" style="margin-bottom:10px">Requests from buyers. Approve to show them under "Wanted" on the site (they hide by themselves after 60 days). Close one when the buyer found it.</div>
+      <div class="hint" style="margin-bottom:10px">🌍 Orders from abroad: press "Send price" to save your price and open WhatsApp to the buyer. Requests from buyers. Approve to show them under "Wanted" on the site (they hide by themselves after 60 days). Close one when the buyer found it.</div>
       <div class="msg" id="wqMsg"></div>
       <div id="wqList"></div>
     </div>
@@ -287,7 +292,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="config.js"></script>
-<script src="common.js?v=b44dbe05"></script>
+<script src="common.js?v=4477a7e8"></script>
 
 <script>
 initHeader();
@@ -377,20 +382,37 @@ async function loadWanted(){
 }
 function renderWanted(){
   const box=$("#wqList"); box.innerHTML="";
-  const pend=wantedAll.filter(r=>r.status==="pending").length; $("#nWanted").textContent = pend ? "("+pend+")" : "";
+  const pend=wantedAll.filter(r=>r.status==="pending").length;   // includes orders from abroad waiting for a price $("#nWanted").textContent = pend ? "("+pend+")" : "";
   if (!wantedAll.length){ box.innerHTML='<div class="empty">No requests yet.</div>'; return; }
   wantedAll.forEach(r=>{
     const row=document.createElement("div"); row.className="sp-row";
     const x=document.createElement("div"); x.className="x";
     const b=document.createElement("b"); b.textContent=r.title+" ";
-    const pill=document.createElement("span"); pill.className="pill"+(r.status==="live"?"":" off"); pill.textContent={pending:"Waiting",live:"Showing",closed:"Closed"}[r.status]||r.status; b.appendChild(pill);
-    const sp=document.createElement("span"); sp.textContent=`${GROUP_NAMES[r.grp]||r.grp} · ${marketName(r.market)} · ${r.budget?fmt(r.budget)+" "+(r.budget_unit||""):"no budget"} · ${r.name||""} ${r.phone} · ${fmtDate(Date.parse(r.created_at))}`+(r.details?"\n"+r.details:"");
+    const imp = r.kind==="import";
+    const pill=document.createElement("span"); pill.className="pill"+(r.status==="live"?"":" off");
+    pill.textContent = imp ? ({pending:"🌍 Needs a price",quoted:"🌍 Price sent",closed:"🌍 Closed"}[r.status]||r.status) : ({pending:"Waiting",live:"Showing",closed:"Closed"}[r.status]||r.status); b.appendChild(pill);
+    const sp=document.createElement("span");
+    sp.textContent = imp
+      ? `Order from abroad · from ${r.source||"?"} · ${marketName(r.market)} · ${r.name||""} ${r.phone} · ${fmtDate(Date.parse(r.created_at))}`+(r.details?"\n"+r.details:"")+(r.quote?"\nPrice sent: "+r.quote:"")
+      : `${GROUP_NAMES[r.grp]||r.grp} · ${marketName(r.market)} · ${r.budget?fmt(r.budget)+" "+(r.budget_unit||""):"no budget"} · ${r.name||""} ${r.phone} · ${fmtDate(Date.parse(r.created_at))}`+(r.details?"\n"+r.details:"");
     sp.style.whiteSpace="pre-line"; x.append(b,sp);
+    if (imp && r.link && /^https?:\/\//.test(r.link)){ const a=document.createElement("a"); a.href=r.link; a.target="_blank"; a.rel="noopener noreferrer"; a.textContent="Open product link"; a.style.display="block"; x.appendChild(a); }
     const tools=document.createElement("div"); tools.className="admin"; tools.style.border="0"; tools.style.margin="0"; tools.style.padding="0";
     const set=st=>async()=>{ const {error}=await sb.from("requests").update({status:st}).eq("id",r.id); if(error) throw error; r.status=st; if (st==="rejected") wantedAll=wantedAll.filter(z=>z!==r); renderWanted(); };
-    if (r.status!=="live") tools.append(btn("✓ Approve","",set("live")));
-    if (r.status==="live") tools.append(btn("Close","",set("closed")));
-    if (r.status==="pending") tools.append(btn("✕","bad",set("rejected"),"Reject?"));
+    if (imp){
+      tools.append(btn("💬 Send price","",async()=>{
+        const q=prompt("Price to send (e.g. 18,500 EGP delivered in 3 weeks)", r.quote||""); if (!q) return;
+        const {error}=await sb.from("requests").update({quote:q.slice(0,300), quoted_at:new Date().toISOString(), status:"quoted"}).eq("id",r.id); if (error) throw error;
+        r.quote=q; r.status="quoted"; renderWanted();
+        const msg=`Hello${r.name?" "+r.name:""}, this is High End Communities about your order from abroad:\n*${r.title}*\n\nPrice: ${q}\n\nReply here to confirm.`;
+        window.open("https://wa.me/"+waNum(r.phone)+"?text="+encodeURIComponent(msg),"_blank","noopener");
+      }));
+      if (r.status!=="closed") tools.append(btn("Close","",set("closed")));
+    } else {
+      if (r.status!=="live") tools.append(btn("✓ Approve","",set("live")));
+      if (r.status==="live") tools.append(btn("Close","",set("closed")));
+      if (r.status==="pending") tools.append(btn("✕","bad",set("rejected"),"Reject?"));
+    }
     tools.append(btn("🗑","bad",async()=>{ const {error}=await sb.from("requests").delete().eq("id",r.id); if(error) throw error; wantedAll=wantedAll.filter(z=>z!==r); renderWanted(); },"Delete?"));
     row.append(x,tools); box.appendChild(row);
   });
@@ -886,7 +908,27 @@ async function loadStats(){
   if (!top.length) tb.insertAdjacentHTML("beforeend","<tr><td colspan='3' class='muted'>No views yet.</td></tr>");
 }
 
-if (sb){ enter(); sb.auth.onAuthStateChange((ev)=>{ if (ev==="SIGNED_OUT"){ $("#loginView").hidden=false; $("#adminView").hidden=true; } }); }
+/* forgotten password: Supabase e-mails a link back to this page, then a new password is chosen here */
+$("#forgotBtn").onclick = async ()=>{
+  const email=$("#email").value.trim();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ showMsg("Type your admin e-mail first, then press Forgot password.","err",$("#loginMsg")); return; }
+  const {error}=await sb.auth.resetPasswordForEmail(email, {redirectTo: location.origin + location.pathname});
+  showMsg(error ? niceError(error) : "If this e-mail is an admin, a reset link is on its way. Open it on this device.", error?"err":"ok", $("#loginMsg"));
+};
+function askNewPassword(){
+  $("#loginView").hidden=false; $("#adminView").hidden=true; $("#newPassBox").hidden=false;
+  showMsg("Choose your new password.","info",$("#loginMsg"));
+}
+$("#newPassBtn").onclick = async ()=>{
+  const pw=$("#newPass").value;
+  if (pw.length<8){ showMsg("At least 8 characters.","err",$("#loginMsg")); return; }
+  const {error}=await sb.auth.updateUser({password:pw});
+  if (error){ showMsg(niceError(error),"err",$("#loginMsg")); return; }
+  $("#newPassBox").hidden=true; $("#newPass").value=""; showMsg("Password saved.","ok",$("#loginMsg")); enter();
+};
+const RECOVERY = /type=recovery/.test(location.hash);
+if (sb){ if (!RECOVERY) enter(); else askNewPassword();
+  sb.auth.onAuthStateChange((ev)=>{ if (ev==="PASSWORD_RECOVERY") askNewPassword(); if (ev==="SIGNED_OUT"){ $("#loginView").hidden=false; $("#adminView").hidden=true; } }); }
 else showMsg("Add your Supabase details to config.js first.","err",$("#loginMsg"));
 </script>
 </body>
