@@ -18,10 +18,10 @@
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=d1972caa">
+<link rel="stylesheet" href="common.css?v=44ab7730">
 </head>
 <body>
-<script src="i18n.js?v=67d7bdcc"></script>
+<script src="i18n.js?v=5bb7a0e9"></script>
 <header class="mast">
   <div class="checker"></div>
   <button type="button" class="langbtn" id="langBtn" lang="ar">العربية</button>
@@ -409,7 +409,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="config.js"></script>
-<script src="common.js?v=d1972caa"></script>
+<script src="common.js?v=44ab7730"></script>
 
 <script>
 initHeader();
@@ -423,15 +423,20 @@ const reasonMsg = (L,r,kind)=> kind==="changes"
 async function enter(){
   const {data:{session}} = await sb.auth.getSession();
   if (!session){ $("#loginView").hidden=false; $("#adminView").hidden=true; return; }
-  const {data:ok} = await sb.rpc("is_admin");
+  const mp = await sb.rpc("my_perms");
+  let ok;
+  if (mp.error){ const r=await sb.rpc("is_admin"); ok=r.data; ME={root:false, full:!!ok, perms:[]}; }   // before update17
+  else { ok=!!mp.data; if (ok) ME={root:!!mp.data.root, full:!!mp.data.full, perms:mp.data.perms||[]}; }
   if (!ok){ showMsg("This account is not an admin. Add its email to the admins table (setup.sql step 1).","err",$("#loginMsg")); await sb.auth.signOut(); return; }
   $("#loginView").hidden=true; $("#adminView").hidden=false;
   $("#who").textContent = "Logged in as " + session.user.email;
   countPage("admin");
   initCategoryPicker(); initPhotoInputs(); renderFields(); $("#terms").checked=true;
   $("#submitBtn").textContent = "Publish now";
-  await Promise.all([loadAll(), loadSponsorsAdmin(), loadSettings(), loadTrusted()]); loadWanted(); loadMoney(); loadAdmins();
-  loadCodes();
+  applyPerms();
+  await Promise.all([can("listings")?loadAll():null, can("sponsors")?loadSponsorsAdmin():null, loadSettings(), can("listings")?loadTrusted():null]);
+  if (can("wanted")) loadWanted(); if (can("money")) loadMoney(); loadAdmins();
+  if (can("codes")) loadCodes();
   loadSponsors();
 }
 $("#loginBtn").onclick = async ()=>{
@@ -444,6 +449,23 @@ $("#loginBtn").onclick = async ()=>{
 };
 $("#pass").addEventListener("keydown",e=>{ if(e.key==="Enter") $("#loginBtn").click(); });
 $("#logout").onclick = async ()=>{ await sb.auth.signOut(); location.reload(); };
+
+/* ---------- what this admin may manage (set by the root admin) ---------- */
+let ME = {root:false, full:true, perms:[]};
+const TAB_PERM = {pending:"listings", live:"listings", sold:"listings", add:"listings", codes:"codes", sponsors:"sponsors", limits:"settings",
+  inspect:"inspect", wanted:"wanted", announce:"announce", share:"share", money:"money", stats:"stats"};
+const PERM_SECTIONS = [["moto","🏍️ Motorcycles"],["watch","⌚ Watches"],["car","🚗 Cars"],["boat","🛥️ Marine"],["equine","🐎 Equine"],["art","🎨 Art"],["estate","🏠 Real estate"],["bag","👜 The Boutique (ladies)"]];
+const PERM_FEATURES = [["listings","Listings: review, edit, add"],["share","Share to WhatsApp"],["announce","Announcements"],["wanted","Wanted requests"],["codes","Discount codes"],
+  ["sponsors","Sponsors & ads"],["inspect","Inspection partners"],["money","Money & members"],["stats","Stats"],["settings","Site settings"]];
+function can(p){ return ME.full || ME.perms.includes(p); }
+function applyPerms(){
+  let first=null;
+  document.querySelectorAll("#adminView .tabs button").forEach(b=>{ const ok=can(TAB_PERM[b.dataset.tab]||"settings"); b.hidden=!ok; if (ok && !first) first=b.dataset.tab; });
+  ["#maintCard","#boutCard","#moveCard"].forEach(id=>{ const el=$(id); if (el) el.hidden=!can("settings"); });
+  const aa=$("#autoApprove"); if (aa) aa.closest(".disc").hidden=!can("settings");
+  if (!ME.full){ $("#who").textContent += " · limited: "+PERM_SECTIONS.filter(([k])=>can(k)).map(([,l])=>l).join(", "); }
+  if (first) tab(first);
+}
 
 /* ---------- tabs ---------- */
 function tab(t){
@@ -481,7 +503,7 @@ function renderShare(){
   $("#nShare").textContent = todo.length || "";
   if (!todo.length){ box.innerHTML='<div class="empty">✅ All new listings are already in the groups.</div>'; return; }
   GROUP_ORDER.forEach(g=>{
-    const its = todo.filter(it=>GROUP[it.L.type]===g); if (!its.length) return;
+    const its = todo.filter(it=>GROUP[it.L.type]===g); if (!its.length || !can(g)) return;
     const c=document.createElement("div"); c.className="card"; c.style.marginBottom="12px";
     const digest = its.length > lim;
     c.innerHTML=`<h3 style="margin:0 0 4px">${esc(GROUP_ICON_A[g]||"")} ${esc(WA_GROUP[g]||GROUP_NAMES[g])} <span class="muted" style="font-weight:400">· ${its.length} new</span></h3>`
@@ -496,7 +518,9 @@ function renderShare(){
       b.onclick=()=>shareOne(it,b);
       const sk=document.createElement("button"); sk.type="button"; sk.className="btn ghost small"; sk.textContent="Skip"; sk.title="Don't send this one";
       sk.onclick=()=>markShared([it.id]);
-      const w=document.createElement("span"); w.style.cssText="display:flex;gap:6px"; w.append(b,sk); r.append(t,w); c.appendChild(r);
+      const ig=document.createElement("button"); ig.type="button"; ig.className="btn ghost small"; ig.textContent="📸 Instagram";
+      ig.onclick=()=>shareInsta(it,ig);
+      const w=document.createElement("span"); w.style.cssText="display:flex;gap:6px;flex-wrap:wrap"; w.append(b,ig,sk); r.append(t,w); c.appendChild(r);
     });
     box.appendChild(c);
   });
@@ -517,6 +541,36 @@ async function shareTo(text, files){
 }
 function askSent(ids, what){
   setTimeout(()=>{ if (confirm(`Did you send ${what} to the group?\n\nOK = mark as sent · Cancel = keep it in the list`)) markShared(ids); }, 600);
+}
+async function flyerFile(it){
+  const L=noPhone(it.L);
+  await ensureFonts(); if (!L.photos || !L.photos.length) L.photos = await loadPhotos({id:it.id,L});
+  const k=1080/FW, c=document.createElement("canvas"); c.width=1080; c.height=Math.round(FH*k);
+  await drawFlyer(canvasPainter(c.getContext("2d"),k), L, it.id);
+  const blob=await new Promise(r=>c.toBlob(r,"image/jpeg",0.85));
+  return blob ? new File([blob], fileBase(L)+".jpg", {type:"image/jpeg"}) : null;
+}
+function instaCaption(it){
+  const L=it.L, g=GROUP[L.type];
+  const tags={moto:"#motorcycles #bikersofegypt #harleydavidson #bmwmotorrad #ducati",car:"#cars #carsforsale #luxurycars #4x4",watch:"#watches #rolex #omega #watchcollector",
+    boat:"#yachts #boats #marine",equine:"#horses #equestrian #arabianhorse",bag:"#luxurybags #hermes #chanel #preloved",art:"#art #collectibles",estate:"#realestate #luxuryhomes"}[g]||"";
+  return `${ICONS[L.type]||""} ${titleOf(L)}\n💰 ${priceStr(L.f)}\n\n${rows(L).slice(0,6).map(([k,v])=>k+": "+v).join("\n")}\n\n📸 Photos, details & contact: link in bio — or search "${titleOf(L)}" on ${baseUrl().replace(/^https?:\/\//,"")}\n\n#HighEndCommunities #forsale ${tags}`;
+}
+async function shareInsta(it, btn){
+  btn.disabled=true; const old=btn.textContent; btn.textContent="Preparing…";
+  const cap=instaCaption(it); let copied=false;
+  try{ await navigator.clipboard.writeText(cap); copied=true; }catch(e){}
+  let f=null; try{ f=await flyerFile(it); }catch(e){}
+  btn.disabled=false; btn.textContent=old;
+  if (f && navigator.canShare && navigator.canShare({files:[f]})){
+    alert((copied?"The caption is copied — paste it in Instagram.":"")+"\n\nNext: choose Instagram → Feed, then paste the caption.");
+    try{ await navigator.share({files:[f]}); }catch(e){}
+    return;
+  }
+  // computer: save the flyer, the caption is on the clipboard, open Instagram
+  if (f){ const u=URL.createObjectURL(f); const a=document.createElement("a"); a.href=u; a.download=f.name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),30000); }
+  alert("The flyer is downloaded"+(copied?" and the caption is copied":"")+". Instagram opens now: press + → Post, pick the flyer, paste the caption.");
+  window.open("https://www.instagram.com/","_blank","noopener");
 }
 async function shareOne(it, btn){
   btn.disabled=true; const old=btn.textContent; btn.textContent="Preparing…";
@@ -551,7 +605,7 @@ $("#digestSave").onclick = async ()=>{
 /* ---------- announcements ---------- */
 function annSetup(){
   if ($("#anGrp").options.length) return;
-  $("#anGrp").innerHTML = `<option value="all">🏠 Home page — everyone</option>`+GROUP_ORDER.map(g=>`<option value="${g}">${esc(GROUP_NAMES[g])}</option>`).join("");
+  $("#anGrp").innerHTML = `<option value="all">🏠 Home page — everyone</option>`+GROUP_ORDER.filter(g=>can(g)).map(g=>`<option value="${g}">${esc(GROUP_NAMES[g])}</option>`).join("");
   $("#anMarket").innerHTML = `<option value="">All countries</option>`+MARKETS.map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join("");
 }
 $("#anPost").onclick = async ()=>{
@@ -594,6 +648,7 @@ async function loadAll(){
   if (error){ showMsg(niceError(error),"err",$("#listMsg")); return; }
   showMsg("","info",$("#listMsg"));
   items = (data||[]).map(r=>{ const it=rowToItem(r); it.L.reviewed=!!r.reviewed; return it; });
+  if (!ME.full) items = items.filter(it=>can(GROUP[it.L.type]));
   await adminPhones("listing", items, it=>it.id, (it,ph)=>{ it.L.f.phone=ph; });
   renderAll();
 }
@@ -644,10 +699,40 @@ async function loadAdmins(){
   (l.data||[]).forEach(a=>{ const tr=document.createElement("tr");
     tr.innerHTML=`<td>${a.is_root?"👑 ":""}${esc(a.email)}</td><td><small>${a.is_root?"root":fmtDate(a.added_at)+(a.added_by?" · by "+esc(a.added_by):"")}</small></td>`;
     const td=document.createElement("td");
+    if (!a.is_root){ const sm=document.createElement("small"); sm.className="muted"; sm.style.display="block";
+      sm.textContent = a.perms ? "Can manage: "+[...PERM_SECTIONS,...PERM_FEATURES].filter(([k])=>a.perms.includes(k)).map(([,l])=>l.replace(/^\p{Extended_Pictographic}\S*\s/u,"")).join(", ") : "Full access";
+      tr.children[0].appendChild(sm); }
+    if (root && !a.is_root){ const pb=document.createElement("button"); pb.type="button"; pb.className="btn ghost small"; pb.textContent="Permissions";
+      pb.onclick=()=>permEditor(a, tr); td.appendChild(pb); }
     if (root && !a.is_root){ const b=document.createElement("button"); b.type="button"; b.className="btn ghost small"; b.textContent="Remove";
       b.onclick=async()=>{ if(!confirm("Remove "+a.email+" as admin?")) return; const {error}=await sb.rpc("admin_remove",{p_email:a.email}); if(error){ showMsg(niceError(error),"err",$("#admMsg")); return; } loadAdmins(); };
       td.appendChild(b); }
     tr.appendChild(td); t.appendChild(tr); });
+}
+function permEditor(a, tr){
+  const old=document.getElementById("permRow"); if (old){ const same=old.dataset.email===a.email; old.remove(); if (same) return; }
+  const row=document.createElement("tr"); row.id="permRow"; row.dataset.email=a.email;
+  const td=document.createElement("td"); td.colSpan=3;
+  const full = !a.perms, has=k=>!!a.perms && a.perms.includes(k);
+  const box=(list)=>list.map(([k,l])=>`<label class="showsold" style="color:var(--text);margin:2px 12px 2px 0;display:inline-flex"><input type="checkbox" value="${k}" ${has(k)?"checked":""}> ${esc(l)}</label>`).join("");
+  td.innerHTML=`<div class="card" style="margin:6px 0">
+    <b>Permissions for ${esc(a.email)}</b>
+    <label class="showsold" style="color:var(--text);font-weight:600;display:block;margin:8px 0"><input type="checkbox" class="pmFull" ${full?"checked":""}> Full access (everything)</label>
+    <div class="pmBody" ${full?"hidden":""}>
+      <div class="hint" style="margin:6px 0 2px">Sections (pages) they manage</div><div>${box(PERM_SECTIONS)}</div>
+      <div class="hint" style="margin:10px 0 2px">What they can do</div><div>${box(PERM_FEATURES)}</div>
+    </div>
+    <div class="actions"><button type="button" class="btn primary small pmSave">Save</button></div></div>`;
+  row.appendChild(td); tr.after(row);
+  td.querySelector(".pmFull").onchange=e=>{ td.querySelector(".pmBody").hidden=e.target.checked; };
+  td.querySelector(".pmSave").onclick=async()=>{
+    const isFull=td.querySelector(".pmFull").checked;
+    const perms = isFull ? null : [...td.querySelectorAll(".pmBody input:checked")].map(i=>i.value);
+    if (perms && !perms.some(p=>PERM_SECTIONS.some(([k])=>k===p))){ showMsg("Pick at least one section.","err",$("#admMsg")); return; }
+    const {error}=await sb.rpc("admin_set_perms",{p_email:a.email, p_perms:perms});
+    if (error){ showMsg(/admin_set_perms/.test(error.message||"")?"Run update17 in Supabase first.":niceError(error),"err",$("#admMsg")); return; }
+    showMsg("Saved — "+a.email+" sees the change next time they open admin.","ok",$("#admMsg")); loadAdmins();
+  };
 }
 $("#admAdd").onclick=async()=>{ const e=$("#admEmail").value.trim(); const {error}=await sb.rpc("admin_add",{p_email:e});
   if (error){ showMsg(niceError(error),"err",$("#admMsg")); return; }

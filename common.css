@@ -675,3 +675,6 @@ footer .copyr{font-size:11px;opacity:.7;max-width:46ch;margin:6px auto 0;line-he
 html[dir=rtl] .ann{border-left:1px solid #d6b46a;border-right:4px solid #b98a3a}
 body.ladies .ann{border-color:#d9b3a6;border-left-color:#8a4434;background:#fff6f3}
 body.ladies .ann b{color:#5e2a20}
+.intro-gate{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:10px;background:rgba(20,16,12,.55);color:#f3ead7;border:1px solid rgba(214,180,106,.7);border-radius:999px;padding:26px 34px;font:600 15px var(--sans,Inter);letter-spacing:2px;text-transform:uppercase;cursor:pointer;backdrop-filter:blur(4px)}
+.intro-gate span{font-size:34px;letter-spacing:0}
+.intro-gate[hidden]{display:none}

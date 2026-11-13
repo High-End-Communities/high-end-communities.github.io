@@ -201,7 +201,7 @@ var D = {
 "Ask High End on WhatsApp":"اسأل High End على واتساب","Call":"اتصال",
 "Partners are independent. High End Communities suggests them but doesn't guarantee their work. Agree the fee with them directly.":"الشركاء مستقلون. High End Communities ترشحهم ولا تضمن عملهم. اتفق على الأتعاب معهم مباشرة.",
 /* intro & viewer */
-"Skip ›":"تخطي ‹","Drive":"نوع الدفع","2WD":"دفع ثنائي","4x4 / AWD":"دفع رباعي 4x4","4x4 & off-road":"دفع رباعي و أوف رود","Open":"افتح",
+"Skip ›":"تخطي ‹","Tap to enter":"اضغط للدخول","Drive":"نوع الدفع","2WD":"دفع ثنائي","4x4 / AWD":"دفع رباعي 4x4","4x4 & off-road":"دفع رباعي و أوف رود","Open":"افتح",
 "📢 Announce":"📢 إعلانات","📢 Post an announcement":"📢 انشر إعلان","Where":"فين","Title":"العنوان","Text (optional)":"النص (اختياري)","Link (optional)":"لينك (اختياري)","Show for":"يظهر لمدة","Publish":"انشر","Turn off":"إيقاف","Show again":"إظهار تاني","Delete":"حذف","No announcements yet.":"مفيش إعلانات لسه.",
 "🔇 Tap for sound":"🔇 اضغط لتشغيل الصوت","Entering":"مرحبًا بك في","Sound on":"تشغيل الصوت","Sound off":"كتم الصوت","Print":"طباعة"
 };
