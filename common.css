@@ -1,3 +1,5 @@
+:root{color-scheme:light only}
+html,body{background:rgb(248,243,232)}
 :root{
     --bg:#f3f1ec; --panel:#ffffff; --panel2:#f6f5f2; --line:#dedad2;
     --text:#2b2b2b; --muted:#77736b; --accent:#2b2b2b; --accent2:#2b2b2b;
@@ -629,3 +631,15 @@ header.mast .checker{background:repeating-conic-gradient(#2f2114 0 25%,#f8f3e8 0
 header.mast .brands{border-top-color:#e4dccb}
 header.mast .brands img{filter:grayscale(1) contrast(1.05);mix-blend-mode:multiply;opacity:.85}
 header.mast .langbtn,header.mast #langBtn{color:#2f2114;border-color:#cdbfa6;background:transparent}
+/* membership modal */
+.modal label.fl{display:block;font-size:13px;color:var(--muted);margin:10px 0 0}
+.modal label.fl input{display:block;width:100%;box-sizing:border-box;margin-top:4px;padding:10px;border:1px solid var(--line);font:inherit;font-size:16px;color:var(--text);background:#fff}
+.modal .card{max-height:92vh;overflow:auto}
+/* The Boutique: a soft blush chip that stands out without shouting */
+.filters .chip.boutiquechip{color:#9a4b35;font-weight:600}
+.filters .chip.boutiquechip.on{color:#7a3e2e;border-bottom-color:#b0645a}
+/* Wanted announcements from High End */
+.hotwanted{display:flex;align-items:center;gap:10px;justify-content:space-between;border:1px dashed #b98a3a;background:#fff8e8;padding:10px 12px;margin:0 0 14px;border-radius:10px;font-size:14px}
+.hotwanted b{display:block}
+.hotwanted small{color:var(--muted)}
+.wanted.hw{border-color:#b98a3a;background:#fff8e8}

@@ -6,7 +6,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Post a listing — High End Communities</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#17181a">
+<meta name="theme-color" content="#f8f3e8">
+<meta name="color-scheme" content="light only">
+<meta name="darkreader-lock">
 <link rel="icon" href="favicon.ico">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
@@ -16,17 +18,17 @@
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=4477a7e8">
+<link rel="stylesheet" href="common.css?v=2dbd297b">
 </head>
 <body>
-<script src="i18n.js?v=2f9a0d2b"></script>
+<script src="i18n.js?v=23b90d59"></script>
 <header class="mast">
   <div class="checker"></div>
   <button type="button" class="langbtn" id="langBtn" lang="ar">العربية</button>
   <div class="mast-in">
     <a class="mast-logo" href="./"><img id="mainLogo" alt="High End Communities"></a>
     <p class="mast-line">Motorcycles, watches and cars, sold owner to owner.</p>
-    <p class="mast-sub">Also yachts, horses, art and real estate. New and used.</p>
+    <p class="mast-sub">Plus a designer boutique, yachts, horses, art and real estate. New and pre-loved.</p>
     <div class="brands" id="brands"></div>
   </div>
 </header>
@@ -49,7 +51,7 @@
         <button type="button" data-m="boat"><img class="lg" alt="" data-brand="boat">Yachts & boats</button>
         <button type="button" data-m="art"><span class="ic">🎨</span>Modern & art</button>
         <button type="button" data-m="estate"><span class="ic">🏠</span>Real estate</button>
-        <button type="button" data-m="bag"><span class="ic">👜</span>Signature Bags</button>
+        <button type="button" data-m="bag"><span class="ic">👜</span>The Boutique</button>
       </div>
       <div class="types sub" id="types">
         <button type="button" data-t="bike" class="on"><span class="ic">🏍️</span>Motorcycle</button>
@@ -92,13 +94,13 @@
       <div class="done" id="done"></div>
     </form>
 </main>
-<footer><div class="checker"></div><p>High End Communities, est. 2024</p><p class="supportwrap" hidden><button type="button" class="supportbtn" data-support>♥ Support High End — keep it free</button></p></footer>
+<footer><div class="checker"></div><p>High End Communities, est. 2024</p><p class="supportwrap" hidden><button type="button" class="supportbtn" data-member>⭐ Membership — unlimited bikes &amp; cars</button></p></footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="config.js"></script>
-<script src="common.js?v=4477a7e8"></script>
+<script src="common.js?v=2dbd297b"></script>
 
 <script>
 initHeader();
@@ -123,12 +125,12 @@ $("#dumpBtn").onclick = ()=>{
   $("#form").scrollIntoView({behavior:"smooth"});
 };
 
-function showDone(row, code, live, files){
+function showDone(row, code, live, files, unpaid){
   const L = {type:row.type, f:row.f, photos:row.photos, thumb:row.thumb, at:Date.now(), status: live?"live":"pending"};
   const d = $("#done"); d.innerHTML = "";
-  const p = document.createElement("p"); p.textContent = live ? "✅ Your listing is live!" : "✅ Sent for review!";
+  const p = document.createElement("p"); p.textContent = live ? "✅ Your listing is live!" : unpaid ? "✅ Saved — it goes live after the fee" : "✅ Sent for review!";
   const t = document.createElement("div"); t.style.cssText="font-size:14px;color:#1d6b3e;margin-bottom:6px";
-  t.textContent = (live ? "It's in the catalogue now. The admin may still edit or remove it if something is missing. " : "The admin checks it and puts it live. ")
+  t.textContent = (live ? "It's in the catalogue now. The admin may still edit or remove it if something is missing. " : unpaid ? "Pay the extra vehicle fee and send the receipt; the admin puts it live. " : "The admin checks it and puts it live. ")
     + "Keep this seller code — you need it to mark your item as sold:";
   const c = document.createElement("div"); c.className="code"; c.textContent = code;
   const row1 = document.createElement("div"); row1.className="dlrow";
@@ -145,6 +147,12 @@ function showDone(row, code, live, files){
     const bi = document.createElement("button"); bi.type="button"; bi.className="btn ghost small"; bi.textContent="🖼️ Flyer image"; bi.onclick=()=>exportImage(L,row.id);
     const bp = document.createElement("button"); bp.type="button"; bp.className="btn ghost small"; bp.textContent="📄 Flyer PDF"; bp.onclick=()=>exportPdf(L,row.id);
     r2.append(bi,bp); d.append(sh, r2);
+  } else if (unpaid){
+    const pb = document.createElement("button"); pb.type="button"; pb.className="btn primary"; pb.style.marginTop="10px";
+    pb.textContent = "Pay "+fmtMoney((SITE_ST||{}).extra_vehicle_fee??1000); pb.onclick=()=>openVehicleFee({...L, phone:row.phone, id:row.id});
+    const mb = document.createElement("button"); mb.type="button"; mb.className="btn ghost small"; mb.style.marginTop="8px";
+    mb.textContent = "⭐ Or become a member: unlimited bikes & cars"; mb.onclick=()=>openMembership(row.phone);
+    d.append(pb, mb);
   } else {
     const al = document.createElement("a"); al.className="btn wa"; al.target="_blank"; al.rel="noopener"; al.style.marginTop="10px";
     al.textContent = "Tell the admin on WhatsApp (faster review)";
@@ -166,6 +174,19 @@ function showDone(row, code, live, files){
   d.scrollIntoView({behavior:"smooth", block:"center"});
 }
 
+function askFee(q){
+  return new Promise(res=>{
+    const m=document.createElement("div"); m.className="modal";
+    m.innerHTML=`<div class="card"><h3>🏍️ Extra vehicle</h3>
+      <p class="muted" style="font-size:14px">This number already has ${q.vehicles} motorcycle / car listing${q.vehicles===1?"":"s"}. The first ${q.free} ${q.free===1?"is":"are"} free; each extra one is <b>${fmtMoney(q.fee)}</b>. Your listing is saved now and goes live when the fee is confirmed.</p>
+      ${Number(q.member_price)>0?`<p class="muted" style="font-size:14px">Or become a member for ${fmtMoney(q.member_price)}: unlimited motorcycles and cars for ${q.member_days} days.</p>`:""}
+      <div class="actions" style="flex-wrap:wrap"><button type="button" class="btn primary" data-a="post">Post and pay ${fmtMoney(q.fee)}</button>
+      <button type="button" class="btn ghost" data-a="member">⭐ Membership</button><button type="button" class="btn ghost" data-a="">Cancel</button></div></div>`;
+    m.addEventListener("click",e=>{ const b=e.target.closest("[data-a]"); if (b||e.target===m){ m.remove(); res(b?b.dataset.a:""); } });
+    document.body.appendChild(m);
+  });
+}
+
 $("#form").addEventListener("submit", async e=>{
   e.preventDefault();
   $("#done").classList.remove("show");
@@ -173,6 +194,17 @@ $("#form").addEventListener("submit", async e=>{
   if (!f){ showMsg($("#terms").checked?"Please fix the highlighted fields.":"Please accept the terms and fix any highlighted fields.","err"); return; }
   if (!sb){ showMsg("This page isn't connected to its database yet (config.js).","err"); return; }
   try{ localStorage.setItem("mm_phone", f.phone); }catch(e){}
+  // payments on: an extra motorcycle / car (beyond the free one) needs a fee, unless the number is a member
+  let unpaidExpected = false;
+  if (paymentsOn() && (type==="bike" || type==="car")){
+    const q = await vehicleQuota(f.phone);
+    if (q && q.pay_enabled && !q.member && q.vehicles >= q.free && Number(q.fee) > 0){
+      const go = await askFee(q);
+      if (go==="member"){ openMembership(f.phone); return; }
+      if (go!=="post") return;
+      unpaidExpected = true;
+    }
+  }
   $("#submitBtn").disabled = true; showMsg("Sending…","info");
   try{
     const pics = photos.slice(0, maxPhotos()).map(p=>p.url);   // main photo first
@@ -192,7 +224,7 @@ $("#form").addEventListener("submit", async e=>{
     const chk = await sb.from("listings").select("id,status").eq("id", row.id).maybeSingle();
     const live = !!(chk && chk.data && chk.data.status === "live");
     showMsg("");
-    showDone(row, code, live, files);
+    showDone(row, code, live, files, unpaidExpected && !live);
     photos=[]; mainPicked=false; renderThumbs(); renderFields(true); $("#terms").checked=false; $("#dumpIn").value="";
   }catch(err){ if (!(await siteCheck("post"))) return; showMsg(niceError(err),"err"); }
   finally{ $("#submitBtn").disabled = false; }

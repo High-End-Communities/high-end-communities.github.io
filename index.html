@@ -6,7 +6,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>High End Communities</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#17181a">
+<meta name="theme-color" content="#f8f3e8">
+<meta name="color-scheme" content="light only">
+<meta name="darkreader-lock">
 <link rel="icon" href="favicon.ico">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
@@ -27,17 +29,17 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=4477a7e8">
+<link rel="stylesheet" href="common.css?v=2dbd297b">
 </head>
 <body>
-<script src="i18n.js?v=2f9a0d2b"></script>
+<script src="i18n.js?v=23b90d59"></script>
 <header class="mast">
   <div class="checker"></div>
   <button type="button" class="langbtn" id="langBtn" lang="ar">العربية</button>
   <div class="mast-in">
     <a class="mast-logo" href="./"><img id="mainLogo" alt="High End Communities"></a>
     <p class="mast-line">Motorcycles, watches and cars, sold owner to owner.</p>
-    <p class="mast-sub">Also yachts, horses, art and real estate. New and used.</p>
+    <p class="mast-sub">Plus a designer boutique, yachts, horses, art and real estate. New and pre-loved.</p>
     <div class="brands" id="brands"></div>
   </div>
 </header>
@@ -51,13 +53,13 @@
     <div class="filters" id="filters">
       <button class="chip on" data-f="all">All</button>
       <button class="chip" data-f="moto">Motorcycles</button>
+      <button class="chip boutiquechip" data-f="bag">✨ The Boutique</button>
       <button class="chip" data-f="watch">Watches</button>
       <button class="chip" data-f="car">Cars</button>
       <button class="chip" data-f="equine">Equine</button>
       <button class="chip" data-f="boat">Yachts & boats</button>
       <button class="chip" data-f="art">Modern & art</button>
       <button class="chip" data-f="estate">Real estate</button>
-      <button class="chip" data-f="bag">Signature Bags</button>
       <button class="chip wantedchip" data-f="wanted">Wanted</button>
     </div>
   </div>
@@ -95,13 +97,13 @@
   <div class="list" id="list"></div>
 </main>
 
-<footer><div class="checker"></div><p>High End Communities, est. 2024</p><p class="supportwrap" hidden><button type="button" class="supportbtn" data-support>♥ Support High End — keep it free</button></p></footer>
+<footer><div class="checker"></div><p>High End Communities, est. 2024</p><p class="supportwrap" hidden><button type="button" class="supportbtn" data-member>⭐ Membership — unlimited bikes &amp; cars</button></p></footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="config.js"></script>
-<script src="common.js?v=4477a7e8"></script>
+<script src="common.js?v=2dbd297b"></script>
 
 <script>
 if (/^#l-[A-Za-z0-9-]{1,60}$/.test(location.hash)) location.replace("item.html?id="+location.hash.slice(3));   // old shared links
@@ -157,7 +159,23 @@ const GROUP_ICON={moto:"🏍️",car:"🚗",watch:"⌚",bag:"👜",boat:"🛥️
 const PER_SECTION=6;
 function pick(f){ filter=f; sub="all"; document.querySelectorAll("#filters .chip").forEach(x=>x.classList.toggle("on",x.dataset.f===f)); drawSubfilters(); render(); window.scrollTo({top:$("#filters").getBoundingClientRect().top+scrollY-10,behavior:"smooth"}); }
 function pickSub(t){ sub=t; drawSubfilters(); render(); }
+/* ---------- "📣 Wanted" announcements posted by High End, shown in their category ---------- */
+let HOT={market:null, list:[]};
+async function loadHot(){
+  if (HOT.market===MARKET || !sb) return; HOT.market=MARKET;
+  try{ const {data}=await sb.from("requests").select("id,grp,title,budget,budget_unit,featured").eq("market",MARKET).eq("status","live").eq("featured",true).order("created_at",{ascending:false}).limit(30);
+    HOT.list=data||[]; if (HOT.list.length) render(); }catch(e){}
+}
+function hotFor(g){
+  const h=HOT.market===MARKET ? HOT.list.filter(r=>r.grp===g) : []; if (!h.length) return null;
+  const r=h[0], d=document.createElement("div"); d.className="hotwanted";
+  const t=document.createElement("div"); t.innerHTML=`<b>📣 Wanted: ${esc(r.title)}</b><small>${r.budget?"Budget up to "+fmt(r.budget)+" "+esc(r.budget_unit||mainCur()):"High End is looking for one"}${h.length>1?" · +"+(h.length-1)+" more":""}</small>`;
+  const a=document.createElement("a"); a.className="btn wa small"; a.target="_blank"; a.rel="noopener"; a.textContent="I have one";
+  hiddenContact(a,"request",r.id,p=>"https://wa.me/"+waNum(p)+"?text="+encodeURIComponent(`Hello High End, I saw you're looking for "${r.title}". I have one — `));
+  d.append(t,a); return d;
+}
 function render(){
+  loadHot();
   const adKey = MARKET+"|"+(filter==="all" ? "" : filter);
   if (adKey !== AD_CTX.key){ AD_CTX.key = adKey; AD_CTX.market = MARKET; AD_CTX.group = filter==="all" ? "" : filter; if (SPONSORS.length) startBannerRotation(); }
   const box = $("#list"); box.innerHTML = ""; box.className="sections";
@@ -182,6 +200,7 @@ function render(){
   $("#catShare").hidden = !live.length; $("#catPdf").hidden = !live.length;
   $("#catShare").href = waHref(catalogueText(live));
   if (!live.length && !(showSold && sold.length)){ box.innerHTML = `<div class="empty">${isW && wbox.dataset.on ? "No watches match these filters." : MARKET!=="EG" && !all.some(x=>marketOf(x.L)===MARKET) ? `The ${marketName(MARKET)} marketplace is just opening.` : "No listings here yet."}</div>`+(MARKET!=="EG"?`<p class="empty-cta"><a class="btn primary" href="post.html">Be the first to list in ${marketName(MARKET)}</a></p>`:""); return; }
+  if (filter!=="all" && !Q.active){ const hw=hotFor(filter); if (hw) box.appendChild(hw); }
   let n=0;
   const addAd=(opt)=>{ const a=feedSponsorCard(n++, opt); if (a) box.appendChild(a); return !!a; };
   if (Q.active){
@@ -199,6 +218,7 @@ function render(){
     GROUP_ORDER.forEach((g,i)=>{
       const its = live.filter(x=>GROUP[x.L.type]===g); if (!its.length) return;
       box.appendChild(section(g, GROUP_NAMES[g], GROUP_ICON[g], its.slice(0,PER_SECTION), its.length>PER_SECTION||SUBTYPES[g] ? ()=>pick(g) : null));
+      const hw=hotFor(g); if (hw) box.appendChild(hw);
       const own = sponsorsFor("feed", {group:g, only:true});
       own.forEach(s=>box.appendChild(sponsorCard(s)));
       if (!own.length && !general){ general = true; addAd({group:"", general:true}); }
@@ -270,22 +290,22 @@ async function renderWanted(box){
   const g=document.createElement("div"); g.className="wantedlist"; box.appendChild(g);
   if (wantedFor!==MARKET){
     g.innerHTML='<p class="muted">Loading…</p>';
-    const {data,error}=await sb.from("requests").select("id,created_at,status,market,grp,title,details,budget,budget_unit,phone,name").eq("market",MARKET).eq("status","live").order("created_at",{ascending:false}).limit(200);
+    const {data,error}=await sb.from("requests").select("id,created_at,status,market,grp,title,details,budget,budget_unit,name,featured").eq("market",MARKET).eq("status","live").order("created_at",{ascending:false}).limit(200);
     if (error){ g.innerHTML=""; showMsg(/requests/.test(error.message||"") ? "Requests open soon." : niceError(error),"info",$("#listMsg")); return; }
-    WANTED=data||[]; wantedFor=MARKET;
+    WANTED=(data||[]).sort((a,b)=>(b.featured?1:0)-(a.featured?1:0)); wantedFor=MARKET;
   }
   if (filter!=="wanted") return;
   g.innerHTML="";
   if (!WANTED.length){ g.innerHTML='<div class="empty">No requests yet. Be the first to ask.</div>'; return; }
   WANTED.forEach(r=>{
-    const c=document.createElement("article"); c.className="wanted";
-    const t=document.createElement("div"); t.className="badge"; t.textContent=(GROUP_NAMES[r.grp]||r.grp)+" · "+fmtDate(Date.parse(r.created_at));
+    const c=document.createElement("article"); c.className="wanted"+(r.featured?" hw":"");
+    const t=document.createElement("div"); t.className="badge"; t.textContent=(r.featured?"📣 High End is looking for · ":"")+(GROUP_NAMES[r.grp]||r.grp)+" · "+fmtDate(Date.parse(r.created_at));
     const h=document.createElement("h3"); h.textContent=r.title; h.dir="auto";
     const bud=document.createElement("div"); bud.className="budget"; bud.textContent = r.budget ? `Budget up to ${fmt(r.budget)} ${r.budget_unit||mainCur()}` : "Budget: open";
     c.append(t,h,bud);
     if (r.details){ const p=document.createElement("p"); p.textContent=r.details; c.appendChild(p); }
     const a=document.createElement("a"); a.className="btn wa small"; a.target="_blank"; a.rel="noopener";
-    a.href="https://wa.me/"+waNum(r.phone)+"?text="+encodeURIComponent(`Hello${r.name?" "+r.name:""}, I saw your request on ${MARKET_NAME}: "${r.title}". I have one — `);
+    hiddenContact(a,"request",r.id,p=>"https://wa.me/"+waNum(p)+"?text="+encodeURIComponent(`Hello${r.name?" "+r.name:""}, I saw your request on ${MARKET_NAME}: "${r.title}". I have one — `));
     a.textContent="I have it — WhatsApp"; c.appendChild(a);
     g.appendChild(c);
   });

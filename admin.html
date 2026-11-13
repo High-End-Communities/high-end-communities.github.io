@@ -6,7 +6,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Admin — High End Communities</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#17181a">
+<meta name="theme-color" content="#f8f3e8">
+<meta name="color-scheme" content="light only">
+<meta name="darkreader-lock">
 <link rel="icon" href="favicon.ico">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
@@ -16,17 +18,17 @@
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=4477a7e8">
+<link rel="stylesheet" href="common.css?v=2dbd297b">
 </head>
 <body>
-<script src="i18n.js?v=2f9a0d2b"></script>
+<script src="i18n.js?v=23b90d59"></script>
 <header class="mast">
   <div class="checker"></div>
   <button type="button" class="langbtn" id="langBtn" lang="ar">العربية</button>
   <div class="mast-in">
     <a class="mast-logo" href="./"><img id="mainLogo" alt="High End Communities"></a>
     <p class="mast-line">Motorcycles, watches and cars, sold owner to owner.</p>
-    <p class="mast-sub">Also yachts, horses, art and real estate. New and used.</p>
+    <p class="mast-sub">Plus a designer boutique, yachts, horses, art and real estate. New and pre-loved.</p>
     <div class="brands" id="brands"></div>
   </div>
 </header>
@@ -57,6 +59,7 @@
       <button type="button" data-tab="limits">🏍️ Limits</button>
       <button type="button" data-tab="inspect">🔧 Inspection</button>
       <button type="button" data-tab="wanted">🔎 Wanted <span id="nWanted"></span></button>
+      <button type="button" data-tab="money">💳 Money <span id="nMoney"></span></button>
       <button type="button" data-tab="stats">Stats</button>
     </div>
     <div class="toolbar"><span class="muted" id="who"></span><button type="button" class="btn ghost small" id="logout">Log out</button></div>
@@ -67,8 +70,77 @@
       <div class="unitrow" style="margin-top:8px"><input id="maintMsg" maxlength="200" placeholder="Message (optional), e.g. Back at 10 pm"><button type="button" class="btn ghost small" id="maintSave">Save</button></div>
       <div class="hint" id="maintHint">You can still use admin while it's on. The page also shows by itself if the database is down or overloaded.</div>
     </div>
+    <div class="card" id="moveCard" style="margin-bottom:12px">
+      <label for="moveUrl" style="font-weight:600">🔀 Move the site to a new address</label>
+      <div class="unitrow" style="margin-top:8px"><input id="moveUrl" type="url" placeholder="https://www.your-new-domain.com"><button type="button" class="btn ghost small" id="moveSave">Save</button><button type="button" class="btn ghost small" id="moveClear">Stop forwarding</button></div>
+      <div class="hint" id="moveHint">Empty = no forwarding. When set, every page here forwards visitors to the same page on the new address (this admin page stays here so you can undo it). Put the new site live first.</div>
+    </div>
+    <div data-pane="money" hidden>
+      <div class="stats">
+        <div class="stat"><b id="mnTotal">–</b><span>Total collected</span></div>
+        <div class="stat"><b id="mnMonth">–</b><span>This month</span></div>
+        <div class="stat"><b id="mnMembers">–</b><span>Active members</span></div>
+      </div>
+      <div class="bars" id="mnBars" title="Last 12 months"></div>
+      <div class="card" style="margin-bottom:12px">
+        <h3 style="margin:0 0 6px">📈 Projection</h3>
+        <table class="mini" id="mnProj"></table>
+        <div class="grid" style="margin-top:8px">
+          <div><label for="mnAdPrice">Ad price (EGP / sponsor / month)</label><input id="mnAdPrice" type="number" min="0" inputmode="numeric"></div>
+          <div><label for="mnSlots">Extra ad slots to sell (what-if)</label><input id="mnSlots" type="number" min="0" max="500" inputmode="numeric" value="0"></div>
+        </div>
+        <div class="actions"><button type="button" class="btn ghost small" id="mnAdSave">Save ad price</button></div>
+        <div class="hint">Run-rate uses the last 90 days of payments. Ads: active sponsors × the monthly price you charge; add slots to see what more sponsors would bring.</div>
+      </div>
+      <div class="card" style="margin-bottom:12px">
+        <h3 style="margin:0 0 6px">✅ WhatsApp checks <span id="mnVerN" class="muted"></span></h3>
+        <div class="hint">The seller sent you "Verify my WhatsApp" with a code. If the message came from that same number and the code matches, press Verified.</div>
+        <div id="mnVerify"></div>
+      </div>
+      <div class="card" style="margin-bottom:12px">
+        <h3 style="margin:0 0 6px">🏍️ Waiting for the extra-vehicle fee <span id="mnUnpaidN" class="muted"></span></h3>
+        <div id="mnUnpaid"></div>
+      </div>
+      <div class="card" style="margin-bottom:12px">
+        <h3 style="margin:0 0 6px">➕ Record a payment</h3>
+        <div class="grid">
+          <div><label for="mpPhone">WhatsApp number</label><input id="mpPhone" inputmode="tel" placeholder="01xxxxxxxxx"></div>
+          <div><label for="mpAmount">Amount (EGP)</label><input id="mpAmount" type="number" min="0" inputmode="numeric"></div>
+          <div><label for="mpKind">For</label><select id="mpKind"><option value="membership">Membership (starts / extends it)</option><option value="promote">Promoted listing</option><option value="ad">Sponsor / ad</option><option value="extra_vehicle">Extra vehicle</option><option value="other">Other</option></select></div>
+          <div><label for="mpMethod">Paid by</label><select id="mpMethod"><option>InstaPay</option><option>Wallet</option><option>Card / link</option><option>Cash</option><option>Bank</option></select></div>
+          <div class="full"><label for="mpNote">Note</label><input id="mpNote" maxlength="300"></div>
+        </div>
+        <div class="actions"><button type="button" class="btn primary small" id="mpSave">Save payment</button></div>
+        <div class="msg" id="mpMsg"></div>
+      </div>
+      <div class="card" style="margin-bottom:12px">
+        <h3 style="margin:0 0 6px">👤 Members &amp; paying numbers</h3>
+        <input id="mnFind" placeholder="Search number or name" style="margin-bottom:8px">
+        <table class="mini" id="mnPeople"></table>
+      </div>
+      <div class="card" style="margin-bottom:12px">
+        <h3 style="margin:0 0 6px">🧾 Payments</h3>
+        <table class="mini" id="mnPays"></table>
+        <div class="actions"><button type="button" class="btn ghost small" id="mnCsv">⬇ Download CSV</button></div>
+      </div>
+      <div class="msg" id="mnMsg"></div>
+    </div>
     <div data-pane="wanted" hidden>
       <div class="hint" style="margin-bottom:10px">🌍 Orders from abroad: press "Send price" to save your price and open WhatsApp to the buyer. Requests from buyers. Approve to show them under "Wanted" on the site (they hide by themselves after 60 days). Close one when the buyer found it.</div>
+      <div class="card" style="margin-bottom:12px">
+        <h3 style="margin:0 0 6px">📣 Post a Wanted ad from High End</h3>
+        <div class="hint">Looking for something for a client (a watch, a bag…)? It shows first under "Wanted" and is announced under its category. Sellers who have one message your WhatsApp.</div>
+        <div class="grid">
+          <div class="full"><label for="hwTitle">What are you looking for?</label><input id="hwTitle" maxlength="80" placeholder="e.g. Hermès Birkin 30 Gold Togo"></div>
+          <div><label for="hwGrp">Category</label><select id="hwGrp"></select></div>
+          <div><label for="hwMarket">Country</label><select id="hwMarket"></select></div>
+          <div><label for="hwBudget">Budget (optional)</label><input id="hwBudget" inputmode="numeric"></div>
+          <div><label for="hwUnit">Currency</label><select id="hwUnit"><option>EGP</option><option>USD</option><option>SAR</option><option>AED</option><option>EUR</option></select></div>
+          <div class="full"><label for="hwDetails">Details (optional)</label><input id="hwDetails" maxlength="500" placeholder="Year, condition, box & papers…"></div>
+        </div>
+        <div class="actions"><button type="button" class="btn primary small" id="hwPost">Post it</button></div>
+        <div class="msg" id="hwMsg"></div>
+      </div>
       <div class="msg" id="wqMsg"></div>
       <div id="wqList"></div>
     </div>
@@ -139,7 +211,7 @@
         <button type="button" data-m="boat"><img class="lg" alt="" data-brand="boat">Yachts & boats</button>
         <button type="button" data-m="art"><span class="ic">🎨</span>Modern & art</button>
         <button type="button" data-m="estate"><span class="ic">🏠</span>Real estate</button>
-        <button type="button" data-m="bag"><span class="ic">👜</span>Signature Bags</button>
+        <button type="button" data-m="bag"><span class="ic">👜</span>The Boutique</button>
       </div>
       <div class="types sub" id="types">
         <button type="button" data-t="bike" class="on"><span class="ic">🏍️</span>Motorcycle</button>
@@ -250,16 +322,20 @@
       </div>
       <div class="card" style="margin-bottom:12px">
         <h3 style="margin:0 0 6px">💳 Payments &amp; value style</h3>
-        <label class="showsold" style="color:var(--text);font-weight:600;margin-bottom:8px"><input type="checkbox" id="payOn"> Payments switched on (visitors see "Promote this listing" and "Support High End")</label>
+        <label class="showsold" style="color:var(--text);font-weight:600;margin-bottom:8px"><input type="checkbox" id="payOn"> Payments switched on (promoted listings, membership, extra-vehicle fee)</label>
         <div class="grid">
           <div class="full"><label for="payLink">Payment page link (when the gateway is ready)</label><input id="payLink" type="url" placeholder="https://… (Paymob / Kashier / Fawry payment link)"></div>
           <div><label for="payInsta">InstaPay address</label><input id="payInsta" maxlength="80" placeholder="e.g. highend@instapay"></div>
           <div><label for="payWallet">Mobile wallet number</label><input id="payWallet" maxlength="40" placeholder="e.g. 010…"></div>
           <div><label for="promoPrice">Promotion price (shown to sellers)</label><input id="promoPrice" maxlength="80" placeholder="e.g. 500 EGP for 2 weeks"></div>
           <div><label for="valueMax">Lighter "value" style when max price is up to (EGP)</label><input id="valueMax" inputmode="numeric" placeholder="100000"></div>
+          <div><label for="freeVeh">Free motorcycles / cars per number</label><input id="freeVeh" type="number" min="0" max="50" inputmode="numeric" placeholder="1"></div>
+          <div><label for="vehFee">Each extra motorcycle / car (EGP)</label><input id="vehFee" type="number" min="0" inputmode="numeric" placeholder="1000"></div>
+          <div><label for="memPrice">Membership price (EGP)</label><input id="memPrice" type="number" min="0" inputmode="numeric" placeholder="e.g. 3000"></div>
+          <div><label for="memDays">Membership length (days)</label><input id="memDays" type="number" min="1" max="3650" inputmode="numeric" placeholder="365"></div>
         </div>
         <div class="actions"><button type="button" class="btn primary small" id="paySave">Save</button></div>
-        <div class="hint">While switched off, nothing about payments shows on the site. When on: sellers see "⭐ Promote this listing" and the footer shows "♥ Support High End". Until a payment link is saved, they pay by InstaPay / wallet or arrange it with you on WhatsApp.</div>
+        <div class="hint">While switched off, nothing about payments shows on the site. When on: sellers see "⭐ Promote this listing", the footer shows "⭐ Membership", and a number's extra motorcycles / cars wait for their fee (members post as many as they like). Until a payment link is saved, they pay by InstaPay / wallet or arrange it with you on WhatsApp.</div>
         <div class="msg" id="payMsg"></div>
       </div>
       <div class="card" style="margin-bottom:12px">
@@ -286,13 +362,13 @@
     </div>
   </section>
 </main>
-<footer><div class="checker"></div><p>High End Communities, est. 2024</p><p class="supportwrap" hidden><button type="button" class="supportbtn" data-support>♥ Support High End — keep it free</button></p></footer>
+<footer><div class="checker"></div><p>High End Communities, est. 2024</p><p class="supportwrap" hidden><button type="button" class="supportbtn" data-member>⭐ Membership — unlimited bikes &amp; cars</button></p></footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="config.js"></script>
-<script src="common.js?v=4477a7e8"></script>
+<script src="common.js?v=2dbd297b"></script>
 
 <script>
 initHeader();
@@ -313,7 +389,7 @@ async function enter(){
   countPage("admin");
   initCategoryPicker(); initPhotoInputs(); renderFields(); $("#terms").checked=true;
   $("#submitBtn").textContent = "Publish now";
-  await Promise.all([loadAll(), loadSponsorsAdmin(), loadSettings(), loadTrusted()]); loadWanted();
+  await Promise.all([loadAll(), loadSponsorsAdmin(), loadSettings(), loadTrusted()]); loadWanted(); loadMoney();
   loadCodes();
   loadSponsors();
 }
@@ -336,6 +412,7 @@ function tab(t){
   if (t==="codes") loadCodes();
   if (t==="inspect") loadExpertsAdmin();
   if (t==="wanted") loadWanted();
+  if (t==="money") loadMoney();
 }
 document.querySelectorAll("#adminView .tabs button").forEach(b=>b.onclick=()=>tab(b.dataset.tab));
 
@@ -346,6 +423,7 @@ async function loadAll(){
   if (error){ showMsg(niceError(error),"err",$("#listMsg")); return; }
   showMsg("","info",$("#listMsg"));
   items = (data||[]).map(r=>{ const it=rowToItem(r); it.L.reviewed=!!r.reviewed; return it; });
+  await adminPhones("listing", items, it=>it.id, (it,ph)=>{ it.L.f.phone=ph; });
   renderAll();
 }
 async function loadSettings(){
@@ -354,7 +432,9 @@ async function loadSettings(){
   if (data && data.report_wa) $("#repWa").value = data.report_wa;
   $("#bikeLim").value = (data && data.bike_monthly_limit) || 2;
   if (data) $("#payOn").checked=!!data.pay_enabled;
-  if (data){ $("#payLink").value=data.pay_link||""; $("#payInsta").value=data.pay_instapay||""; $("#payWallet").value=data.pay_wallet||""; $("#promoPrice").value=data.promo_price||""; $("#valueMax").value=data.value_max_egp||""; }
+  if (data){ $("#payLink").value=data.pay_link||""; $("#payInsta").value=data.pay_instapay||""; $("#payWallet").value=data.pay_wallet||""; $("#promoPrice").value=data.promo_price||""; $("#valueMax").value=data.value_max_egp||"";
+    $("#freeVeh").value=data.free_vehicles??1; $("#vehFee").value=data.extra_vehicle_fee??1000; $("#memPrice").value=data.member_price||""; $("#memDays").value=data.member_days||365;
+    $("#mnAdPrice").value=data.ad_price_month||""; $("#moveUrl").value=data.redirect_url||""; moveUi(); }
   const on = !data || data.auto_approve!==false;
   $("#autoApprove").checked = on; autoHint(on);
 }
@@ -370,15 +450,148 @@ $("#paySave").onclick = async ()=>{
   if (link && !/^https:\/\//.test(link)){ showMsg("The payment link must start with https://","err",$("#payMsg")); return; }
   const rec={pay_enabled:$("#payOn").checked, pay_link:link||null, pay_instapay:$("#payInsta").value.trim()||null, pay_wallet:$("#payWallet").value.trim()||null, promo_price:$("#promoPrice").value.trim()||null};
   if (vm) rec.value_max_egp=vm;
+  const num=(id,d)=>{ const v=String($(id).value).trim(); return v==="" ? d : Number(v); };
+  Object.assign(rec,{free_vehicles:num("#freeVeh",1), extra_vehicle_fee:num("#vehFee",1000), member_price:num("#memPrice",0), member_days:num("#memDays",365)});
   const {error}=await sb.from("settings").update(rec).eq("id",1);
-  showMsg(error ? (/column/.test(error.message||"") ? "Run update11.sql in Supabase first." : niceError(error)) : "Saved.", error?"err":"ok", $("#payMsg"));
+  showMsg(error ? (/column/.test(error.message||"") ? "Run the latest update SQL in Supabase first." : niceError(error)) : "Saved.", error?"err":"ok", $("#payMsg"));
+  if (!error) SITE_ST = Object.assign(SITE_ST||{}, rec);
+};
+
+/* ---------- moving the site ---------- */
+function moveUi(){ const on=!!$("#moveUrl").value.trim(); $("#moveCard").style.background = on ? "#fff3cd" : ""; }
+async function saveMove(url){
+  if (url && !/^https:\/\/[A-Za-z0-9.-]+\.[A-Za-z]{2,}(\/\S*)?$/.test(url)){ showMsg("The new address must start with https:// (e.g. https://www.example.com)","err",$("#listMsg")); return; }
+  if (url && url.replace(/\/+$/,"").startsWith(location.origin)){ showMsg("That's this same site.","err",$("#listMsg")); return; }
+  if (url && !confirm("Every page will forward visitors to "+url+". Continue?")) return;
+  const {error}=await sb.from("settings").update({redirect_url:url||null}).eq("id",1);
+  if (error){ showMsg(/column/.test(error.message||"")?"Run the latest update SQL in Supabase first.":niceError(error),"err",$("#listMsg")); return; }
+  $("#moveUrl").value=url||""; moveUi(); toast(url?"Forwarding is on.":"Forwarding is off.");
+}
+$("#moveSave").onclick=()=>saveMove($("#moveUrl").value.trim());
+$("#moveClear").onclick=()=>saveMove("");
+
+/* ---------- money: members, payments, projections ---------- */
+let moneyPays=[], moneyMembers=[], moneyInfo=null;
+const egp = n => fmtMoney(Math.round(Number(n)||0));
+async function loadMoney(){
+  showMsg("Loading…","info",$("#mnMsg"));
+  const [mi, pays, mems] = await Promise.all([ sb.rpc("admin_money"),
+    sb.from("payments").select("*").order("paid_at",{ascending:false}).limit(2000),
+    sb.from("members").select("*").order("created_at",{ascending:false}).limit(2000) ]);
+  const err = mi.error||pays.error||mems.error;
+  if (err){ showMsg(/admin_money|payments|members|does not exist/.test(err.message||"") ? "Run the latest update SQL (update14) in Supabase first." : niceError(err),"err",$("#mnMsg")); return; }
+  showMsg("","",$("#mnMsg"));
+  moneyInfo=mi.data||{}; moneyPays=pays.data||[]; moneyMembers=mems.data||[];
+  renderMoney();
+}
+function renderMoney(){
+  const m=moneyInfo||{};
+  $("#mnTotal").textContent=egp(m.total); $("#mnMonth").textContent=egp(m.this_month); $("#mnMembers").textContent=fmt(m.members||0);
+  // last 12 months
+  const now=new Date(), months=[]; for(let i=11;i>=0;i--){ const d=new Date(now.getFullYear(), now.getMonth()-i, 1); months.push(d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")); }
+  const byM={}; (m.months||[]).forEach(x=>byM[x.m]=Number(x.t)); const mx=Math.max(1,...months.map(k=>byM[k]||0));
+  $("#mnBars").innerHTML = months.map(k=>`<div style="height:${Math.round((byM[k]||0)/mx*100)}%" data-t="${k}: ${egp(byM[k]||0)}"></div>`).join("");
+  // projection
+  const runMonth = Number(m.last_90||0)/3, adPrice=Number($("#mnAdPrice").value||m.ad_price||0), slots=Number($("#mnSlots").value||0), spons=Number(m.sponsors||0);
+  const adNow=spons*adPrice, adMore=(spons+slots)*adPrice;
+  $("#mnProj").innerHTML = `<tr><th></th><th class="n">Month</th><th class="n">Year</th></tr>
+    <tr><td>Payments run-rate (last 90 days)</td><td class="n">${egp(runMonth)}</td><td class="n">${egp(runMonth*12)}</td></tr>
+    <tr><td>Ads: ${spons} active sponsor${spons===1?"":"s"} × ${egp(adPrice)}</td><td class="n">${egp(adNow)}</td><td class="n">${egp(adNow*12)}</td></tr>
+    ${slots?`<tr><td>Ads with ${slots} more slot${slots===1?"":"s"}</td><td class="n">${egp(adMore)}</td><td class="n">${egp(adMore*12)}</td></tr>`:""}
+    <tr><td><b>Projected total</b></td><td class="n"><b>${egp(runMonth+adMore)}</b></td><td class="n"><b>${egp((runMonth+adMore)*12)}</b></td></tr>`;
+  // WhatsApp checks
+  const ver = moneyMembers.filter(x=>!x.verified && x.verify_code);
+  $("#mnVerN").textContent = ver.length?`(${ver.length})`:"";
+  const vb=$("#mnVerify"); vb.innerHTML = ver.length ? "" : '<div class="muted" style="font-size:14px">None waiting.</div>';
+  ver.forEach(x=>{ const r=document.createElement("div"); r.className="payrow"; r.style.alignItems="center";
+    r.innerHTML=`<span><b>${esc(x.phone)}</b>${x.name?" · "+esc(x.name):""}<br><small>code <b>${esc(x.verify_code)}</b> · ${fmtDate(x.verify_asked||x.created_at)}</small></span>`;
+    const ok=document.createElement("button"); ok.type="button"; ok.className="btn primary small"; ok.textContent="Verified";
+    ok.onclick=async()=>{ const {error}=await sb.from("members").update({verified:true, verified_at:new Date().toISOString(), verify_code:null}).eq("phone",x.phone); if(error){ toast(niceError(error)); return; } loadMoney(); };
+    const no=document.createElement("button"); no.type="button"; no.className="btn ghost small"; no.textContent="✕";
+    no.onclick=async()=>{ if(!confirm("Delete this request?")) return; await sb.from("members").delete().eq("phone",x.phone).eq("verified",false); loadMoney(); };
+    const bx=document.createElement("span"); bx.style.cssText="display:flex;gap:6px"; bx.append(ok,no); r.appendChild(bx); vb.appendChild(r); });
+  // unpaid listings
+  const un = items.filter(x=>x.L.status==="unpaid");
+  $("#mnUnpaidN").textContent = un.length?`(${un.length})`:""; $("#nMoney").textContent = (un.length+ver.length) ? `(${un.length+ver.length})` : "";
+  const ub=$("#mnUnpaid"); ub.innerHTML = un.length ? "" : '<div class="muted" style="font-size:14px">None waiting.</div>';
+  un.forEach(x=>{ const r=document.createElement("div"); r.className="payrow"; r.style.alignItems="center";
+    r.innerHTML=`<span><a href="${esc(itemHref(x.id))}" target="_blank" rel="noopener"><b>${esc(titleOf(x.L))}</b></a><br><small>${esc(phoneOf(x.L))} · ${fmtDate(x.L.at||Date.now())}</small></span>`;
+    const ok=document.createElement("button"); ok.type="button"; ok.className="btn primary small"; ok.textContent="Paid ✓";
+    ok.onclick=async()=>{ const amt=prompt("Amount received (EGP)", String((SITE_ST||{}).extra_vehicle_fee??1000)); if(amt===null) return;
+      const how=prompt("Paid by (InstaPay / Wallet / Cash…)","InstaPay"); if(how===null) return;
+      const {error}=await sb.rpc("admin_mark_paid",{p_listing:x.id, p_amount:Number(amt)||0, p_method:how}); if(error){ toast(niceError(error)); return; }
+      toast("Recorded — the listing is out."); await loadAll(); loadMoney(); };
+    const wa=document.createElement("a"); wa.className="btn ghost small"; wa.target="_blank"; wa.rel="noopener"; wa.textContent="WhatsApp";
+    wa.href="https://wa.me/"+waNum(phoneOf(x.L))+"?text="+encodeURIComponent(`Hello, about your listing "${titleOf(x.L)}" on ${MARKET_NAME}: it goes live once the extra vehicle fee (${egp((SITE_ST||{}).extra_vehicle_fee??1000)}) is received.`);
+    const bx=document.createElement("span"); bx.style.cssText="display:flex;gap:6px"; bx.append(ok,wa); r.appendChild(bx); ub.appendChild(r); });
+  renderPeople(); renderPays();
+}
+function renderPeople(){
+  const nt=v=>String(v||"").toLowerCase().replace(/\s+/g,""); const q=nt($("#mnFind").value); const by={};
+  moneyMembers.forEach(x=>by[x.phone]={phone:x.phone,name:x.name,mem:x,total:0,n:0,last:null});
+  moneyPays.forEach(p=>{ const o=by[p.phone]||(by[p.phone]={phone:p.phone,name:"",mem:null,total:0,n:0,last:null}); o.total+=Number(p.amount)||0; o.n++; if(!o.last||p.paid_at>o.last) o.last=p.paid_at; });
+  const counts={}; items.forEach(x=>{ const ph=phoneOf(x.L); if(ph && x.L.status!=="rejected") counts[ph]=(counts[ph]||0)+1; });
+  const rows=Object.values(by).filter(o=>o.mem?.verified || o.n).filter(o=>!q || nt(o.phone+" "+(o.name||"")).includes(q))
+    .sort((a,b)=>b.total-a.total);
+  const t=$("#mnPeople"); t.innerHTML="<tr><th>Number</th><th>Member</th><th class='n'>Listings</th><th class='n'>Paid</th><th></th></tr>";
+  if (!rows.length){ t.insertAdjacentHTML("beforeend","<tr><td colspan='5' class='muted'>No members or payments yet.</td></tr>"); return; }
+  rows.forEach(o=>{ const tr=document.createElement("tr"); const act=o.mem && o.mem.verified && o.mem.member_until && new Date(o.mem.member_until)>new Date();
+    tr.innerHTML=`<td><b>${esc(o.phone)}</b>${o.name?"<br><small>"+esc(o.name)+"</small>":""}</td><td>${act?"⭐ until "+fmtDate(o.mem.member_until):o.mem&&o.mem.verified?"✅ verified":"–"}</td><td class="n">${counts[o.phone]||0}</td><td class="n">${egp(o.total)}${o.n>1?"<br><small>"+o.n+" payments</small>":""}</td>`;
+    const td=document.createElement("td"); const b=document.createElement("button"); b.type="button"; b.className="btn ghost small"; b.textContent="+ Pay";
+    b.onclick=()=>{ $("#mpPhone").value=o.phone; $("#mpKind").value="membership"; $("#mpAmount").value=(SITE_ST||{}).member_price||""; $("#mpAmount").focus(); $("#mpPhone").scrollIntoView({behavior:"smooth",block:"center"}); };
+    const w=document.createElement("a"); w.className="btn ghost small"; w.target="_blank"; w.rel="noopener"; w.textContent="WA"; w.href="https://wa.me/"+waNum(o.phone);
+    td.append(b,w); tr.appendChild(td); t.appendChild(tr); });
+}
+$("#mnFind").addEventListener("input", renderPeople);
+function renderPays(){
+  const t=$("#mnPays"); const kinds={membership:"Membership",extra_vehicle:"Extra vehicle",promote:"Promoted",ad:"Sponsor / ad",other:"Other"};
+  t.innerHTML="<tr><th>Date</th><th>Number</th><th>For</th><th class='n'>EGP</th><th></th></tr>";
+  if (!moneyPays.length){ t.insertAdjacentHTML("beforeend","<tr><td colspan='5' class='muted'>No payments yet.</td></tr>"); return; }
+  moneyPays.slice(0,200).forEach(p=>{ const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${fmtDate(p.paid_at)}</td><td>${esc(p.phone)}</td><td>${kinds[p.kind]||esc(p.kind)}${p.method?"<br><small>"+esc(p.method)+"</small>":""}${p.note?"<br><small>"+esc(p.note)+"</small>":""}</td><td class="n">${fmt(Number(p.amount)||0)}</td>`;
+    const td=document.createElement("td"); const d=document.createElement("button"); d.type="button"; d.className="btn ghost small"; d.textContent="🗑";
+    d.onclick=async()=>{ if(!confirm("Delete this payment record?")) return; const {error}=await sb.from("payments").delete().eq("id",p.id); if(error){ toast(niceError(error)); return; } loadMoney(); };
+    td.appendChild(d); tr.appendChild(td); t.appendChild(tr); });
+}
+$("#mnCsv").onclick=()=>{
+  const q=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
+  const csv=["date,number,for,method,amount_egp,note"].concat(moneyPays.map(p=>[p.paid_at.slice(0,10),p.phone,p.kind,p.method,p.amount,p.note].map(q).join(","))).join("\n");
+  const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv"})); a.download="high-end-payments.csv"; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),20000);
+};
+$("#mnSlots").addEventListener("input", renderMoney);
+$("#mnAdPrice").addEventListener("input", renderMoney);
+$("#mnAdSave").onclick=async()=>{ const v=Number($("#mnAdPrice").value||0); const {error}=await sb.from("settings").update({ad_price_month:v}).eq("id",1); toast(error?niceError(error):"Saved."); };
+$("#mpSave").onclick=async()=>{
+  const ph=normPhone($("#mpPhone").value, "EG") || normPhone($("#mpPhone").value, getMarket()); const amt=Number($("#mpAmount").value);
+  if (!ph){ showMsg("Enter a valid WhatsApp number.","err",$("#mpMsg")); return; }
+  if (!(amt>=0) || $("#mpAmount").value===""){ showMsg("Enter the amount.","err",$("#mpMsg")); return; }
+  const kind=$("#mpKind").value, method=$("#mpMethod").value, note=$("#mpNote").value.trim()||null;
+  let error;
+  if (kind==="membership"){ ({error}=await sb.rpc("admin_add_membership",{p_phone:ph,p_amount:amt,p_method:method}));
+    if (!error && note){ const last=await sb.from("payments").select("id").eq("phone",ph).order("paid_at",{ascending:false}).limit(1).maybeSingle(); if(last.data) await sb.from("payments").update({note}).eq("id",last.data.id); } }
+  else ({error}=await sb.from("payments").insert({phone:ph, amount:amt, kind, method, note}));
+  if (error){ showMsg(niceError(error),"err",$("#mpMsg")); return; }
+  showMsg(kind==="membership" ? `Saved. ${ph} is a member for ${(SITE_ST||{}).member_days||365} days more; their waiting vehicles are out.` : "Saved.","ok",$("#mpMsg"));
+  $("#mpAmount").value=""; $("#mpNote").value=""; if (kind==="membership") await loadAll(); loadMoney();
+};
+/* ---------- Wanted ads from High End ---------- */
+(function(){
+  const g=$("#hwGrp"); [["watch","Watches"],["bag","The Boutique"],["moto","Motorcycles"],["car","Cars"],["boat","Yachts & boats"],["equine","Equine"],["art","Modern & art"],["estate","Real estate"],["other","Other"]].forEach(([v,t])=>g.add(new Option(t,v)));
+  const m=$("#hwMarket"); MARKETS.forEach(x=>m.add(new Option(x.name,x.id)));
+})();
+$("#hwPost").onclick=async()=>{
+  const title=$("#hwTitle").value.trim(); if (title.length<3){ showMsg("Write what you're looking for.","err",$("#hwMsg")); return; }
+  const bud=parseInt(String($("#hwBudget").value).replace(/\D/g,""),10)||null;
+  const {error}=await sb.rpc("admin_post_request",{p_market:$("#hwMarket").value, p_grp:$("#hwGrp").value, p_title:title, p_details:$("#hwDetails").value.trim()||null, p_budget:bud, p_budget_unit:bud?$("#hwUnit").value:null, p_phone:ADMIN_WA});
+  if (error){ showMsg(/admin_post_request|featured/.test(error.message||"")?"Run the latest update SQL (update14) in Supabase first.":niceError(error),"err",$("#hwMsg")); return; }
+  showMsg("Posted — it's live under Wanted.","ok",$("#hwMsg")); $("#hwTitle").value=""; $("#hwDetails").value=""; $("#hwBudget").value=""; loadWanted();
 };
 /* ---------- Wanted requests ---------- */
 let wantedAll=[];
 async function loadWanted(){
-  const {data,error}=await sb.from("requests").select("*").neq("status","rejected").order("created_at",{ascending:false}).limit(500);
+  const {data,error}=await sb.from("requests").select("id,created_at,status,market,grp,title,details,budget,budget_unit,name,kind,link,source,quote,quoted_at").neq("status","rejected").order("created_at",{ascending:false}).limit(500);
   if (error){ showMsg(/requests/.test(error.message||"") ? "Run update11.sql in Supabase to turn on Wanted." : niceError(error),"err",$("#wqMsg")); return; }
-  wantedAll=data||[]; renderWanted();
+  wantedAll=data||[]; await adminPhones("request", wantedAll, r=>r.id, (r,ph)=>{ r.phone=ph; }); renderWanted();
 }
 function renderWanted(){
   const box=$("#wqList"); box.innerHTML="";
