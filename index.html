@@ -29,10 +29,10 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=11795301">
+<link rel="stylesheet" href="common.css?v=f07eac7b">
 </head>
 <body>
-<script src="i18n.js?v=a2127fb0"></script>
+<script src="i18n.js?v=94e2797e"></script>
 <header class="mast">
   <div class="checker"></div>
   <button type="button" class="langbtn" id="langBtn" lang="ar">العربية</button>
@@ -103,7 +103,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="config.js"></script>
-<script src="common.js?v=11795301"></script>
+<script src="common.js?v=f07eac7b"></script>
 
 <script>
 if (/^#l-[A-Za-z0-9-]{1,60}$/.test(location.hash)) location.replace("item.html?id="+location.hash.slice(3));   // old shared links
@@ -121,7 +121,7 @@ function drawMarkets(){
 function drawSubfilters(){
   const box=$("#subfilters"); const subs = SUBTYPES[filter];
   box.hidden = !subs; if (!subs) return; box.innerHTML="";
-  [["all","","All "+(GROUP_NAMES[filter]||"").split(/[ ,&]/)[0].toLowerCase()]].concat(subs).forEach(([t,ic,label])=>{
+  [["all","","All"]].concat(subs, filter==="car" ? [["4x4","🚙","4x4 & off-road"]] : []).forEach(([t,ic,label])=>{
     const b=document.createElement("button"); b.className="chip"+(sub===t?" on":""); b.dataset.s=t;
     b.textContent = (ic?ic+" ":"")+(t==="all" ? "All" : (SECTION_NAMES[t]||label));
     b.onclick=()=>{ sub=t; drawSubfilters(); render(); };
@@ -176,6 +176,7 @@ function hotFor(g){
 }
 function render(){
   loadHot();
+  if (!ANN) loadAnnouncements().then(a=>{ if (a.length) render(); });
   const adKey = MARKET+"|"+(filter==="all" ? "" : filter);
   if (adKey !== AD_CTX.key){ AD_CTX.key = adKey; AD_CTX.market = MARKET; AD_CTX.group = filter==="all" ? "" : filter; if (SPONSORS.length) startBannerRotation(); }
   const box = $("#list"); box.innerHTML = ""; box.className="sections";
@@ -184,7 +185,7 @@ function render(){
   $("#searchbar").hidden = false; $("#pcur").textContent = mainCur();
   const Q = searchState();
   document.body.classList.toggle("value", Q.value);
-  const inCat = all.filter(x=>x.L.f && SCHEMAS[x.L.type] && (FIXED || GROUP[x.L.type]!=="bag") && marketOf(x.L)===MARKET && (filter==="all" || GROUP[x.L.type]===filter) && (sub==="all" || x.L.type===sub) && matchesSearch(x.L, Q));
+  const inCat = all.filter(x=>x.L.f && SCHEMAS[x.L.type] && (FIXED || GROUP[x.L.type]!=="bag") && marketOf(x.L)===MARKET && (filter==="all" || GROUP[x.L.type]===filter) && (sub==="all" || x.L.type===sub || (sub==="4x4" && is4x4(x.L))) && matchesSearch(x.L, Q));
   CAT_TITLE = sub!=="all" ? (SECTION_NAMES[sub]||"") : (filter!=="all" ? (GROUP_NAMES[filter]||"") : "");
   $("#catPdf").textContent = (CAT_TITLE ? CAT_TITLE+" PDF" : "Catalogue PDF");
   $("#catShare").textContent = "Share " + (CAT_TITLE ? CAT_TITLE.toLowerCase() : "catalogue") + " on WhatsApp";
@@ -199,7 +200,9 @@ function render(){
   shownItems = live;
   $("#catShare").hidden = !live.length; $("#catPdf").hidden = !live.length;
   $("#catShare").href = waHref(catalogueText(live));
-  if (!live.length && !(showSold && sold.length)){ box.innerHTML = `<div class="empty">${isW && wbox.dataset.on ? "No watches match these filters." : MARKET!=="EG" && !all.some(x=>marketOf(x.L)===MARKET) ? `The ${marketName(MARKET)} marketplace is just opening.` : "No listings here yet."}</div>`+(MARKET!=="EG"?`<p class="empty-cta"><a class="btn primary" href="post.html">Be the first to list in ${marketName(MARKET)}</a></p>`:""); return; }
+  const annTop = Q.active ? null : annFor(filter==="all"?"all":filter, MARKET);
+  if (!live.length && !(showSold && sold.length)){ box.innerHTML = `<div class="empty">${isW && wbox.dataset.on ? "No watches match these filters." : MARKET!=="EG" && !all.some(x=>marketOf(x.L)===MARKET) ? `The ${marketName(MARKET)} marketplace is just opening.` : "No listings here yet."}</div>`+(MARKET!=="EG"?`<p class="empty-cta"><a class="btn primary" href="post.html">Be the first to list in ${marketName(MARKET)}</a></p>`:""); if (annTop) box.prepend(annTop); return; }
+  if (annTop) box.appendChild(annTop);
   if (filter!=="all" && !Q.active){ const hw=hotFor(filter); if (hw) box.appendChild(hw); }
   let n=0;
   const addAd=(opt)=>{ const a=feedSponsorCard(n++, opt); if (a) box.appendChild(a); return !!a; };
@@ -218,6 +221,7 @@ function render(){
     GROUP_ORDER.forEach((g,i)=>{
       const its = live.filter(x=>GROUP[x.L.type]===g); if (!its.length) return;
       box.appendChild(section(g, GROUP_NAMES[g], GROUP_ICON[g], its.slice(0,PER_SECTION), its.length>PER_SECTION||SUBTYPES[g] ? ()=>pick(g) : null));
+      const an=annFor(g, MARKET); if (an) box.appendChild(an);
       const hw=hotFor(g); if (hw) box.appendChild(hw);
       const own = sponsorsFor("feed", {group:g, only:true});
       own.forEach(s=>box.appendChild(sponsorCard(s)));
@@ -225,8 +229,8 @@ function render(){
     });
   } else if (sub==="all" && SUBTYPES[filter]){
     // a category with sub-sections: one block per sub-section
-    SUBTYPES[filter].forEach(([t,ic])=>{
-      const its = live.filter(x=>x.L.type===t); if (!its.length) return;
+    SUBTYPES[filter].concat(filter==="car" ? [["4x4","🚙"]] : []).forEach(([t,ic])=>{
+      const its = live.filter(x=>t==="4x4" ? is4x4(x.L) : x.L.type===t); if (!its.length) return;
       box.appendChild(section(t, SECTION_NAMES[t], ic, its.slice(0,PER_SECTION*2), its.length>PER_SECTION*2 ? ()=>pickSub(t) : null));
     });
     if (box.children.length>1) box.insertBefore(feedSponsorCard(0), box.children[1]);

@@ -218,6 +218,7 @@ const SCHEMAS = {
     {k:"mileage", l:"Mileage (km)", req:1, type:"number", min:0, max:1000000, ph:"e.g. 35000"},
     {k:"gearbox", l:"Transmission", type:"select", opts:["Automatic","Manual"], def:"Automatic"},
     {k:"fuel", l:"Fuel", type:"select", opts:["Petrol","Diesel","Hybrid","Electric"], def:"Petrol"},
+    {k:"drive", l:"Drive", type:"select", opts:["2WD","4x4 / AWD"], def:"2WD"},
     {k:"color", l:"Color", ph:"e.g. GT Silver"},
     {k:"paint", l:"Original paint", type:"select", opts:["Yes","No"], def:"Yes"},
     {k:"condition", l:"Condition", req:1, type:"select", opts:["New","Used"], def:"Used"},
@@ -341,12 +342,33 @@ const SUBTYPES = {
 };
 const SECTION_NAMES = {bike:"Motorcycles", gear:"Safety gear & helmets", acc:"Motorcycle accessories & parts", watch:"Watches",
   car:"Cars", carpart:"Car parts & accessories", boat:"Yachts & boats", boatpart:"Marine parts & accessories",
-  equine:"Horses", equinepart:"Equine accessories", art:"Modern & art", estate:"Real estate", bag:"The Boutique"};
-const GROUP_NAMES = {moto:"Motorcycles, gear & accessories", car:"Cars & car parts", boat:"Yachts, boats & marine parts", equine:"Equine",
-  watch:"Watches", art:"Modern & art", estate:"Real estate", bag:"The Boutique"};
+  equine:"Horses", equinepart:"Equine accessories", art:"Modern & art", estate:"Real estate", bag:"The Boutique", "4x4":"4x4 & off-road"};
+// 4x4 is a view of the cars, not its own type: the seller's "Drive" answer, or 4x4 words in the ad
+function is4x4(L){ const f=L.f||{}; if (L.type!=="car") return false;
+  if (/4x4|awd/i.test(f.drive||"")) return true;
+  return /\b(4x4|4wd|awd|off[- ]?road|g[- ]?class|g ?63|wrangler|defender|land cruiser|prado|patrol|hilux|raptor|bronco|4matic|xdrive|quattro)\b/i.test([f.model,f.brand,f.addons].join(" ")); }
+const GROUP_NAMES = {moto:"High End Motorcycles Community", car:"High End Cars Community", boat:"High End Marine Community", equine:"EQUINE HAVEN Community",
+  watch:"High End Watches", art:"Modern & art", estate:"Real estate", bag:"The Boutique"};
 const GROUP_ORDER=["moto","watch","car","boat","equine","art","estate","bag"];
 const TYPE_ORDER = GROUP_ORDER.flatMap(g => SUBTYPES[g] ? SUBTYPES[g].map(x=>x[0]) : Object.keys(GROUP).filter(t=>GROUP[t]===g));
 function bySection(items){ return TYPE_ORDER.map(t=>[t, items.filter(x=>x.L.type===t)]).filter(([,xs])=>xs.length); }
+/* ---------- announcements the admin posts to a category (or to everyone) ---------- */
+let ANN = null;
+async function loadAnnouncements(){
+  if (ANN || !sb) return ANN||[]; ANN=[];
+  try{ const {data}=await sb.from("announcements").select("id,grp,market,title,body,link,expires_at,created_at").eq("active",true).order("created_at",{ascending:false}).limit(40);
+    const now=Date.now(); ANN=(data||[]).filter(r=>!r.expires_at || Date.parse(r.expires_at)>now); }catch(e){}
+  return ANN;
+}
+function annFor(g, market){
+  const a=(ANN||[]).filter(r=>r.grp===g && (!r.market || r.market===market)); if (!a.length) return null;
+  const box=document.createElement("div"); box.className="annbox";
+  a.slice(0,3).forEach(r=>{ const d=document.createElement("div"); d.className="ann";
+    d.innerHTML=`<b>📢 ${esc(r.title)}</b>`+(r.body?`<p>${esc(r.body).replace(/\n/g,"<br>")}</p>`:"");
+    if (r.link){ const l=document.createElement("a"); l.className="btn ghost small"; l.href=r.link; l.target="_blank"; l.rel="noopener"; l.textContent="Open"; d.appendChild(l); }
+    box.appendChild(d); });
+  return box;
+}
 let CAT_TITLE = "";        // set by the catalogue page to the section being shown
 const CI_TO_CC = 16.387, KM_PER_MI = 1.609344;
 // Best-selling and most popular motorcycles worldwide (suggestions only — sellers can still type anything)

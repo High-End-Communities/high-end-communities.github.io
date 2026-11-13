@@ -18,10 +18,10 @@
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=11795301">
+<link rel="stylesheet" href="common.css?v=f07eac7b">
 </head>
 <body>
-<script src="i18n.js?v=a2127fb0"></script>
+<script src="i18n.js?v=94e2797e"></script>
 <header class="mast">
   <div class="checker"></div>
   <button type="button" class="langbtn" id="langBtn" lang="ar">العربية</button>
@@ -59,6 +59,7 @@
       <button type="button" data-tab="limits">🏍️ Limits</button>
       <button type="button" data-tab="inspect">🔧 Inspection</button>
       <button type="button" data-tab="wanted">🔎 Wanted <span id="nWanted"></span></button>
+      <button type="button" data-tab="announce">📢 Announce <span id="nAnn"></span></button>
       <button type="button" data-tab="money">💳 Money <span id="nMoney"></span></button>
       <button type="button" data-tab="stats">Stats</button>
     </div>
@@ -156,6 +157,23 @@
       </div>
       <div class="msg" id="wqMsg"></div>
       <div id="wqList"></div>
+    </div>
+    <div data-pane="announce" hidden>
+      <div class="card" style="margin-bottom:12px">
+        <h3 style="margin:0 0 6px">📢 Post an announcement</h3>
+        <div class="hint">Shows at the top of the category you pick (or on the home page for everyone), until you turn it off or it expires.</div>
+        <div class="grid">
+          <div><label for="anGrp">Where</label><select id="anGrp"></select></div>
+          <div><label for="anMarket">Country</label><select id="anMarket"></select></div>
+          <div class="full"><label for="anTitle">Title</label><input id="anTitle" maxlength="120" placeholder="e.g. Ride out this Friday at 7 am"></div>
+          <div class="full"><label for="anBody">Text (optional)</label><textarea id="anBody" maxlength="600" rows="3" placeholder="Details, place, time…"></textarea></div>
+          <div><label for="anLink">Link (optional)</label><input id="anLink" inputmode="url" placeholder="https://…"></div>
+          <div><label for="anDays">Show for</label><select id="anDays"><option value="3">3 days</option><option value="7" selected>1 week</option><option value="14">2 weeks</option><option value="30">1 month</option><option value="0">Until I turn it off</option></select></div>
+        </div>
+        <div class="actions"><button type="button" class="btn primary small" id="anPost">Publish</button></div>
+        <div class="msg" id="anMsg"></div>
+      </div>
+      <div id="anList"></div>
     </div>
     <div data-pane="inspect" hidden>
       <div class="card" style="margin-bottom:12px">
@@ -381,7 +399,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="config.js"></script>
-<script src="common.js?v=11795301"></script>
+<script src="common.js?v=f07eac7b"></script>
 
 <script>
 initHeader();
@@ -425,9 +443,49 @@ function tab(t){
   if (t==="codes") loadCodes();
   if (t==="inspect") loadExpertsAdmin();
   if (t==="wanted") loadWanted();
+  if (t==="announce") loadAnn();
   if (t==="money") loadMoney();
 }
 document.querySelectorAll("#adminView .tabs button").forEach(b=>b.onclick=()=>tab(b.dataset.tab));
+
+/* ---------- announcements ---------- */
+function annSetup(){
+  if ($("#anGrp").options.length) return;
+  $("#anGrp").innerHTML = `<option value="all">🏠 Home page — everyone</option>`+GROUP_ORDER.map(g=>`<option value="${g}">${esc(GROUP_NAMES[g])}</option>`).join("");
+  $("#anMarket").innerHTML = `<option value="">All countries</option>`+MARKETS.map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join("");
+}
+$("#anPost").onclick = async ()=>{
+  const title=$("#anTitle").value.trim(); if (title.length<2){ showMsg("Write a title.","err",$("#anMsg")); return; }
+  let link=$("#anLink").value.trim(); if (link && !/^https?:\/\//i.test(link)) link="https://"+link;
+  const days=+$("#anDays").value;
+  const row={active:true, grp:$("#anGrp").value, market:$("#anMarket").value||null, title, body:$("#anBody").value.trim()||null, link:link||null,
+    expires_at: days ? new Date(Date.now()+days*864e5).toISOString() : null};
+  const {error}=await sb.from("announcements").insert(row);
+  if (error){ showMsg(niceError(error),"err",$("#anMsg")); return; }
+  showMsg("Published — it's on the site now.","ok",$("#anMsg")); $("#anTitle").value=""; $("#anBody").value=""; $("#anLink").value=""; loadAnn();
+};
+async function loadAnn(){
+  annSetup();
+  const {data,error}=await sb.from("announcements").select("*").order("created_at",{ascending:false}).limit(100);
+  const box=$("#anList"); box.innerHTML="";
+  if (error){ box.innerHTML=`<div class="msg err">${esc(niceError(error))}</div>`; return; }
+  const now=Date.now(), on=r=>r.active && (!r.expires_at || Date.parse(r.expires_at)>now);
+  $("#nAnn").textContent = (data||[]).filter(on).length || "";
+  if (!data || !data.length){ box.innerHTML='<div class="empty">No announcements yet.</div>'; return; }
+  data.forEach(r=>{
+    const c=document.createElement("div"); c.className="card"; c.style.marginBottom="8px";
+    const where = r.grp==="all" ? "Home page" : (GROUP_NAMES[r.grp]||r.grp);
+    const until = r.expires_at ? "until "+fmtDate(Date.parse(r.expires_at)) : "no end date";
+    c.innerHTML=`<b>📢 ${esc(r.title)}</b><div class="hint">${esc(where)} · ${r.market?esc(marketName(r.market)):"All countries"} · ${on(r)?"🟢 Showing":"⚪ Off"} · ${until}</div>`+(r.body?`<p style="margin:6px 0 0">${esc(r.body)}</p>`:"");
+    const a=document.createElement("div"); a.className="actions";
+    const t=document.createElement("button"); t.type="button"; t.className="btn ghost small"; t.textContent = on(r) ? "Turn off" : "Show again";
+    t.onclick=async()=>{ const upd = on(r) ? {active:false} : {active:true, expires_at: r.expires_at && Date.parse(r.expires_at)<=now ? new Date(now+7*864e5).toISOString() : r.expires_at};
+      const {error}=await sb.from("announcements").update(upd).eq("id",r.id); if (error) alert(niceError(error)); loadAnn(); };
+    const d=document.createElement("button"); d.type="button"; d.className="btn ghost small"; d.textContent="Delete";
+    d.onclick=async()=>{ if (!confirm("Delete this announcement?")) return; const {error}=await sb.from("announcements").delete().eq("id",r.id); if (error) alert(niceError(error)); loadAnn(); };
+    a.append(t,d); c.appendChild(a); box.appendChild(c);
+  });
+}
 
 /* ---------- listings ---------- */
 async function loadAll(){
