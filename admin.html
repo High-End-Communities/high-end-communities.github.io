@@ -18,7 +18,7 @@
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=ad2d642f">
+<link rel="stylesheet" href="common.css?v=f4eb5f92">
 </head>
 <body>
 <script src="i18n.js?v=3d170bf9"></script>
@@ -409,12 +409,13 @@
         <div class="unitrow" style="margin-top:8px"><input id="dbBudget" type="number" min="50" max="450" inputmode="numeric"><button type="button" class="btn ghost small" id="dbBudgetSave">Save MB</button></div>
         <div class="hint">When listings use more than this, the oldest are removed (sold first). 350 MB is safe on the free 500 MB plan.</div>
       </div>
-      <div class="card" style="margin-bottom:12px">
+      <div class="card" style="margin-bottom:12px" id="payCard">
         <h3 style="margin:0 0 6px">💳 Payments &amp; value style</h3>
         <label class="showsold" style="color:var(--text);font-weight:600;margin-bottom:8px"><input type="checkbox" id="payOn"> Payments switched on (promoted listings, membership, extra-vehicle fee)</label>
         <div class="grid">
           <div class="full"><label for="payLink">Payment page link (when the gateway is ready)</label><input id="payLink" type="url" placeholder="https://… (Paymob / Kashier / Fawry payment link)"></div>
           <div><label for="payInsta">InstaPay address</label><input id="payInsta" maxlength="80" placeholder="e.g. highend@instapay"></div>
+          <div><label for="adminWa">Admin WhatsApp (receipts, requests, new listings)</label><input id="adminWa" inputmode="tel" maxlength="16" placeholder="01xxxxxxxxx"></div>
           <div><label for="payWallet">Mobile wallet number</label><input id="payWallet" maxlength="40" placeholder="e.g. 010…"></div>
           <div><label for="promoPrice">Promotion price (shown to sellers)</label><input id="promoPrice" maxlength="80" placeholder="e.g. 500 EGP for 2 weeks"></div>
           <div><label for="valueMax">Lighter "value" style when max price is up to (EGP)</label><input id="valueMax" inputmode="numeric" placeholder="100000"></div>
@@ -457,7 +458,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="config.js"></script>
-<script src="common.js?v=ad2d642f"></script>
+<script src="common.js?v=f4eb5f92"></script>
 
 <script>
 initHeader();
@@ -504,13 +505,14 @@ const TAB_PERM = {pending:"listings", live:"listings", sold:"listings", add:"lis
   inspect:"inspect", wanted:"wanted", announce:"announce", share:"share", money:"money", stats:"stats"};
 const PERM_SECTIONS = [["moto","🏍️ Motorcycles"],["watch","⌚ Watches"],["car","🚗 Cars"],["boat","🛥️ Marine"],["equine","🐎 Equine"],["art","🎨 Art"],["estate","🏠 Real estate"],["bag","👜 The Boutique (ladies)"]];
 const PERM_FEATURES = [["listings","Listings: review, edit, add"],["share","Share to WhatsApp"],["announce","Announcements"],["wanted","Wanted requests"],["codes","Discount codes"],
-  ["sponsors","Sponsors & ads"],["inspect","Inspection partners"],["money","Money & members"],["stats","Stats"],["settings","Site settings"]];
-function can(p){ return ME.full || ME.perms.includes(p); }
+  ["sponsors","Sponsors & ads"],["inspect","Inspection partners"],["stats","Stats"]];   // money, fees, totals and site settings: full admins only
+function can(p){ if (p==="money"||p==="settings") return !!ME.full; return ME.full || ME.perms.includes(p); }
 function applyPerms(){
   let first=null;
   document.querySelectorAll("#adminView .tabs button").forEach(b=>{ const ok=can(TAB_PERM[b.dataset.tab]||"settings"); b.hidden=!ok; if (ok && !first) first=b.dataset.tab; });
-  ["#maintCard","#boutCard","#moveCard"].forEach(id=>{ const el=$(id); if (el) el.hidden=!can("settings"); });
+  ["#maintCard","#boutCard","#moveCard","#payCard"].forEach(id=>{ const el=$(id); if (el) el.hidden=!can("settings"); });
   const aa=$("#autoApprove"); if (aa) aa.closest(".disc").hidden=!can("settings");
+  const so=$("#soSave"); if (so) so.closest(".card").hidden=!can("settings");
   if (!ME.full){ $("#who").textContent += " · limited: "+PERM_SECTIONS.filter(([k])=>can(k)).map(([,l])=>l).join(", "); }
   if (first) tab(first);
 }
@@ -780,7 +782,7 @@ async function loadSettings(){
   if (data && data.report_wa) $("#repWa").value = data.report_wa;
   $("#bikeLim").value = (data && data.bike_monthly_limit) || 2;
   if (data) $("#payOn").checked=!!data.pay_enabled;
-  if (data){ $("#payLink").value=data.pay_link||""; $("#payInsta").value=data.pay_instapay||""; $("#payWallet").value=data.pay_wallet||""; $("#promoPrice").value=data.promo_price||""; $("#valueMax").value=data.value_max_egp||"";
+  if (data){ $("#payLink").value=data.pay_link||""; $("#payInsta").value=data.pay_instapay||""; $("#payWallet").value=data.pay_wallet||""; $("#adminWa").value=data.admin_wa||ADMIN_WA; $("#promoPrice").value=data.promo_price||""; $("#valueMax").value=data.value_max_egp||"";
     $("#freeVeh").value=data.free_vehicles??1; $("#vehFee").value=data.extra_vehicle_fee??1000; $("#memPrice").value=data.member_price||""; $("#memDays").value=data.member_days||365;
     $("#mnAdPrice").value=data.ad_price_month||""; $("#moveUrl").value=data.redirect_url||""; moveUi(); $("#boutOn").checked=!!data.boutique_on; }
   const on = !data || data.auto_approve!==false;
@@ -798,6 +800,8 @@ $("#paySave").onclick = async ()=>{
   if (link && !/^https:\/\//.test(link)){ showMsg("The payment link must start with https://","err",$("#payMsg")); return; }
   const rec={pay_enabled:$("#payOn").checked, pay_link:link||null, pay_instapay:$("#payInsta").value.trim()||null, pay_wallet:$("#payWallet").value.trim()||null, promo_price:$("#promoPrice").value.trim()||null};
   if (vm) rec.value_max_egp=vm;
+  { const w=String($("#adminWa").value).replace(/[^\d]/g,"").replace(/^00/,""); if (w && !/^(01[0125]\d{8}|(966|971|973|974|90|212|213|216|218|20)\d{7,10})$/.test(w)){ showMsg("Admin WhatsApp: 01xxxxxxxxx, or the country code + number.","err",$("#payMsg")); return; }
+    if (w) rec.admin_wa = w===ADMIN_WA ? null : w; }
   const num=(id,d)=>{ const v=String($(id).value).trim(); return v==="" ? d : Number(v); };
   Object.assign(rec,{free_vehicles:num("#freeVeh",1), extra_vehicle_fee:num("#vehFee",1000), member_price:num("#memPrice",0), member_days:num("#memDays",365)});
   const {error}=await sb.from("settings").update(rec).eq("id",1);

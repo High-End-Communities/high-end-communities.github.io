@@ -1053,7 +1053,9 @@ async function makeThumb(dataUrl){
   c.getContext("2d").drawImage(im,0,0,c.width,c.height);
   return c.toDataURL("image/jpeg",0.55);
 }
-function adminHref(text){ return "https://wa.me/2"+ADMIN_WA+"?text="+encodeURIComponent(text); }
+// the admin's WhatsApp: set in Admin → Settings (falls back to config.js)
+function adminWaNum(){ const v=String((typeof SITE_ST!=="undefined"&&SITE_ST&&SITE_ST.admin_wa)||ADMIN_WA).replace(/\D/g,""); return /^0/.test(v)?"2"+v:v; }
+function adminHref(text){ return "https://wa.me/"+adminWaNum()+"?text="+encodeURIComponent(text); }
 
 /* ===================== Quick dump: paste a WhatsApp message, the form fills itself ===================== */
 const KEYWORDS = {
@@ -1506,7 +1508,7 @@ function showMaintenance(kind, msg){
   const again = document.createElement("button"); again.type="button"; again.className="btn primary"; again.textContent="Try again";
   again.onclick = ()=>location.reload();
   const wa = document.createElement("a"); wa.className="btn wa"; wa.target="_blank"; wa.rel="noopener"; wa.textContent="WhatsApp us";
-  wa.href = "https://wa.me/2"+ADMIN_WA;
+  wa.href = "https://wa.me/"+adminWaNum();
   row.append(again, wa);
   const t = document.createElement("div"); t.className="muted"; t.style.marginTop="10px"; t.textContent="This page checks again by itself every minute.";
   d.append(img, h, ar, p, row, t);
