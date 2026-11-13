@@ -189,10 +189,10 @@ var D = {
 "Price: high to low":"السعر: من الأعلى للأقل","Year: newest":"السنة: الأحدث","Clear filters":"مسح الفلاتر","Clear":"مسح","Filters":"فلاتر",
 "No watches match these filters.":"لا توجد ساعات مطابقة لهذه الفلاتر.",
 /* marketplaces */
-"Marketplace":"السوق","Egypt":"مصر","Saudi Arabia":"السعودية","UAE":"الإمارات","Bahrain":"البحرين","North Africa":"شمال أفريقيا","Morocco":"المغرب","Algeria":"الجزائر","Tunisia":"تونس","Libya":"ليبيا","Turkey":"تركيا",
+"Marketplace":"السوق","Egypt":"مصر","Saudi Arabia":"السعودية","UAE":"الإمارات","Qatar":"قطر","Bahrain":"البحرين","North Africa":"شمال أفريقيا","Morocco":"المغرب","Algeria":"الجزائر","Tunisia":"تونس","Libya":"ليبيا","Turkey":"تركيا",
 "Where are you selling?":"أين تبيع؟",
 "Your listing appears in this country's marketplace, with its currency and phone code.":"يظهر منتجك في سوق هذه الدولة، بعملتها وكود هاتفها.",
-"SAR":"ر.س","AED":"د.إ","BHD":"د.ب","TRY":"ل.ت","MAD":"د.م","TND":"د.ت","DZD":"د.ج","LYD":"د.ل",
+"SAR":"ر.س","AED":"د.إ","QAR":"ر.ق","BHD":"د.ب","TRY":"ل.ت","MAD":"د.م","TND":"د.ت","DZD":"د.ج","LYD":"د.ل",
 "Enter your WhatsApp number: Egypt 01xxxxxxxxx, or with the country code (+966, +971, +973, +90, +212, +213, +216, +218).":"أدخل رقم الواتساب: مصر 01xxxxxxxxx، أو بكود الدولة (+966، +971، +973، +90، +212، +213، +216، +218).",
 "Inspect before you buy":"افحصها قبل الشراء","Authenticate before you buy":"تأكد من الأصالة قبل الشراء",
 "Technical inspection":"فحص فني","Expert authentication":"تأكيد الأصالة من خبير",
@@ -207,7 +207,7 @@ var D = {
 };
 var LOW = {}; Object.keys(D).forEach(function(k){ LOW[k.toLowerCase()] = D[k]; });
 var MON = {Jan:"يناير",Feb:"فبراير",Mar:"مارس",Apr:"أبريل",May:"مايو",Jun:"يونيو",Jul:"يوليو",Aug:"أغسطس",Sep:"سبتمبر",Oct:"أكتوبر",Nov:"نوفمبر",Dec:"ديسمبر"};
-var CUR = {"EGP":"ج.م","USD":"دولار","SAR":"ر.س","AED":"د.إ","BHD":"د.ب","TRY":"ل.ت","EUR":"يورو","MAD":"د.م","TND":"د.ت","DZD":"د.ج","LYD":"د.ل"};
+var CUR = {"EGP":"ج.م","USD":"دولار","SAR":"ر.س","AED":"د.إ","QAR":"ر.ق","BHD":"د.ب","TRY":"ل.ت","EUR":"يورو","MAD":"د.م","TND":"د.ت","DZD":"د.ج","LYD":"د.ل"};
 function mk(n){ return D[n] || n; }
 var P = [
   [/^(\d+) results$/, function(m){ return m[1] + " نتيجة"; }],

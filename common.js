@@ -41,6 +41,7 @@ const MARKETS = [
   {id:"EG", name:"Egypt", cur:["EGP","USD"], dial:["20"], local:"01xxxxxxxxx", tz:["Africa/Cairo"], cc:["EG"]},
   {id:"SA", name:"Saudi Arabia", cur:["SAR","USD"], dial:["966"], local:"05xxxxxxxx", tz:["Asia/Riyadh"], cc:["SA"]},
   {id:"AE", name:"UAE", cur:["AED","USD"], dial:["971"], local:"05xxxxxxxx", tz:["Asia/Dubai"], cc:["AE"]},
+  {id:"QA", name:"Qatar", cur:["QAR","USD"], dial:["974"], local:"3xxxxxxx", tz:["Asia/Qatar"], cc:["QA"]},
   {id:"BH", name:"Bahrain", cur:["BHD","USD"], dial:["973"], local:"3xxxxxxx", tz:["Asia/Bahrain"], cc:["BH"]},
   {id:"MA", name:"Morocco", cur:["MAD","EUR","USD"], dial:["212"], local:"06xxxxxxxx", tz:["Africa/Casablanca","Africa/El_Aaiun"], cc:["MA"]},
   {id:"DZ", name:"Algeria", cur:["DZD","EUR","USD"], dial:["213"], local:"05xxxxxxxx", tz:["Africa/Algiers"], cc:["DZ"]},
@@ -50,7 +51,7 @@ const MARKETS = [
 ];
 const MARKET_BY_ID = Object.fromEntries(MARKETS.map(m=>[m.id,m]));
 // how many of each currency one US dollar buys (only used to check price ranges and show "≈" prices)
-const PER_USD = Object.assign({USD:1, EGP:USD_TO_EGP, SAR:3.75, AED:3.6725, BHD:0.376, EUR:0.87, TRY:50, MAD:9.3, TND:2.95, DZD:134, LYD:4.9},
+const PER_USD = Object.assign({USD:1, EGP:USD_TO_EGP, SAR:3.75, AED:3.6725, QAR:3.64, BHD:0.376, EUR:0.87, TRY:50, MAD:9.3, TND:2.95, DZD:134, LYD:4.9},
   (typeof RATES_PER_USD!=="undefined" && RATES_PER_USD) || {});
 function toEGP(n, cur){ return Number(n||0) / (PER_USD[cur]||1) * USD_TO_EGP; }
 function fromEGP(n, cur){ return Number(n||0) / USD_TO_EGP * (PER_USD[cur]||1); }

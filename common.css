@@ -495,8 +495,9 @@ html[dir=rtl] .intro-btns{right:auto;left:12px}
 @media (max-width:560px){html[lang=ar] .item .contact a.tel::before{content:"اتصال"}.langbtn{top:14px;inset-inline-end:10px;padding:5px 10px;font-size:12.5px}}
 
 /* ---- marketplace (country) switch ---- */
-.markets{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:22px 0 0;padding:4px 0}
+.markets{display:flex;align-items:center;justify-content:flex-start;gap:6px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:22px 0 0;padding:4px 0}
 .markets::-webkit-scrollbar{display:none}
+.markets>:first-child{margin-left:auto}.markets>:last-child{margin-right:auto}   /* centred when it fits, scrollable from the first country when it doesn't */
 .mk-label{font:400 13px var(--sans);color:var(--muted);margin-inline-end:6px;white-space:nowrap}
 .mk{flex:none;display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid #cfccc4;border-radius:2px;padding:7px 12px;font:400 13.5px var(--sans);color:var(--text);cursor:pointer;white-space:nowrap}
 .mk:hover{border-color:var(--carbon)}
