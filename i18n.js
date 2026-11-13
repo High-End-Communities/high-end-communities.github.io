@@ -51,7 +51,7 @@ var D = {
 "Sponsored":"إعلان ممول",
 "Plan rides, track your routes and ride together with the community.":"خطط لرحلاتك وتابع مساراتك واركب مع المجتمع.",
 "All":"الكل","Motorcycles":"موتوسيكلات","Watches":"ساعات","Cars":"سيارات","Equine":"خيول",
-"Yachts & boats":"يخوت وقوارب","Modern & art":"فن وتصميم معاصر","Real estate":"عقارات","The Boutique":"البوتيك","For her":"لها","Opening soon":"قريبًا","The Boutique is being prepared. Come back shortly.":"البوتيك بيتجهز. ارجعي قريب.","Back to High End":"ارجع لهاي إند","✨ The Boutique":"✨ البوتيك",
+"Yachts & boats":"يخوت وقوارب","Modern & art":"فن وتصميم معاصر","Real estate":"عقارات","The Boutique":"البوتيك","For her":"لها","© 2024–2026 High End Communities. All rights reserved.":"© 2024–2026 هاي إند كوميونيتيز. جميع الحقوق محفوظة.","The site design, code, logos, photos and content may not be copied, reproduced or reused without written permission.":"لا يجوز نسخ أو إعادة استخدام تصميم الموقع أو الكود أو الشعارات أو الصور أو المحتوى بدون إذن كتابي.","Opening soon":"قريبًا","The Boutique is being prepared. Come back shortly.":"البوتيك بيتجهز. ارجعي قريب.","Back to High End":"ارجع لهاي إند","✨ The Boutique":"✨ البوتيك",
 "Show sold":"عرض المباع","Catalogue PDF":"الكتالوج PDF","Share catalogue on WhatsApp":"شارك الكتالوج على واتساب",
 "High End Communities only lists items and is not responsible for any product promoted. Buyers must do their own due diligence and check ownership papers with a lawyer.":"High End Communities منصة عرض فقط وغير مسؤولة عن أي منتج معروض. على المشتري أن يتحقق بنفسه ويراجع أوراق الملكية مع محامٍ.",
 "Read the full terms":"اقرأ الشروط كاملة",

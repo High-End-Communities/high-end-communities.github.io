@@ -56,3 +56,7 @@ By posting, viewing or responding to any listing, you accept these terms.
 ---
 
 © 2026 High End Communities
+
+## Copyright
+
+© 2024–2026 High End Communities. All rights reserved. The design, code, logos, photos and content of this site may not be copied, reproduced or reused without written permission. See [LICENSE](LICENSE).
