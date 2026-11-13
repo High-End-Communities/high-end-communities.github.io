@@ -91,13 +91,19 @@
       <div class="hint" id="moveHint">Empty = no forwarding. When set, every page here forwards visitors to the same page on the new address (this admin page stays here so you can undo it). Put the new site live first.</div>
     </div>
     <div data-pane="money" hidden>
-      <div class="stats">
+      <div class="card fullonly" id="mnAlertCard" style="margin-bottom:12px" hidden>
+        <h3 style="margin:0 0 6px">🔔 Confirmed by other admins <span id="mnAlertN" class="muted"></span></h3>
+        <div id="mnAlerts"></div>
+        <div class="actions"><button type="button" class="btn ghost small" id="mnAlertSeen">Mark all as seen</button></div>
+      </div>
+      <div class="hint" id="mnStaffHint" hidden style="margin-bottom:10px">You can confirm payments here. Each confirmation is sent to the cash admin.</div>
+      <div class="stats fullonly">
         <div class="stat"><b id="mnTotal">–</b><span>Total collected</span></div>
         <div class="stat"><b id="mnMonth">–</b><span>This month</span></div>
         <div class="stat"><b id="mnMembers">–</b><span>Active members</span></div>
       </div>
-      <div class="bars" id="mnBars" title="Last 12 months"></div>
-      <div class="card" style="margin-bottom:12px">
+      <div class="bars fullonly" id="mnBars" title="Last 12 months"></div>
+      <div class="card fullonly" style="margin-bottom:12px">
         <h3 style="margin:0 0 6px">📈 Projection</h3>
         <table class="mini" id="mnProj"></table>
         <div class="grid" style="margin-top:8px">
@@ -117,6 +123,19 @@
         <div id="mnUnpaid"></div>
       </div>
       <div class="card" style="margin-bottom:12px">
+        <h3 style="margin:0 0 6px">✅ Start or extend a monthly pack</h3>
+        <div class="grid">
+          <div><label for="fpPhone">WhatsApp number</label><input id="fpPhone" inputmode="tel" placeholder="01xxxxxxxxx"></div>
+          <div><label for="fpPack">Pack</label><select id="fpPack"></select></div>
+          <div><label for="fpAmount">Amount received (EGP)</label><input id="fpAmount" type="number" min="0" inputmode="numeric"></div>
+          <div><label for="fpMethod">Paid by</label><select id="fpMethod"><option>InstaPay</option><option>Wallet</option><option>Card / link</option><option>Cash</option><option>Bank</option></select></div>
+        </div>
+        <div class="actions"><button type="button" class="btn primary small" id="fpSave">Start the pack</button></div>
+        <div class="hint">Their waiting listings in that section go out first; the rest stay as credit until the pack ends. Buying again before it ends adds to it.</div>
+        <div class="msg" id="fpMsg"></div>
+        <table class="mini fullonly" id="feCredits"></table>
+      </div>
+      <div class="card fullonly" style="margin-bottom:12px">
         <h3 style="margin:0 0 6px">📦 Free listings, fees &amp; promotions</h3>
         <div class="hint">Free listings per WhatsApp number in each section; after that each extra listing waits for its fee. Leave "Free" empty for no limit, or put fee 0 to keep it free. Motorcycles &amp; cars: Settings tab (free vehicles / extra vehicle fee). Applies only while Payments are switched on.</div>
         <table class="mini" id="feRules"></table>
@@ -130,17 +149,6 @@
         <div style="overflow-x:auto"><table class="mini" id="fePacks"></table></div>
         <div class="actions"><button type="button" class="btn ghost small" id="fePackAdd">+ Add pack</button><button type="button" class="btn primary small" id="feSave">Save fees &amp; promotions</button></div>
         <div class="msg" id="feMsg"></div>
-        <h4 style="margin:14px 0 6px">✅ Sell a pack</h4>
-        <div class="grid">
-          <div><label for="fpPhone">WhatsApp number</label><input id="fpPhone" inputmode="tel" placeholder="01xxxxxxxxx"></div>
-          <div><label for="fpPack">Pack</label><select id="fpPack"></select></div>
-          <div><label for="fpAmount">Amount received (EGP)</label><input id="fpAmount" type="number" min="0" inputmode="numeric"></div>
-          <div><label for="fpMethod">Paid by</label><select id="fpMethod"><option>InstaPay</option><option>Wallet</option><option>Card / link</option><option>Cash</option><option>Bank</option></select></div>
-        </div>
-        <div class="actions"><button type="button" class="btn primary small" id="fpSave">Start the pack</button></div>
-        <div class="hint">Their waiting listings in that section go out first; the rest stay as credit until the pack ends.</div>
-        <div class="msg" id="fpMsg"></div>
-        <table class="mini" id="feCredits"></table>
         <h4 style="margin:14px 0 6px">🏷️ Discount codes for fees</h4>
         <div class="grid">
           <div><label for="fcCode">Code</label><input id="fcCode" maxlength="20" placeholder="e.g. HOSS20" style="text-transform:uppercase"></div>
@@ -155,7 +163,7 @@
         <table class="mini" id="feCodes"></table>
       </div>
       <div class="card" style="margin-bottom:12px">
-        <h3 style="margin:0 0 6px">➕ Record a payment</h3>
+        <h3 style="margin:0 0 6px">➕ Record a payment / start or extend a membership</h3>
         <div class="grid">
           <div><label for="mpPhone">WhatsApp number</label><input id="mpPhone" inputmode="tel" placeholder="01xxxxxxxxx"></div>
           <div><label for="mpAmount">Amount (EGP)</label><input id="mpAmount" type="number" min="0" inputmode="numeric"></div>
@@ -166,12 +174,12 @@
         <div class="actions"><button type="button" class="btn primary small" id="mpSave">Save payment</button></div>
         <div class="msg" id="mpMsg"></div>
       </div>
-      <div class="card" style="margin-bottom:12px">
+      <div class="card fullonly" style="margin-bottom:12px">
         <h3 style="margin:0 0 6px">👤 Members &amp; paying numbers</h3>
         <input id="mnFind" placeholder="Search number or name" style="margin-bottom:8px">
         <table class="mini" id="mnPeople"></table>
       </div>
-      <div class="card" style="margin-bottom:12px">
+      <div class="card fullonly" style="margin-bottom:12px">
         <h3 style="margin:0 0 6px">🧾 Payments</h3>
         <table class="mini" id="mnPays"></table>
         <div class="actions"><button type="button" class="btn ghost small" id="mnCsv">⬇ Download CSV</button></div>
@@ -416,6 +424,7 @@
           <div class="full"><label for="payLink">Payment page link (when the gateway is ready)</label><input id="payLink" type="url" placeholder="https://… (Paymob / Kashier / Fawry payment link)"></div>
           <div><label for="payInsta">InstaPay address</label><input id="payInsta" maxlength="80" placeholder="e.g. highend@instapay"></div>
           <div><label for="adminWa">Admin WhatsApp (receipts, requests, new listings)</label><input id="adminWa" inputmode="tel" maxlength="16" placeholder="01xxxxxxxxx"></div>
+          <div><label for="cashWa">Cash admin WhatsApp (alerted when another admin confirms a payment)</label><input id="cashWa" inputmode="tel" maxlength="16" placeholder="same as admin WhatsApp"></div>
           <div><label for="payWallet">Mobile wallet number</label><input id="payWallet" maxlength="40" placeholder="e.g. 010…"></div>
           <div><label for="promoPrice">Promotion price (shown to sellers)</label><input id="promoPrice" maxlength="80" placeholder="e.g. 500 EGP for 2 weeks"></div>
           <div><label for="valueMax">Lighter "value" style when max price is up to (EGP)</label><input id="valueMax" inputmode="numeric" placeholder="100000"></div>
@@ -505,14 +514,17 @@ const TAB_PERM = {pending:"listings", live:"listings", sold:"listings", add:"lis
   inspect:"inspect", wanted:"wanted", announce:"announce", share:"share", money:"money", stats:"stats"};
 const PERM_SECTIONS = [["moto","🏍️ Motorcycles"],["watch","⌚ Watches"],["car","🚗 Cars"],["boat","🛥️ Marine"],["equine","🐎 Equine"],["art","🎨 Art"],["estate","🏠 Real estate"],["bag","👜 The Boutique (ladies)"]];
 const PERM_FEATURES = [["listings","Listings: review, edit, add"],["share","Share to WhatsApp"],["announce","Announcements"],["wanted","Wanted requests"],["codes","Discount codes"],
-  ["sponsors","Sponsors & ads"],["inspect","Inspection partners"],["stats","Stats"]];   // money, fees, totals and site settings: full admins only
+  ["sponsors","Sponsors & ads"],["inspect","Inspection partners"],["confirm","Confirm payments (no totals)"],["stats","Stats"]];   // money, fees, totals and site settings: full admins only
 function can(p){ if (p==="money"||p==="settings") return !!ME.full; return ME.full || ME.perms.includes(p); }
 function applyPerms(){
   let first=null;
-  document.querySelectorAll("#adminView .tabs button").forEach(b=>{ const ok=can(TAB_PERM[b.dataset.tab]||"settings"); b.hidden=!ok; if (ok && !first) first=b.dataset.tab; });
+  document.querySelectorAll("#adminView .tabs button").forEach(b=>{ const ok=b.dataset.tab==="money" ? (can("money")||can("confirm")) : can(TAB_PERM[b.dataset.tab]||"settings"); b.hidden=!ok; if (ok && !first) first=b.dataset.tab; });
   ["#maintCard","#boutCard","#moveCard","#payCard"].forEach(id=>{ const el=$(id); if (el) el.hidden=!can("settings"); });
   const aa=$("#autoApprove"); if (aa) aa.closest(".disc").hidden=!can("settings");
   const so=$("#soSave"); if (so) so.closest(".card").hidden=!can("settings");
+  document.querySelectorAll("[data-pane=money] .fullonly").forEach(el=>{ if(!can("money")) el.hidden=true; });
+  $("#mnStaffHint").hidden=can("money");
+  if (!can("money")){ const k=$("#mpKind"); [...k.options].forEach(o=>{ if(o.value!=="membership") o.remove(); }); }
   if (!ME.full){ $("#who").textContent += " · limited: "+PERM_SECTIONS.filter(([k])=>can(k)).map(([,l])=>l).join(", "); }
   if (first) tab(first);
 }
@@ -782,7 +794,7 @@ async function loadSettings(){
   if (data && data.report_wa) $("#repWa").value = data.report_wa;
   $("#bikeLim").value = (data && data.bike_monthly_limit) || 2;
   if (data) $("#payOn").checked=!!data.pay_enabled;
-  if (data){ $("#payLink").value=data.pay_link||""; $("#payInsta").value=data.pay_instapay||""; $("#payWallet").value=data.pay_wallet||""; $("#adminWa").value=data.admin_wa||ADMIN_WA; $("#promoPrice").value=data.promo_price||""; $("#valueMax").value=data.value_max_egp||"";
+  if (data){ $("#payLink").value=data.pay_link||""; $("#payInsta").value=data.pay_instapay||""; $("#payWallet").value=data.pay_wallet||""; $("#adminWa").value=data.admin_wa||ADMIN_WA; $("#cashWa").value=data.cash_wa||""; $("#promoPrice").value=data.promo_price||""; $("#valueMax").value=data.value_max_egp||"";
     $("#freeVeh").value=data.free_vehicles??1; $("#vehFee").value=data.extra_vehicle_fee??1000; $("#memPrice").value=data.member_price||""; $("#memDays").value=data.member_days||365;
     $("#mnAdPrice").value=data.ad_price_month||""; $("#moveUrl").value=data.redirect_url||""; moveUi(); $("#boutOn").checked=!!data.boutique_on; }
   const on = !data || data.auto_approve!==false;
@@ -802,6 +814,8 @@ $("#paySave").onclick = async ()=>{
   if (vm) rec.value_max_egp=vm;
   { const w=String($("#adminWa").value).replace(/[^\d]/g,"").replace(/^00/,""); if (w && !/^(01[0125]\d{8}|(966|971|973|974|90|212|213|216|218|20)\d{7,10})$/.test(w)){ showMsg("Admin WhatsApp: 01xxxxxxxxx, or the country code + number.","err",$("#payMsg")); return; }
     if (w) rec.admin_wa = w===ADMIN_WA ? null : w; }
+  { const w=String($("#cashWa").value).replace(/[^\d]/g,"").replace(/^00/,""); if (w && !/^(01[0125]\d{8}|(966|971|973|974|90|212|213|216|218|20)\d{7,10})$/.test(w)){ showMsg("Cash admin WhatsApp: 01xxxxxxxxx, or the country code + number.","err",$("#payMsg")); return; }
+    rec.cash_wa = w||null; }
   const num=(id,d)=>{ const v=String($(id).value).trim(); return v==="" ? d : Number(v); };
   Object.assign(rec,{free_vehicles:num("#freeVeh",1), extra_vehicle_fee:num("#vehFee",1000), member_price:num("#memPrice",0), member_days:num("#memDays",365)});
   const {error}=await sb.from("settings").update(rec).eq("id",1);
@@ -881,6 +895,11 @@ let moneyPays=[], moneyMembers=[], moneyInfo=null;
 const egp = n => fmtMoney(Math.round(Number(n)||0));
 async function loadMoney(){
   showMsg("Loading…","info",$("#mnMsg"));
+  if (!can("money")){   // confirm-only admin: no totals, no payments list
+    const mems=await sb.from("members").select("phone,name,verified,verify_code,verify_asked,created_at").eq("verified",false).limit(500);
+    showMsg(mems.error?niceError(mems.error):"","err",$("#mnMsg"));
+    moneyInfo={}; moneyPays=[]; moneyMembers=mems.data||[]; renderMoney(); loadFees(); return;
+  }
   const [mi, pays, mems] = await Promise.all([ sb.rpc("admin_money"),
     sb.from("payments").select("*").order("paid_at",{ascending:false}).limit(2000),
     sb.from("members").select("*").order("created_at",{ascending:false}).limit(2000) ]);
@@ -888,10 +907,11 @@ async function loadMoney(){
   if (err){ showMsg(/admin_money|payments|members|does not exist/.test(err.message||"") ? "Run the latest update SQL (update14) in Supabase first." : niceError(err),"err",$("#mnMsg")); return; }
   showMsg("","",$("#mnMsg"));
   moneyInfo=mi.data||{}; moneyPays=pays.data||[]; moneyMembers=mems.data||[];
-  renderMoney(); loadFees();
+  renderMoney(); loadFees(); loadAlerts();
 }
 function renderMoney(){
   const m=moneyInfo||{};
+  if (can("money")){
   $("#mnTotal").textContent=egp(m.total); $("#mnMonth").textContent=egp(m.this_month); $("#mnMembers").textContent=fmt(m.members||0);
   // last 12 months
   const now=new Date(), months=[]; for(let i=11;i>=0;i--){ const d=new Date(now.getFullYear(), now.getMonth()-i, 1); months.push(d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")); }
@@ -905,6 +925,7 @@ function renderMoney(){
     <tr><td>Ads: ${spons} active sponsor${spons===1?"":"s"} × ${egp(adPrice)}</td><td class="n">${egp(adNow)}</td><td class="n">${egp(adNow*12)}</td></tr>
     ${slots?`<tr><td>Ads with ${slots} more slot${slots===1?"":"s"}</td><td class="n">${egp(adMore)}</td><td class="n">${egp(adMore*12)}</td></tr>`:""}
     <tr><td><b>Projected total</b></td><td class="n"><b>${egp(runMonth+adMore)}</b></td><td class="n"><b>${egp((runMonth+adMore)*12)}</b></td></tr>`;
+  }
   // WhatsApp checks
   const ver = moneyMembers.filter(x=>!x.verified && x.verify_code);
   $("#mnVerN").textContent = ver.length?`(${ver.length})`:"";
@@ -912,10 +933,10 @@ function renderMoney(){
   ver.forEach(x=>{ const r=document.createElement("div"); r.className="payrow"; r.style.alignItems="center";
     r.innerHTML=`<span><b>${esc(x.phone)}</b>${x.name?" · "+esc(x.name):""}<br><small>code <b>${esc(x.verify_code)}</b> · ${fmtDate(x.verify_asked||x.created_at)}</small></span>`;
     const ok=document.createElement("button"); ok.type="button"; ok.className="btn primary small"; ok.textContent="Verified";
-    ok.onclick=async()=>{ const {error}=await sb.from("members").update({verified:true, verified_at:new Date().toISOString(), verify_code:null}).eq("phone",x.phone); if(error){ toast(niceError(error)); return; } loadMoney(); };
+    ok.onclick=async()=>{ const {error}=await sb.rpc("admin_verify_member",{p_phone:x.phone}); if(error){ toast(niceError(error)); return; } tellCash(`✅ WhatsApp verified: ${x.phone}${x.name?" ("+x.name+")":""}`); loadMoney(); };
     const no=document.createElement("button"); no.type="button"; no.className="btn ghost small"; no.textContent="✕";
     no.onclick=async()=>{ if(!confirm("Delete this request?")) return; await sb.from("members").delete().eq("phone",x.phone).eq("verified",false); loadMoney(); };
-    const bx=document.createElement("span"); bx.style.cssText="display:flex;gap:6px"; bx.append(ok,no); r.appendChild(bx); vb.appendChild(r); });
+    const bx=document.createElement("span"); bx.style.cssText="display:flex;gap:6px"; bx.append(ok); if (can("money")) bx.append(no); r.appendChild(bx); vb.appendChild(r); });
   // unpaid listings
   const un = items.filter(x=>x.L.status==="unpaid");
   $("#mnUnpaidN").textContent = un.length?`(${un.length})`:""; $("#nMoney").textContent = (un.length+ver.length) ? `(${un.length+ver.length})` : "";
@@ -926,6 +947,7 @@ function renderMoney(){
     ok.onclick=async()=>{ const amt=prompt("Amount received (EGP)", String(feeOfType(x.L.type))); if(amt===null) return;
       const how=prompt("Paid by (InstaPay / Wallet / Cash…)","InstaPay"); if(how===null) return;
       const {error}=await sb.rpc("admin_mark_paid",{p_listing:x.id, p_amount:Number(amt)||0, p_method:how}); if(error){ toast(niceError(error)); return; }
+      tellCash(`💵 Fee received: ${egp(Number(amt)||0)} by ${how}\n${titleOf(x.L)}\nNumber: ${phoneOf(x.L)}\n${itemHref(x.id)}`);
       toast("Recorded — the listing is out."); await loadAll(); loadMoney(); };
     const wa=document.createElement("a"); wa.className="btn ghost small"; wa.target="_blank"; wa.rel="noopener"; wa.textContent="WhatsApp";
     wa.href="https://wa.me/"+waNum(phoneOf(x.L))+"?text="+encodeURIComponent(`Hello, about your listing "${titleOf(x.L)}" on ${MARKET_NAME}: it goes live once the extra listing fee (${egp(feeOfType(x.L.type))}) is received.`);
@@ -978,8 +1000,30 @@ $("#mpSave").onclick=async()=>{
   else ({error}=await sb.from("payments").insert({phone:ph, amount:amt, kind, method, note}));
   if (error){ showMsg(niceError(error),"err",$("#mpMsg")); return; }
   showMsg(kind==="membership" ? `Saved. ${ph} is a member for ${(SITE_ST||{}).member_days||365} days more; their waiting vehicles are out.` : "Saved.","ok",$("#mpMsg"));
+  if (kind==="membership") tellCash(`⭐ Membership started / extended: ${ph}\n${egp(amt)} by ${method}`);
   $("#mpAmount").value=""; $("#mpNote").value=""; if (kind==="membership") await loadAll(); loadMoney();
 };
+/* ---------- Payment confirmations: limited admins tell the cash admin; full admins see an alert list ---------- */
+function tellCash(text){
+  if (ME.full) return;   // full admins see everything already
+  const v=String((SITE_ST&&(SITE_ST.cash_wa||SITE_ST.admin_wa))||ADMIN_WA).replace(/\D/g,""), n=/^0/.test(v)?"2"+v:v;
+  const who=(sbUserEmail||"").trim();
+  const u="https://wa.me/"+n+"?text="+encodeURIComponent(text+"\n\nConfirmed by "+(who||"an admin")+" on "+MARKET_NAME);
+  const w=window.open(u,"_blank","noopener"); if(!w) location.href=u;
+}
+let sbUserEmail="";
+(async()=>{ try{ const {data}=await sb.auth.getUser(); sbUserEmail=(data&&data.user&&data.user.email)||""; }catch(e){} })();
+async function loadAlerts(){
+  if (!ME.full) return;
+  const {data,error}=await sb.from("money_alerts").select("*").eq("seen",false).order("at",{ascending:false}).limit(200);
+  const card=$("#mnAlertCard"); if (error||!data){ card.hidden=true; return; }
+  card.hidden=!data.length; $("#mnAlertN").textContent=data.length?`(${data.length})`:"";
+  const icon={verified:"✅",extra_listing:"💵",membership:"⭐",pack:"📦"};
+  $("#mnAlerts").innerHTML=data.map(a=>`<div class="payrow"><span>${icon[a.kind]||"💳"} <b>${esc(a.phone||"")}</b>${a.amount!=null?" · "+egp(a.amount):""}<br><small>${esc(a.note||a.kind)} · by ${esc(a.by_email||"?")} · ${fmtDate(a.at)}</small></span></div>`).join("");
+  const nb=$("#nMoney"); const cur=parseInt((nb.textContent||"").replace(/\D/g,""))||0; if (data.length) nb.textContent=`(${cur+data.length})`;
+}
+$("#mnAlertSeen").onclick=async()=>{ const {error}=await sb.from("money_alerts").update({seen:true}).eq("seen",false); if(error){ toast(niceError(error)); return; } loadAlerts(); };
+
 /* ---------- Free listings, fees & promotions ---------- */
 const FEE_KEYS=["watch","bag","art","estate","boat","equine","moto","car"];
 let feeSt={rules:{}, packs:[]};
@@ -1010,7 +1054,7 @@ async function loadFees(){
   if(error){ showMsg(/fee_/.test(error.message||"")?"Run update18 in Supabase first.":niceError(error),"err",$("#feMsg")); return; }
   feeSt={rules:JSON.parse(JSON.stringify(data.fee_rules||{})), packs:JSON.parse(JSON.stringify(data.fee_packs||[]))};
   $("#feSalePct").value=data.fee_sale_pct||0; $("#feSaleUntil").value=data.fee_sale_until?data.fee_sale_until.slice(0,10):""; $("#feSaleNote").value=data.fee_sale_note||"";
-  drawFeeRules(); drawPacks(); loadFeeCodes(); loadCredits();
+  drawPacks(); if (!can("money")) return; drawFeeRules(); loadFeeCodes(); loadCredits();
 }
 $("#fePackAdd").onclick=()=>{ feeSt.packs.push({grp:"watch",n:5,price:0,days:30}); drawPacks(); };
 $("#feSave").onclick=async()=>{
@@ -1028,6 +1072,7 @@ $("#fpSave").onclick=async()=>{
   const {data,error}=await sb.rpc("admin_add_credits",{p_phone:ph,p_grp:p.grp,p_n:Number(p.n),p_amount:Number($("#fpAmount").value)||0,p_method:$("#fpMethod").value,p_days:Number(p.days)||30});
   if(error){ showMsg(niceError(error),"err",$("#fpMsg")); return; }
   showMsg(`Started. ${Number(p.n)-Number(data)} waiting listing(s) went out; ${data} left as credit for ${Number(p.days)||30} days.`,"ok",$("#fpMsg")); $("#fpPhone").value="";
+  tellCash(`📦 Pack started: ${ph}\n${FEE_GROUPS[p.grp]||p.grp}: ${p.n} listings / ${Number(p.days)||30} days\n${egp(Number($("#fpAmount").value)||0)} by ${$("#fpMethod").value}`);
   await loadAll(); loadMoney(); loadCredits();
 };
 async function loadCredits(){
