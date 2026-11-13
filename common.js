@@ -827,7 +827,8 @@ function wrapText(P,s,o,maxW,maxLines){
   return lines;
 }
 function clip(P,s,o,maxW){ return wrapText(P,s,o,maxW,1)[0]||""; }
-function checker(P,x,y,w,sq){ const n=Math.ceil(w/sq); P.rect(x,y,w,sq*2,"#ffffff"); for(let r=0;r<2;r++) for(let i=0;i<n;i++) if((i+r)%2===0) P.rect(x+i*sq,y+r*sq,Math.min(sq,x+w-(x+i*sq)),sq,"#2b2b2b"); }
+const PAPER = "#f7f3e8";   // flyer background = the crest logo's cream
+function checker(P,x,y,w,sq){ const n=Math.ceil(w/sq); P.rect(x,y,w,sq*2,PAPER); for(let r=0;r<2;r++) for(let i=0;i<n;i++) if((i+r)%2===0) P.rect(x+i*sq,y+r*sq,Math.min(sq,x+w-(x+i*sq)),sq,"#2b2b2b"); }
 const _fillCache = new Map();
 let FILL_PXMM = 5.2;   // photo pixels per mm in flyers (raised for the HD flyer)
 async function filledPhoto(im, w, h){
@@ -887,7 +888,7 @@ async function drawFlyer(P, L, id){
   const SP = flyerSponsor({market:marketOf(L), group:GROUP[L.type]||""}); const logo = await loadSrc(logoFor(L.type)), masar = await loadSrc(SP.image);
   const ph = await loadPhotoImgs(L.photos, MAX_PHOTOS);
   const M = 8, W = FW-2*M;
-  P.rect(0,0,FW,FH,"#ffffff");
+  P.rect(0,0,FW,FH,PAPER);
   checker(P,0,0,FW,2);
   const lr = Math.min(52/logo.naturalWidth, 38/logo.naturalHeight);
   const lw = logo.naturalWidth*lr, lh = logo.naturalHeight*lr; P.img(logo,(FW-lw)/2,6,lw,lh);
@@ -1797,7 +1798,7 @@ async function drawFlyerHD(P, L, id, ph){
   const SP = flyerSponsor({market:marketOf(L), group:GROUP[L.type]||""});
   const logo = P.dry ? null : await loadSrc(logoFor(L.type)), masar = P.dry ? null : await loadSrc(SP.image);
   const M = 8, W = FW-2*M;
-  if (!P.dry){ P.rect(0,0,FW,9999,"#ffffff"); checker(P,0,0,FW,2); }
+  if (!P.dry){ P.rect(0,0,FW,9999,PAPER); checker(P,0,0,FW,2); }
   // header: logo, QR to the listing, reference
   const lh = 30; if (logo){ const r=lh/logo.naturalHeight, lw=logo.naturalWidth*r; P.img(logo,(FW-lw)/2,6,lw,lh); }
   if (!P.dry && drawQR(P, linkFor(id), FW-M-24, 6, 24)) P.text("Scan to open the listing", FW-M-12, 6+24+3, {size:5,color:"#77736b",align:"center"});
