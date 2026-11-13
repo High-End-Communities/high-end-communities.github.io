@@ -1933,33 +1933,39 @@ function runIntro(key){ key = key || "he_intro";
     if (sessionStorage.getItem(key)) return;
     sessionStorage.setItem(key,"1");
   }catch(e){}
+  const END_AT = 11;   // the video's last seconds show the old address — hand over to the logo countdown before them
   const ov=document.createElement("div"); ov.className="intro"; ov.setAttribute("role","dialog"); ov.setAttribute("aria-label","Welcome");
-  ov.innerHTML=`<video class="intro-vid" playsinline muted autoplay preload="auto" poster="intro-poster.jpg"><source src="intro.mp4" type="video/mp4"></video>
-    <div class="intro-btns"><button type="button" class="intro-sound" aria-label="Sound on">🔇</button><button type="button" class="intro-skip">Skip ›</button></div>
+  ov.innerHTML=`<video class="intro-vid" playsinline autoplay preload="auto" poster="intro-poster.jpg"><source src="intro.mp4" type="video/mp4"></video>
+    <div class="intro-btns"><button type="button" class="intro-sound" aria-label="Sound on">🔇 Tap for sound</button><button type="button" class="intro-skip">Skip ›</button></div>
     <div class="intro-end" hidden>
       <div class="intro-ring">
         <svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="54" class="r-bg"/><circle cx="60" cy="60" r="54" class="r-fg"/></svg>
-        <img src="icon-192.png" alt="High End Communities">
+        <img src="${BRAND_ART}" alt="High End Communities">
         <span class="intro-num">3</span>
       </div>
-      <div class="intro-txt">Entering<b>HIGH END COMMUNITIES</b></div>
     </div>`;
   document.body.appendChild(ov); document.body.style.overflow="hidden";
   const v=ov.querySelector("video"), snd=ov.querySelector(".intro-sound");
   let done=false, counting=false;
-  const finish=()=>{ if (done) return; done=true; ov.classList.add("out"); setTimeout(()=>{ ov.remove(); document.body.style.overflow=""; },600); };
-  const countdown=()=>{
+  const setSnd=()=>{ snd.textContent = v.muted ? "🔇 Tap for sound" : "🔊"; snd.setAttribute("aria-label", v.muted?"Sound on":"Sound off"); };
+  const finish=()=>{ if (done) return; done=true; try{ v.pause(); }catch(e){} ov.classList.add("out"); setTimeout(()=>{ ov.remove(); document.body.style.overflow=""; },600); };
+  const countdown=()=>{                         // the music keeps playing under the countdown
     if (counting) return; counting=true;
-    try{ v.pause(); }catch(e){}
     ov.querySelector(".intro-end").hidden=false; ov.classList.add("ending");
     const num=ov.querySelector(".intro-num"); let n=3; num.textContent=n;
     const t=setInterval(()=>{ n--; if (n>0){ num.textContent=n; num.classList.remove("pop"); void num.offsetWidth; num.classList.add("pop"); } else { clearInterval(t); finish(); } },1000);
   };
+  v.addEventListener("timeupdate", ()=>{ if (v.currentTime >= END_AT) countdown(); });
   v.addEventListener("ended", countdown);
   v.addEventListener("error", countdown, true);
-  ov.querySelector(".intro-skip").onclick=finish;
-  snd.onclick=()=>{ v.muted=!v.muted; snd.textContent=v.muted?"🔇":"🔊"; snd.setAttribute("aria-label",v.muted?"Sound on":"Sound off"); if (v.paused && !counting) v.play().catch(()=>{}); };
-  const p=v.play(); if (p && p.catch) p.catch(()=>countdown());          // autoplay blocked (e.g. low-power mode) → straight to the countdown
+  ov.querySelector(".intro-skip").onclick=(e)=>{ e.stopPropagation(); finish(); };
+  const unmute=()=>{ v.muted=false; v.volume=1; setSnd(); if (v.paused && !done) v.play().catch(()=>{}); };
+  snd.onclick=(e)=>{ e.stopPropagation(); if (v.muted) unmute(); else { v.muted=true; setSnd(); } };
+  ov.addEventListener("click", ()=>{ if (v.muted) unmute(); });   // a tap anywhere turns the music on
+  // try with sound first; browsers that block it play muted and show "Tap for sound"
+  v.muted=false;
+  const p=v.play();
+  if (p && p.catch) p.then(setSnd).catch(()=>{ v.muted=true; setSnd(); v.play().catch(()=>countdown()); });   // autoplay fully blocked (e.g. low-power mode) → straight to the countdown
   setTimeout(()=>{ if (!counting && v.currentTime < 0.2) countdown(); }, 5000);   // slow connection
   setTimeout(()=>{ if (!counting) countdown(); }, 22000);                       // never stay stuck
 }

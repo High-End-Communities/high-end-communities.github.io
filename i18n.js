@@ -201,7 +201,7 @@ var D = {
 "Ask High End on WhatsApp":"اسأل High End على واتساب","Call":"اتصال",
 "Partners are independent. High End Communities suggests them but doesn't guarantee their work. Agree the fee with them directly.":"الشركاء مستقلون. High End Communities ترشحهم ولا تضمن عملهم. اتفق على الأتعاب معهم مباشرة.",
 /* intro & viewer */
-"Skip ›":"تخطي ‹","Entering":"مرحبًا بك في","Sound on":"تشغيل الصوت","Sound off":"كتم الصوت","Print":"طباعة"
+"Skip ›":"تخطي ‹","🔇 Tap for sound":"🔇 اضغط لتشغيل الصوت","Entering":"مرحبًا بك في","Sound on":"تشغيل الصوت","Sound off":"كتم الصوت","Print":"طباعة"
 };
 var LOW = {}; Object.keys(D).forEach(function(k){ LOW[k.toLowerCase()] = D[k]; });
 var MON = {Jan:"يناير",Feb:"فبراير",Mar:"مارس",Apr:"أبريل",May:"مايو",Jun:"يونيو",Jul:"يوليو",Aug:"أغسطس",Sep:"سبتمبر",Oct:"أكتوبر",Nov:"نوفمبر",Dec:"ديسمبر"};
