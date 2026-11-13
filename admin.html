@@ -18,17 +18,17 @@
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=2dbd297b">
+<link rel="stylesheet" href="common.css?v=dbb53794">
 </head>
 <body>
-<script src="i18n.js?v=23b90d59"></script>
+<script src="i18n.js?v=a5877a95"></script>
 <header class="mast">
   <div class="checker"></div>
   <button type="button" class="langbtn" id="langBtn" lang="ar">العربية</button>
   <div class="mast-in">
     <a class="mast-logo" href="./"><img id="mainLogo" alt="High End Communities"></a>
     <p class="mast-line">Motorcycles, watches and cars, sold owner to owner.</p>
-    <p class="mast-sub">Plus a designer boutique, yachts, horses, art and real estate. New and pre-loved.</p>
+    <p class="mast-sub">Also yachts, horses, art and real estate. New and used.</p>
     <div class="brands" id="brands"></div>
   </div>
 </header>
@@ -69,6 +69,19 @@
       <label class="showsold" style="color:var(--text);font-weight:600"><input type="checkbox" id="maintOn"> 🛠 Maintenance mode — visitors see "Website under maintenance"</label>
       <div class="unitrow" style="margin-top:8px"><input id="maintMsg" maxlength="200" placeholder="Message (optional), e.g. Back at 10 pm"><button type="button" class="btn ghost small" id="maintSave">Save</button></div>
       <div class="hint" id="maintHint">You can still use admin while it's on. The page also shows by itself if the database is down or overloaded.</div>
+    </div>
+    <div class="card" id="boutCard" style="margin-bottom:12px">
+      <label class="showsold" style="color:var(--text);font-weight:600"><input type="checkbox" id="boutOn"> ✨ Show The Boutique (ladies section)</label>
+      <div class="hint">Off: the Boutique tab, its page and the "Boutique" choice on the post form are hidden. Preview it any time: <a href="bags.html?preview=1" target="_blank" rel="noopener">bags.html?preview=1</a></div>
+    </div>
+    <div class="card" id="admCard" style="margin-bottom:12px">
+      <h3 style="margin:0 0 6px">👥 Admins</h3>
+      <table class="mini" id="admList"></table>
+      <div id="admAddBox" hidden>
+        <div class="unitrow" style="margin-top:8px"><input id="admEmail" type="email" placeholder="new admin's email"><button type="button" class="btn ghost small" id="admAdd">Add admin</button></div>
+        <div class="hint">After adding, invite the same email in Supabase → Authentication → Users → "Invite user" so they can set a password. Only the root admin (👑) can add or remove admins, and the root can't be removed from here.</div>
+      </div>
+      <div class="msg" id="admMsg"></div>
     </div>
     <div class="card" id="moveCard" style="margin-bottom:12px">
       <label for="moveUrl" style="font-weight:600">🔀 Move the site to a new address</label>
@@ -211,7 +224,7 @@
         <button type="button" data-m="boat"><img class="lg" alt="" data-brand="boat">Yachts & boats</button>
         <button type="button" data-m="art"><span class="ic">🎨</span>Modern & art</button>
         <button type="button" data-m="estate"><span class="ic">🏠</span>Real estate</button>
-        <button type="button" data-m="bag"><span class="ic">👜</span>The Boutique</button>
+        <button type="button" data-m="bag" data-boutique hidden><span class="ic">👜</span>The Boutique</button>
       </div>
       <div class="types sub" id="types">
         <button type="button" data-t="bike" class="on"><span class="ic">🏍️</span>Motorcycle</button>
@@ -368,7 +381,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="config.js"></script>
-<script src="common.js?v=2dbd297b"></script>
+<script src="common.js?v=dbb53794"></script>
 
 <script>
 initHeader();
@@ -389,7 +402,7 @@ async function enter(){
   countPage("admin");
   initCategoryPicker(); initPhotoInputs(); renderFields(); $("#terms").checked=true;
   $("#submitBtn").textContent = "Publish now";
-  await Promise.all([loadAll(), loadSponsorsAdmin(), loadSettings(), loadTrusted()]); loadWanted(); loadMoney();
+  await Promise.all([loadAll(), loadSponsorsAdmin(), loadSettings(), loadTrusted()]); loadWanted(); loadMoney(); loadAdmins();
   loadCodes();
   loadSponsors();
 }
@@ -434,7 +447,7 @@ async function loadSettings(){
   if (data) $("#payOn").checked=!!data.pay_enabled;
   if (data){ $("#payLink").value=data.pay_link||""; $("#payInsta").value=data.pay_instapay||""; $("#payWallet").value=data.pay_wallet||""; $("#promoPrice").value=data.promo_price||""; $("#valueMax").value=data.value_max_egp||"";
     $("#freeVeh").value=data.free_vehicles??1; $("#vehFee").value=data.extra_vehicle_fee??1000; $("#memPrice").value=data.member_price||""; $("#memDays").value=data.member_days||365;
-    $("#mnAdPrice").value=data.ad_price_month||""; $("#moveUrl").value=data.redirect_url||""; moveUi(); }
+    $("#mnAdPrice").value=data.ad_price_month||""; $("#moveUrl").value=data.redirect_url||""; moveUi(); $("#boutOn").checked=!!data.boutique_on; }
   const on = !data || data.auto_approve!==false;
   $("#autoApprove").checked = on; autoHint(on);
 }
@@ -457,6 +470,30 @@ $("#paySave").onclick = async ()=>{
   if (!error) SITE_ST = Object.assign(SITE_ST||{}, rec);
 };
 
+
+/* ---------- The Boutique switch ---------- */
+$("#boutOn").onchange=async()=>{ const on=$("#boutOn").checked;
+  const {error}=await sb.from("settings").update({boutique_on:on}).eq("id",1);
+  if (error){ $("#boutOn").checked=!on; showMsg(/column/.test(error.message||"")?"Run the latest update SQL (update15) in Supabase first.":niceError(error),"err",$("#listMsg")); return; }
+  toast(on?"The Boutique is visible now.":"The Boutique is hidden."); };
+
+/* ---------- Admins ---------- */
+async function loadAdmins(){
+  const t=$("#admList"); const [l,r]=await Promise.all([sb.rpc("admin_list"), sb.rpc("is_root_admin")]);
+  if (l.error){ t.innerHTML=`<tr><td class="muted">${/admin_list/.test(l.error.message||"")?"Run the latest update SQL (update15) in Supabase first.":esc(niceError(l.error))}</td></tr>`; return; }
+  const root=!!r.data; $("#admAddBox").hidden=!root;
+  t.innerHTML="<tr><th>Email</th><th>Added</th><th></th></tr>";
+  (l.data||[]).forEach(a=>{ const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${a.is_root?"👑 ":""}${esc(a.email)}</td><td><small>${a.is_root?"root":fmtDate(a.added_at)+(a.added_by?" · by "+esc(a.added_by):"")}</small></td>`;
+    const td=document.createElement("td");
+    if (root && !a.is_root){ const b=document.createElement("button"); b.type="button"; b.className="btn ghost small"; b.textContent="Remove";
+      b.onclick=async()=>{ if(!confirm("Remove "+a.email+" as admin?")) return; const {error}=await sb.rpc("admin_remove",{p_email:a.email}); if(error){ showMsg(niceError(error),"err",$("#admMsg")); return; } loadAdmins(); };
+      td.appendChild(b); }
+    tr.appendChild(td); t.appendChild(tr); });
+}
+$("#admAdd").onclick=async()=>{ const e=$("#admEmail").value.trim(); const {error}=await sb.rpc("admin_add",{p_email:e});
+  if (error){ showMsg(niceError(error),"err",$("#admMsg")); return; }
+  showMsg("Added. Now invite "+e+" in Supabase → Authentication → Users.","ok",$("#admMsg")); $("#admEmail").value=""; loadAdmins(); };
 /* ---------- moving the site ---------- */
 function moveUi(){ const on=!!$("#moveUrl").value.trim(); $("#moveCard").style.background = on ? "#fff3cd" : ""; }
 async function saveMove(url){

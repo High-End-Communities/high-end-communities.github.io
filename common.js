@@ -344,7 +344,7 @@ const SECTION_NAMES = {bike:"Motorcycles", gear:"Safety gear & helmets", acc:"Mo
   equine:"Horses", equinepart:"Equine accessories", art:"Modern & art", estate:"Real estate", bag:"The Boutique"};
 const GROUP_NAMES = {moto:"Motorcycles, gear & accessories", car:"Cars & car parts", boat:"Yachts, boats & marine parts", equine:"Equine",
   watch:"Watches", art:"Modern & art", estate:"Real estate", bag:"The Boutique"};
-const GROUP_ORDER=["moto","bag","watch","car","boat","equine","art","estate"];
+const GROUP_ORDER=["moto","watch","car","boat","equine","art","estate","bag"];
 const TYPE_ORDER = GROUP_ORDER.flatMap(g => SUBTYPES[g] ? SUBTYPES[g].map(x=>x[0]) : Object.keys(GROUP).filter(t=>GROUP[t]===g));
 function bySection(items){ return TYPE_ORDER.map(t=>[t, items.filter(x=>x.L.type===t)]).filter(([,xs])=>xs.length); }
 let CAT_TITLE = "";        // set by the catalogue page to the section being shown
@@ -1447,6 +1447,11 @@ async function siteCheck(page, quiet){
   const st = res.data || {};
   SITE_ST = st;
   document.querySelectorAll(".supportwrap").forEach(e=>e.hidden=!st.pay_enabled);   // payments stay hidden until the admin switches them on
+  // The Boutique (ladies section) shows only when the admin switches it on
+  document.querySelectorAll("[data-boutique]").forEach(e=>e.hidden=!st.boutique_on);
+  if (window.FIXED_GROUP==="bag" && !st.boutique_on && !/[?&]preview=1/.test(location.search)){
+    const s=document.getElementById("boutiqueSoon"); if (s){ s.hidden=false; [...document.querySelectorAll("main > *")].forEach(e=>{ if(e!==s && !e.classList.contains("ladyhero")) e.hidden=true; }); }
+    return false; }
   // the admin moved the site to a new address: every page forwards there (the admin page stays here so it can be undone)
   if (st.redirect_url && page!=="admin" && /^https:\/\//.test(st.redirect_url)){
     const to = st.redirect_url.replace(/\/+$/,"") + location.pathname + location.search + location.hash;

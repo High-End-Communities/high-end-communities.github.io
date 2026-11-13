@@ -643,3 +643,24 @@ header.mast .langbtn,header.mast #langBtn{color:#2f2114;border-color:#cdbfa6;bac
 .hotwanted b{display:block}
 .hotwanted small{color:var(--muted)}
 .wanted.hw{border-color:#b98a3a;background:#fff8e8}
+/* ===== The Boutique: the ladies section (bags.html) ===== */
+.btn.boutiquetab{background:#f6e6e1;color:#8a4434;border:1px solid #e6c2b6}
+.btn.boutiquetab:hover{background:#efd6ce}
+body.ladies{background:#fbf4f1;--line:#ecd8d1}
+body.ladies header.mast{background:#fbf1ec;border-bottom:1px solid #ecd2c8}
+body.ladies .ladyhero{text-align:center;padding:26px 16px 10px;margin:0 auto 6px;max-width:640px}
+body.ladies .ladykicker{font-family:"Jost",system-ui,sans-serif;font-size:13px;letter-spacing:.08em;color:#b0645a;margin:0 0 4px}
+body.ladies .pagetitle{font-family:"Bodoni Moda",Georgia,serif;font-weight:500;font-size:clamp(34px,8vw,52px);color:#5e2a20;margin:0;line-height:1.05}
+body.ladies .pagesub{font-family:"Jost",system-ui,sans-serif;color:#8d6b62;font-size:15px;margin:10px auto 0;max-width:46ch}
+body.ladies .ladyhero::after{content:"";display:block;width:64px;height:1px;background:#c9907f;margin:18px auto 0}
+body.ladies .btn.primary{background:#8a4434;border-color:#8a4434;color:#fff}
+body.ladies .btn.primary:hover{background:#73372a}
+body.ladies article.item{border-color:#ecd2c8;border-radius:14px;background:#fff}
+body.ladies article.item h3{font-family:"Bodoni Moda",Georgia,serif;font-weight:500}
+body.ladies .price, body.ladies .pricebig{color:#5e2a20}
+body.ladies .filters .chip.on{color:#8a4434;border-bottom-color:#b0645a}
+body.ladies .mk.on{background:#8a4434;border-color:#8a4434}
+body.ladies .soon{text-align:center;padding:40px 16px 60px}
+body.ladies .soon h2{font-family:"Bodoni Moda",Georgia,serif;font-weight:500;color:#5e2a20;font-size:30px;margin:0 0 8px}
+body.ladies .soon p{color:#8d6b62;margin:0 0 18px}
+body.ladies #brands{display:none}

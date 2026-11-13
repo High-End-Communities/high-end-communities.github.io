@@ -29,17 +29,17 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=2dbd297b">
+<link rel="stylesheet" href="common.css?v=dbb53794">
 </head>
 <body>
-<script src="i18n.js?v=23b90d59"></script>
+<script src="i18n.js?v=a5877a95"></script>
 <header class="mast">
   <div class="checker"></div>
   <button type="button" class="langbtn" id="langBtn" lang="ar">العربية</button>
   <div class="mast-in">
     <a class="mast-logo" href="./"><img id="mainLogo" alt="High End Communities"></a>
     <p class="mast-line">Motorcycles, watches and cars, sold owner to owner.</p>
-    <p class="mast-sub">Plus a designer boutique, yachts, horses, art and real estate. New and pre-loved.</p>
+    <p class="mast-sub">Also yachts, horses, art and real estate. New and used.</p>
     <div class="brands" id="brands"></div>
   </div>
 </header>
@@ -47,13 +47,13 @@
   <div class="markets" id="markets" aria-label="Marketplace"></div>
   <div class="topnav">
     <a class="btn primary" href="post.html">List an item for sale</a>
+    <a class="btn boutiquetab" href="bags.html" data-boutique hidden>✨ The Boutique</a>
   </div>
   <aside class="masar sponsor-banner"></aside>
   <div class="toolbar">
     <div class="filters" id="filters">
       <button class="chip on" data-f="all">All</button>
       <button class="chip" data-f="moto">Motorcycles</button>
-      <button class="chip boutiquechip" data-f="bag">✨ The Boutique</button>
       <button class="chip" data-f="watch">Watches</button>
       <button class="chip" data-f="car">Cars</button>
       <button class="chip" data-f="equine">Equine</button>
@@ -103,7 +103,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="config.js"></script>
-<script src="common.js?v=2dbd297b"></script>
+<script src="common.js?v=dbb53794"></script>
 
 <script>
 if (/^#l-[A-Za-z0-9-]{1,60}$/.test(location.hash)) location.replace("item.html?id="+location.hash.slice(3));   // old shared links
@@ -184,7 +184,7 @@ function render(){
   $("#searchbar").hidden = false; $("#pcur").textContent = mainCur();
   const Q = searchState();
   document.body.classList.toggle("value", Q.value);
-  const inCat = all.filter(x=>x.L.f && SCHEMAS[x.L.type] && marketOf(x.L)===MARKET && (filter==="all" || GROUP[x.L.type]===filter) && (sub==="all" || x.L.type===sub) && matchesSearch(x.L, Q));
+  const inCat = all.filter(x=>x.L.f && SCHEMAS[x.L.type] && (FIXED || GROUP[x.L.type]!=="bag") && marketOf(x.L)===MARKET && (filter==="all" || GROUP[x.L.type]===filter) && (sub==="all" || x.L.type===sub) && matchesSearch(x.L, Q));
   CAT_TITLE = sub!=="all" ? (SECTION_NAMES[sub]||"") : (filter!=="all" ? (GROUP_NAMES[filter]||"") : "");
   $("#catPdf").textContent = (CAT_TITLE ? CAT_TITLE+" PDF" : "Catalogue PDF");
   $("#catShare").textContent = "Share " + (CAT_TITLE ? CAT_TITLE.toLowerCase() : "catalogue") + " on WhatsApp";
