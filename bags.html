@@ -15,11 +15,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="High End">
-<meta name="description" content="Buy and sell motorcycles, watches, cars, horses, yachts, art and real estate — new and used.">
+<meta name="description" content="Buy and sell motorcycles, watches, cars, horses, boats, jet skis, art and real estate — new and used.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="High End Communities">
 <meta property="og:title" content="High End — The Boutique">
-<meta property="og:description" content="Motorcycles • Watches • Cars • Equine • Yachts &amp; boats • Modern &amp; art • Real estate. New and used, with photos, prices and seller numbers.">
+<meta property="og:description" content="Motorcycles • Watches • Cars • Equine • Marine &amp; jet skis • Modern &amp; art • Real estate. New and used, with photos, prices and seller numbers.">
 <meta property="og:url" content="https://high-end-communities.github.io/bags.html">
 <meta property="og:image" content="https://high-end-communities.github.io/logo.jpeg">
 <meta property="og:image:secure_url" content="https://high-end-communities.github.io/logo.jpeg">
@@ -29,17 +29,17 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=44ab7730">
+<link rel="stylesheet" href="common.css?v=ad2d642f">
 </head>
 <body class="ladies">
-<script src="i18n.js?v=5bb7a0e9"></script>
+<script src="i18n.js?v=3d170bf9"></script>
 <header class="mast">
   <div class="checker"></div>
   <button type="button" class="langbtn" id="langBtn" lang="ar">العربية</button>
   <div class="mast-in">
     <a class="mast-logo" href="./"><img id="mainLogo" alt="High End Communities"></a>
     <p class="mast-line">Motorcycles, watches and cars, sold owner to owner.</p>
-    <p class="mast-sub">Also yachts, horses, art and real estate. New and used.</p>
+    <p class="mast-sub">Also marine &amp; jet skis, horses, art and real estate. New and used.</p>
     <div class="brands" id="brands"></div>
   </div>
 </header>
@@ -59,7 +59,7 @@
       <button class="chip" data-f="watch">Watches</button>
       <button class="chip" data-f="car">Cars</button>
       <button class="chip" data-f="equine">Equine</button>
-      <button class="chip" data-f="boat">Yachts & boats</button>
+      <button class="chip" data-f="boat">Marine</button>
       <button class="chip" data-f="art">Modern & art</button>
       <button class="chip" data-f="estate">Real estate</button>
       <button class="chip wantedchip" data-f="wanted">Wanted</button>
@@ -99,14 +99,14 @@
   <div class="list" id="list"></div>
 </main>
 
-<footer><div class="checker"></div><p>High End Communities, est. 2024</p><p class="copyr">© 2024–2026 High End Communities. All rights reserved.<br>The site design, code, logos, photos and content may not be copied, reproduced or reused without written permission.</p><p class="supportwrap" hidden><button type="button" class="supportbtn" data-member>⭐ Membership — unlimited bikes &amp; cars</button></p></footer>
+<footer><div class="checker"></div><p>High End Communities, est. 2024</p><p class="copyr">© 2024–2026 High End Communities. All rights reserved.<br>The site design, code, logos, photos and content may not be copied, reproduced or reused without written permission.</p><p class="socials" hidden></p><p class="supportwrap" hidden><button type="button" class="supportbtn" data-member>⭐ Membership — unlimited bikes &amp; cars</button></p></footer>
 
 <script>window.FIXED_GROUP="bag";</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="config.js"></script>
-<script src="common.js?v=44ab7730"></script>
+<script src="common.js?v=ad2d642f"></script>
 
 <script>
 if (/^#l-[A-Za-z0-9-]{1,60}$/.test(location.hash)) location.replace("item.html?id="+location.hash.slice(3));   // old shared links
@@ -297,7 +297,7 @@ async function renderWanted(box){
   const g=document.createElement("div"); g.className="wantedlist"; box.appendChild(g);
   if (wantedFor!==MARKET){
     g.innerHTML='<p class="muted">Loading…</p>';
-    const {data,error}=await sb.from("requests").select("id,created_at,status,market,grp,title,details,budget,budget_unit,name,featured").eq("market",MARKET).eq("status","live").order("created_at",{ascending:false}).limit(200);
+    const {data,error}=await sb.from("requests").select("id,created_at,status,market,grp,title,details,budget,budget_unit,name,featured,photo").eq("market",MARKET).eq("status","live").order("created_at",{ascending:false}).limit(200);
     if (error){ g.innerHTML=""; showMsg(/requests/.test(error.message||"") ? "Requests open soon." : niceError(error),"info",$("#listMsg")); return; }
     WANTED=(data||[]).sort((a,b)=>(b.featured?1:0)-(a.featured?1:0)); wantedFor=MARKET;
   }
@@ -310,6 +310,7 @@ async function renderWanted(box){
     const h=document.createElement("h3"); h.textContent=r.title; h.dir="auto";
     const bud=document.createElement("div"); bud.className="budget"; bud.textContent = r.budget ? `Budget up to ${fmt(r.budget)} ${r.budget_unit||mainCur()}` : "Budget: open";
     c.append(t,h,bud);
+    if (r.photo && /^data:image\/jpeg;base64,/.test(r.photo)){ const im=document.createElement("img"); im.className="wphoto"; im.loading="lazy"; im.alt=""; im.src=r.photo; c.appendChild(im); }
     if (r.details){ const p=document.createElement("p"); p.textContent=r.details; c.appendChild(p); }
     const a=document.createElement("a"); a.className="btn wa small"; a.target="_blank"; a.rel="noopener";
     hiddenContact(a,"request",r.id,p=>"https://wa.me/"+waNum(p)+"?text="+encodeURIComponent(`Hello${r.name?" "+r.name:""}, I saw your request on ${MARKET_NAME}: "${r.title}". I have one — `));
@@ -323,17 +324,18 @@ function openImportForm(){
   if (!m){
     m=document.createElement("div"); m.className="modal"; m.id="impModal";
     m.innerHTML=`<div class="card"><h3>🌍 Order from abroad</h3>
-      <p class="muted" style="font-size:14px">Tyres, parts, gear or anything special from the USA, Europe and more. Tell us what you need and we reply on WhatsApp with a price delivered to you.</p>
+      <p class="muted" style="font-size:14px">Tyres, parts, gear or anything special from anywhere in the world. Tell us what you need and we reply on WhatsApp with a price delivered to you.</p>
       <label for="im_title">What do you need?</label><input id="im_title" maxlength="80" placeholder="e.g. Michelin Road 6 tyres 120/70 + 190/55">
       <label for="im_link">Product link (optional)</label><input id="im_link" type="url" maxlength="500" placeholder="https://…">
-      <label for="im_src">From</label><select id="im_src"><option>USA</option><option>Europe</option><option>UK</option><option>UAE</option><option>China</option><option>Japan</option><option>Other</option></select>
-      <label for="im_details">Size, quantity, colour… (optional)</label><textarea id="im_details" maxlength="500"></textarea>
+      <label for="im_details">Product description (model, size, colour, quantity…)</label><textarea id="im_details" maxlength="500"></textarea>
+      <div id="im_photo"></div>
       <label for="im_phone">Your WhatsApp number</label><input id="im_phone" type="tel" inputmode="tel">
       <label for="im_name">Your name (optional)</label><input id="im_name" maxlength="40">
       <div class="hint">Only the High End team sees this request.</div>
       <div class="actions"><button type="button" class="btn primary" id="im_go">Ask for a price</button><button type="button" class="btn ghost" id="im_close">Close</button></div>
       <div class="msg" id="im_msg"></div></div>`;
     document.body.appendChild(m);
+    const imPh=photoPicker("im_file"); $("#im_photo").replaceWith(imPh);
     $("#im_close").onclick=()=>{ m.hidden=true; };
     $("#im_go").onclick=async()=>{
       const title=$("#im_title").value.trim(), ph=anyPhone($("#im_phone").value, MARKET), link=$("#im_link").value.trim();
@@ -342,12 +344,12 @@ function openImportForm(){
       if (!ph){ showMsg(PHONE_HELP,"err",$("#im_msg")); return; }
       $("#im_go").disabled=true;
       try{
-        const {error}=await sb.from("requests").insert({kind:"import", market:MARKET, grp:"other", title, link:link||null, source:$("#im_src").value,
-          details:$("#im_details").value.trim()||null, phone:ph, name:$("#im_name").value.trim()||null});
+        const {error}=await sb.from("requests").insert({kind:"import", market:MARKET, grp:"other", title, link:link||null,
+          details:$("#im_details").value.trim()||null, phone:ph, name:$("#im_name").value.trim()||null, ...(imPh.value?{photo:imPh.value}:{})});
         if (error) throw error;
         try{ localStorage.setItem("mm_phone", ph); }catch(e){}
         showMsg("Sent. We'll reply on WhatsApp with a price.","ok",$("#im_msg"));
-        ["#im_title","#im_link","#im_details"].forEach(id=>$(id).value="");
+        ["#im_title","#im_link","#im_details"].forEach(id=>$(id).value=""); imPh.reset();
       }catch(e){ showMsg(/kind|requests/.test(e.message||"") ? "Orders from abroad open soon." : niceError(e),"err",$("#im_msg")); }
       finally{ $("#im_go").disabled=false; }
     };
@@ -364,7 +366,8 @@ function openRequestForm(){
       <p class="muted" style="font-size:14px">Tell sellers what you want. It shows in "Wanted" after a quick review.</p>
       <label for="rq_grp">Category</label><select id="rq_grp">${GROUP_ORDER.map(g=>`<option value="${g}">${esc(GROUP_NAMES[g])}</option>`).join("")}</select>
       <label for="rq_title">What are you looking for?</label><input id="rq_title" maxlength="80" placeholder="e.g. BMW R 1250 GS 2020 or newer">
-      <label for="rq_details">Details (optional)</label><textarea id="rq_details" maxlength="500" placeholder="Colour, year, condition, city…"></textarea>
+      <label for="rq_details">Description (optional)</label><textarea id="rq_details" maxlength="500" placeholder="Colour, year, condition, city…"></textarea>
+      <div id="rq_photo"></div>
       <label for="rq_budget">Budget up to (optional)</label><div class="unitrow"><input id="rq_budget" inputmode="numeric"><select id="rq_unit"></select></div>
       <label for="rq_phone">Your WhatsApp number</label><input id="rq_phone" type="tel" inputmode="tel">
       <label for="rq_name">Your name (optional)</label><input id="rq_name" maxlength="40">
@@ -372,6 +375,7 @@ function openRequestForm(){
       <div class="actions"><button type="button" class="btn primary" id="rq_go">Send request</button><button type="button" class="btn ghost" id="rq_close">Close</button></div>
       <div class="msg" id="rq_msg"></div></div>`;
     document.body.appendChild(m);
+    const rqPh=photoPicker("rq_file"); $("#rq_photo").replaceWith(rqPh);
     $("#rq_close").onclick=()=>{ m.hidden=true; };
     $("#rq_go").onclick=async()=>{
       const title=$("#rq_title").value.trim(), ph=anyPhone($("#rq_phone").value, MARKET);
@@ -381,11 +385,11 @@ function openRequestForm(){
       $("#rq_go").disabled=true;
       try{
         const {error}=await sb.from("requests").insert({market:MARKET, grp:$("#rq_grp").value, title, details:$("#rq_details").value.trim()||null,
-          budget:bud, budget_unit:bud?$("#rq_unit").value:null, phone:ph, name:$("#rq_name").value.trim()||null});
+          budget:bud, budget_unit:bud?$("#rq_unit").value:null, phone:ph, name:$("#rq_name").value.trim()||null, ...(rqPh.value?{photo:rqPh.value}:{})});
         if (error) throw error;
         try{ localStorage.setItem("mm_phone", ph); }catch(e){}
         showMsg("Sent. Your request shows in Wanted after review.","ok",$("#rq_msg"));
-        ["#rq_title","#rq_details","#rq_budget"].forEach(id=>$(id).value="");
+        ["#rq_title","#rq_details","#rq_budget"].forEach(id=>$(id).value=""); rqPh.reset();
       }catch(e){ showMsg(/requests/.test(e.message||"")&&/exist|schema/i.test(e.message||"") ? "Requests open soon." : niceError(e),"err",$("#rq_msg")); }
       finally{ $("#rq_go").disabled=false; }
     };

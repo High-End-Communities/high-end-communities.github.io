@@ -92,7 +92,7 @@ const PHONE_HELP = "Enter your WhatsApp number: Egypt 01xxxxxxxxx, or with the c
 /* ---- inspection partners: workshops check vehicles, experts authenticate luxury items ---- */
 const INSPECT = {moto:"workshop", car:"workshop", boat:"workshop", watch:"expert", bag:"expert", art:"expert", equine:"expert", estate:"expert"};
 const INSPECT_TYPES = ["bike","car","boat","watch","bag","art","equine","estate"];   // whole items, not parts or gear
-const INSPECT_GROUPS = [["moto","Motorcycles"],["car","Cars"],["watch","Watches"],["bag","The Boutique"],["art","Modern & art"],["boat","Yachts & boats"],["equine","Equine"],["estate","Real estate"]];
+const INSPECT_GROUPS = [["moto","Motorcycles"],["car","Cars"],["watch","Watches"],["bag","The Boutique"],["art","Modern & art"],["boat","Marine"],["equine","Equine"],["estate","Real estate"]];
 let EXPERTS = null;
 async function loadExperts(force){
   if (EXPERTS && !force) return EXPERTS;
@@ -331,18 +331,18 @@ const SCHEMAS = {
     {k:"phone", l:"Phone number", req:1, type:"phone"}
   ]
 };
-const LABELS = {bike:"Motorcycle", gear:"Safety gear", acc:"Moto accessory", watch:"Watch", car:"Car", carpart:"Car part / accessory", equine:"Horse", equinepart:"Equine accessory", boatpart:"Marine part / accessory", bag:"Boutique item", boat:"Yacht & boat", art:"Modern & art", estate:"Real estate"};
+const LABELS = {bike:"Motorcycle", gear:"Safety gear", acc:"Moto accessory", watch:"Watch", car:"Car", carpart:"Car part / accessory", equine:"Horse", equinepart:"Equine accessory", boatpart:"Marine part / accessory", bag:"Boutique item", boat:"Marine", art:"Modern & art", estate:"Real estate"};
 const ICONS = {bag:"👜", bike:"🏍️", gear:"🪖", acc:"🔧", watch:"⌚", car:"🚗", carpart:"🔩", equinepart:"🏇", boatpart:"⚓", equine:"🐎", boat:"🛥️", art:"🎨", estate:"🏠"};
 const GROUP = {bag:"bag", bike:"moto", gear:"moto", acc:"moto", watch:"watch", car:"car", carpart:"car", equinepart:"equine", boatpart:"boat", equine:"equine", boat:"boat", art:"art", estate:"estate"};
 const RANGES = {bag:BAG_RANGES, bike:BIKE_RANGE, gear:GEAR_RANGES, acc:ACC_RANGES, watch:WATCH_RANGE, car:CAR_RANGE, carpart:CARPART_RANGES, equine:HORSE_RANGE, equinepart:EQUINE_RANGES, boatpart:BOATPART_RANGES, boat:BOAT_RANGES, art:ART_RANGES, estate:ESTATE_RANGES};
 const SUBTYPES = {
   moto:  [["bike","🏍️","Motorcycle"],["gear","🪖","Safety gear"],["acc","🔧","Accessory"]],
   car:   [["car","🚗","Car"],["carpart","🔩","Parts & accessories"]],
-  boat:  [["boat","🛥️","Yacht / boat"],["boatpart","⚓","Parts & accessories"]],
+  boat:  [["boat","🛥️","Boats, yachts & jet skis"],["boatpart","⚓","Parts & accessories"]],
   equine:[["equine","🐎","Horse"],["equinepart","🏇","Saddles, tack & accessories"]]
 };
 const SECTION_NAMES = {bike:"Motorcycles", gear:"Safety gear & helmets", acc:"Motorcycle accessories & parts", watch:"Watches",
-  car:"Cars", carpart:"Car parts & accessories", boat:"Yachts & boats", boatpart:"Marine parts & accessories",
+  car:"Cars", carpart:"Car parts & accessories", boat:"Boats, yachts & jet skis", boatpart:"Marine parts & accessories",
   equine:"Horses", equinepart:"Equine accessories", art:"Modern & art", estate:"Real estate", bag:"The Boutique", "4x4":"4x4 & off-road"};
 // 4x4 is a view of the cars, not its own type: the seller's "Drive" answer, or 4x4 words in the ad
 function is4x4(L){ const f=L.f||{}; if (L.type!=="car") return false;
@@ -781,7 +781,7 @@ function shareText(L,id){
   return `${icon} *${MARKET_NAME}*${isFeatured(L)?" ⭐":""}\n\n${listingText(L)}` + (L.discount ? `\n🏷️ *${L.discount}% off* — get your discount code on the site` : "") + (INCLUDE_LINK ? `\n\n📸 Photos & details: ${linkFor(id)}` : "") + `\n\n_⚠️ ${DISCLAIMER}_`;
 }
 function catalogueText(items){
-  const groups = {bike:"🏍️ *Motorcycles*", gear:"🪖 *Safety gear*", acc:"🔧 *Moto accessories*", watch:"⌚ *Watches*", car:"🚗 *Cars*", carpart:"🔩 *Car parts & accessories*", bag:"👜 *The Boutique*", equinepart:"🏇 *Equine accessories*", boatpart:"⚓ *Marine parts & accessories*", equine:"🐎 *Equine*", boat:"🛥️ *Yachts & boats*", art:"🎨 *Modern & art*", estate:"🏠 *Real estate*"};
+  const groups = {bike:"🏍️ *Motorcycles*", gear:"🪖 *Safety gear*", acc:"🔧 *Moto accessories*", watch:"⌚ *Watches*", car:"🚗 *Cars*", carpart:"🔩 *Car parts & accessories*", bag:"👜 *The Boutique*", equinepart:"🏇 *Equine accessories*", boatpart:"⚓ *Marine parts & accessories*", equine:"🐎 *Equine*", boat:"🛥️ *Marine: boats, yachts & jet skis*", art:"🎨 *Modern & art*", estate:"🏠 *Real estate*"};
   let t = `📒 *${MARKET_NAME} — ${CAT_TITLE ? CAT_TITLE+" catalogue" : "Catalogue"}*\n`;
   let n = 0;
   for (const [g, all] of bySection(items)){
@@ -1028,6 +1028,24 @@ function niceError(e){
 }
 function newSellerCode(){ const a=new Uint32Array(1); crypto.getRandomValues(a); return String(100000 + (a[0] % 900000)); }
 function uuid(){ return (crypto.randomUUID ? crypto.randomUUID() : "10000000-1000-4000-8000-100000000000".replace(/[018]/g,c=>(c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16))); }
+// a photo from the phone made small enough to send with a request (max 700px, JPEG)
+function smallPhoto(file, max=700){
+  return new Promise((res,rej)=>{ const fr=new FileReader(); fr.onerror=rej; fr.onload=async()=>{ try{
+    const im=await loadSrc(fr.result); let q=0.7, m=max, out="";
+    for (let i=0;i<4;i++){ const r=Math.min(1, m/Math.max(im.naturalWidth, im.naturalHeight)); const c=document.createElement("canvas");
+      c.width=Math.round(im.naturalWidth*r); c.height=Math.round(im.naturalHeight*r); c.getContext("2d").drawImage(im,0,0,c.width,c.height);
+      out=c.toDataURL("image/jpeg",q); if (out.length<=190000) break; m=Math.round(m*0.75); q=0.6; }
+    res(out); }catch(e){ rej(e); } }; fr.readAsDataURL(file); });
+}
+function photoPicker(id){
+  const w=document.createElement("div"); w.className="rqphoto";
+  w.innerHTML=`<label class="btn ghost small" for="${id}">📷 Add a photo (optional)</label><input id="${id}" type="file" accept="image/*" hidden><img alt="" hidden><button type="button" class="btn ghost small" hidden>✕</button>`;
+  const inp=w.querySelector("input"), img=w.querySelector("img"), x=w.querySelector("button"); w.value=null;
+  inp.onchange=async()=>{ const f=inp.files&&inp.files[0]; if(!f) return; try{ w.value=await smallPhoto(f); img.src=w.value; img.hidden=false; x.hidden=false; }catch(e){ w.value=null; } inp.value=""; };
+  x.onclick=()=>{ w.value=null; img.hidden=true; x.hidden=true; };
+  w.reset=()=>x.onclick();
+  return w;
+}
 async function makeThumb(dataUrl){
   const im = await loadSrc(dataUrl); const max=260;
   const r = Math.min(1, max/Math.max(im.naturalWidth, im.naturalHeight));
@@ -1426,11 +1444,51 @@ function openMembership(prefill){
       `⭐ *Membership payment*\n\nNumber: ${n}${nm.value.trim()?"\nName: "+nm.value.trim():""}${price?"\nAmount: "+fmtMoney(price):""}`); };
   m.hidden=false;
 }
-function openVehicleFee(row){
-  const st=SITE_ST||{};
-  payModal("🏍️ Extra vehicle fee", `This number already has ${Number(st.free_vehicles??1)} free vehicle listing${Number(st.free_vehicles??1)===1?"":"s"}. Pay ${fmtMoney(st.extra_vehicle_fee??1000)} and send the receipt: the listing goes live when the admin confirms.`,
-    `🏍️ *Extra vehicle fee*\n\n${titleOf(row)}\nNumber: ${row.phone}\nRef: ${row.id}\nAmount: ${fmtMoney(st.extra_vehicle_fee??1000)}`);
+/* ===================== Extra listings: every section can have a free limit, then a fee =====================
+   The admin sets free listings + fee per section, a sale (% off for a period), discount codes and packs. */
+const FEE_GROUPS = {vehicle:"Motorcycles & cars", moto:"Motorcycle gear & accessories", car:"Car parts & accessories", watch:"Watches",
+  boat:"Marine", equine:"Horses & equine", art:"Modern & art", estate:"Real estate", bag:"Ladies boutique"};
+const FEE_ICON = {vehicle:"🏍️", moto:"🪖", car:"🔧", watch:"⌚", boat:"🛥️", equine:"🐎", art:"🖼️", estate:"🏠", bag:"👜"};
+async function listingQuota(phone, type){ try{ const {data,error}=await sb.rpc("listing_quota",{p_phone:phone, p_type:type}); return error?null:data; }catch(e){ return null; } }
+function feeNeeded(q){ return !!(q && q.pay_enabled && !(q.member && q.grp==="vehicle") && q.free!=null && Number(q.fee)>0 && q.used>=q.free && !(q.credits>0)); }
+function feeAfter(fee, pct){ return Math.round(Number(fee||0)*(100-Number(pct||0))/100); }
+function saleLine(q){ if(!(q.sale_pct>0)) return ""; const u=q.sale_until?new Date(q.sale_until).toLocaleDateString("en-GB",{day:"numeric",month:"short"}):"";
+  return `🎉 ${q.sale_note?q.sale_note+": ":""}${q.sale_pct}% off extra listings${u?" until "+u:""}.`; }
+function packsHtml(q){ return (q.packs||[]).filter(p=>Number(p.n)>0&&Number(p.price)>0).map(p=>{
+    const each=Math.round(Number(p.price)/Number(p.n)), save=Number(q.fee)>0?Math.round(100-100*each/Number(q.fee)):0;
+    return `<button type="button" class="btn ghost small" data-pack="${Number(p.n)}" data-price="${Number(p.price)}" data-days="${packDays(p)}">📦 ${Number(p.n)} listings ${packPer(p)} · ${fmtMoney(p.price)}${save>0?" (save "+save+"%)":""}</button>`; }).join(""); }
+function packDays(p){ return Number(p.days)>0?Number(p.days):30; }
+function packPer(p){ const d=packDays(p); return d===30?"a month":d===365?"a year":"for "+d+" days"; }
+async function openListingFee(row){
+  const q = await listingQuota(row.phone, row.type) || {grp:"vehicle", fee:(SITE_ST||{}).extra_vehicle_fee??1000, free:(SITE_ST||{}).free_vehicles??1, sale_pct:0, packs:[]};
+  const g=q.grp, sec=FEE_GROUPS[g]||"this section", free=Number(q.free||0);
+  let pct = Number(q.sale_pct||0), code="";
+  const amt=()=>feeAfter(q.fee, Math.max(pct, 0));
+  const wa=()=>`${FEE_ICON[g]||"➕"} *Extra listing fee*\n\n${titleOf(row)}\nNumber: ${row.phone}\nRef: ${row.id}\nAmount: ${fmtMoney(amt())}${code?"\nCode: "+code:""}${pct&&!code?"\nSale: "+pct+"% off":""}`;
+  payModal(`${FEE_ICON[g]||"➕"} Extra listing fee`, `${sec}: the first ${free} listing${free===1?" is":"s are"} free for each number. Pay the fee and send the receipt: the listing goes live when the admin confirms.`, wa());
+  const card=document.querySelector("#payModal .card"), acts=card.querySelector(".actions"), waBtn=acts.querySelector("a.btn.wa");
+  const box=document.createElement("div"); box.className="feebox";
+  const price=document.createElement("div"); price.className="payrow";
+  const sale=document.createElement("p"); sale.className="muted"; sale.style.fontSize="13px"; sale.textContent=saleLine(q);
+  const draw=()=>{ price.innerHTML=`<span>To pay</span><b>${amt()<Number(q.fee)?`<s class="muted">${fmtMoney(q.fee)}</s> `:""}${fmtMoney(amt())}</b>`; waBtn.href=adminHref(wa()); };
+  const cr=document.createElement("div"); cr.className="dlrow";
+  const ci=document.createElement("input"); ci.placeholder="Discount code"; ci.maxLength=20; ci.style.cssText="flex:1;min-width:0;text-transform:uppercase";
+  const cb=document.createElement("button"); cb.type="button"; cb.className="btn ghost small"; cb.textContent="Apply";
+  const cm=document.createElement("small"); cm.className="muted";
+  cb.onclick=async()=>{ const c=ci.value.trim().toUpperCase(); if(!c) return; cb.disabled=true;
+    const {data,error}=await sb.rpc("fee_code_check",{p_code:c, p_listing:row.id}); cb.disabled=false;
+    if(error||!data){ cm.textContent="This code isn't valid for this listing."; return; }
+    code=c; pct=Math.max(Number(data), Number(q.sale_pct||0)); cm.textContent=`✅ ${data}% off`; draw(); };
+  cr.append(ci,cb);
+  box.append(price); if(sale.textContent) box.append(sale); box.append(cr, cm);
+  const ph=packsHtml(q);
+  if (ph){ const pk=document.createElement("div"); pk.className="packs"; pk.innerHTML=`<p class="muted" style="font-size:13px;margin:10px 0 6px">Posting more? Take a monthly pack: this listing uses one and the rest are ready for your next ones.</p><div class="dlrow" style="flex-wrap:wrap">${ph}</div>`;
+    pk.querySelectorAll("[data-pack]").forEach(b=>b.onclick=()=>{ waBtn.href=adminHref(`📦 *Listings pack*\n\n${b.dataset.pack} ${sec} listings ${packPer({days:b.dataset.days})} for ${fmtMoney(b.dataset.price)}\nNumber: ${row.phone}\nFirst one: ${titleOf(row)} (Ref: ${row.id})`);
+      price.innerHTML=`<span>Pack: ${b.dataset.pack} listings</span><b>${fmtMoney(b.dataset.price)}</b>`; pk.querySelectorAll("[data-pack]").forEach(x=>x.classList.toggle("on",x===b)); });
+    box.append(pk); }
+  card.insertBefore(box, acts); draw();
 }
+function openVehicleFee(row){ return openListingFee(row); }
 document.addEventListener("click", e=>{ const b=e.target.closest && e.target.closest("[data-member]"); if (b && paymentsOn()){ e.preventDefault(); openMembership(); } });
 
 /* ===================== Maintenance page ===================== */
@@ -1471,6 +1529,10 @@ async function siteCheck(page, quiet){
   const st = res.data || {};
   SITE_ST = st;
   document.querySelectorAll(".supportwrap").forEach(e=>e.hidden=!st.pay_enabled);   // payments stay hidden until the admin switches them on
+  document.querySelectorAll("footer .socials").forEach(e=>{ e.innerHTML="";
+    [[st.social_fb,/^https:\/\/(www\.|m\.)?(facebook|fb)\.com\//,"Facebook"],[st.social_ig,/^https:\/\/(www\.)?instagram\.com\//,"Instagram"]].forEach(([u,re,n])=>{
+      if (u && re.test(u)){ const a=document.createElement("a"); a.href=u; a.target="_blank"; a.rel="noopener"; a.textContent=n; e.appendChild(a); } });
+    e.hidden=!e.childElementCount; });
   // The Boutique (ladies section) shows only when the admin switches it on
   document.querySelectorAll("[data-boutique]").forEach(e=>e.hidden=!st.boutique_on);
   if (window.FIXED_GROUP==="bag" && !st.boutique_on && !/[?&]preview=1/.test(location.search)){

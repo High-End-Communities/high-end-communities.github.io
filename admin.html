@@ -18,17 +18,17 @@
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=44ab7730">
+<link rel="stylesheet" href="common.css?v=ad2d642f">
 </head>
 <body>
-<script src="i18n.js?v=5bb7a0e9"></script>
+<script src="i18n.js?v=3d170bf9"></script>
 <header class="mast">
   <div class="checker"></div>
   <button type="button" class="langbtn" id="langBtn" lang="ar">العربية</button>
   <div class="mast-in">
     <a class="mast-logo" href="./"><img id="mainLogo" alt="High End Communities"></a>
     <p class="mast-line">Motorcycles, watches and cars, sold owner to owner.</p>
-    <p class="mast-sub">Also yachts, horses, art and real estate. New and used.</p>
+    <p class="mast-sub">Also marine &amp; jet skis, horses, art and real estate. New and used.</p>
     <div class="brands" id="brands"></div>
   </div>
 </header>
@@ -113,15 +113,53 @@
         <div id="mnVerify"></div>
       </div>
       <div class="card" style="margin-bottom:12px">
-        <h3 style="margin:0 0 6px">🏍️ Waiting for the extra-vehicle fee <span id="mnUnpaidN" class="muted"></span></h3>
+        <h3 style="margin:0 0 6px">⏳ Waiting for the extra-listing fee <span id="mnUnpaidN" class="muted"></span></h3>
         <div id="mnUnpaid"></div>
+      </div>
+      <div class="card" style="margin-bottom:12px">
+        <h3 style="margin:0 0 6px">📦 Free listings, fees &amp; promotions</h3>
+        <div class="hint">Free listings per WhatsApp number in each section; after that each extra listing waits for its fee. Leave "Free" empty for no limit, or put fee 0 to keep it free. Motorcycles &amp; cars: Settings tab (free vehicles / extra vehicle fee). Applies only while Payments are switched on.</div>
+        <table class="mini" id="feRules"></table>
+        <h4 style="margin:14px 0 6px">🎉 Sale on extra listings</h4>
+        <div class="grid">
+          <div><label for="feSalePct">% off (0 = no sale)</label><input id="feSalePct" type="number" min="0" max="90" inputmode="numeric" placeholder="0"></div>
+          <div><label for="feSaleUntil">Until (empty = until you stop it)</label><input id="feSaleUntil" type="date"></div>
+          <div class="full"><label for="feSaleNote">Sale name (shown to sellers)</label><input id="feSaleNote" maxlength="120" placeholder="e.g. Ramadan offer"></div>
+        </div>
+        <h4 style="margin:14px 0 6px">📦 Monthly packs</h4>
+        <div style="overflow-x:auto"><table class="mini" id="fePacks"></table></div>
+        <div class="actions"><button type="button" class="btn ghost small" id="fePackAdd">+ Add pack</button><button type="button" class="btn primary small" id="feSave">Save fees &amp; promotions</button></div>
+        <div class="msg" id="feMsg"></div>
+        <h4 style="margin:14px 0 6px">✅ Sell a pack</h4>
+        <div class="grid">
+          <div><label for="fpPhone">WhatsApp number</label><input id="fpPhone" inputmode="tel" placeholder="01xxxxxxxxx"></div>
+          <div><label for="fpPack">Pack</label><select id="fpPack"></select></div>
+          <div><label for="fpAmount">Amount received (EGP)</label><input id="fpAmount" type="number" min="0" inputmode="numeric"></div>
+          <div><label for="fpMethod">Paid by</label><select id="fpMethod"><option>InstaPay</option><option>Wallet</option><option>Card / link</option><option>Cash</option><option>Bank</option></select></div>
+        </div>
+        <div class="actions"><button type="button" class="btn primary small" id="fpSave">Start the pack</button></div>
+        <div class="hint">Their waiting listings in that section go out first; the rest stay as credit until the pack ends.</div>
+        <div class="msg" id="fpMsg"></div>
+        <table class="mini" id="feCredits"></table>
+        <h4 style="margin:14px 0 6px">🏷️ Discount codes for fees</h4>
+        <div class="grid">
+          <div><label for="fcCode">Code</label><input id="fcCode" maxlength="20" placeholder="e.g. HOSS20" style="text-transform:uppercase"></div>
+          <div><label for="fcPct">% off</label><input id="fcPct" type="number" min="1" max="100" inputmode="numeric" placeholder="20"></div>
+          <div><label for="fcGrp">Section</label><select id="fcGrp"></select></div>
+          <div><label for="fcUntil">Until (optional)</label><input id="fcUntil" type="date"></div>
+          <div><label for="fcMax">How many uses (optional)</label><input id="fcMax" type="number" min="1" inputmode="numeric"></div>
+          <div><label for="fcNote">Note (for you)</label><input id="fcNote" maxlength="200" placeholder="e.g. for Ahmed, Rolex dealer"></div>
+        </div>
+        <div class="actions"><button type="button" class="btn primary small" id="fcSave">Add code</button></div>
+        <div class="msg" id="fcMsg"></div>
+        <table class="mini" id="feCodes"></table>
       </div>
       <div class="card" style="margin-bottom:12px">
         <h3 style="margin:0 0 6px">➕ Record a payment</h3>
         <div class="grid">
           <div><label for="mpPhone">WhatsApp number</label><input id="mpPhone" inputmode="tel" placeholder="01xxxxxxxxx"></div>
           <div><label for="mpAmount">Amount (EGP)</label><input id="mpAmount" type="number" min="0" inputmode="numeric"></div>
-          <div><label for="mpKind">For</label><select id="mpKind"><option value="membership">Membership (starts / extends it)</option><option value="promote">Promoted listing</option><option value="ad">Sponsor / ad</option><option value="extra_vehicle">Extra vehicle</option><option value="other">Other</option></select></div>
+          <div><label for="mpKind">For</label><select id="mpKind"><option value="membership">Membership (starts / extends it)</option><option value="promote">Promoted listing</option><option value="ad">Sponsor / ad</option><option value="extra_vehicle">Extra vehicle</option><option value="extra_listing">Extra listing</option><option value="other">Other</option></select></div>
           <div><label for="mpMethod">Paid by</label><select id="mpMethod"><option>InstaPay</option><option>Wallet</option><option>Card / link</option><option>Cash</option><option>Bank</option></select></div>
           <div class="full"><label for="mpNote">Note</label><input id="mpNote" maxlength="300"></div>
         </div>
@@ -160,6 +198,16 @@
       <div id="wqList"></div>
     </div>
     <div data-pane="share" hidden>
+      <div class="card" style="margin-bottom:12px">
+        <h3 style="margin:0 0 6px">📣 Our Facebook &amp; Instagram</h3>
+        <div class="grid">
+          <div><label for="soFb">Facebook page link</label><input id="soFb" type="url" placeholder="https://www.facebook.com/…"></div>
+          <div><label for="soIg">Instagram link</label><input id="soIg" type="url" placeholder="https://www.instagram.com/…"></div>
+        </div>
+        <div class="actions"><button type="button" class="btn primary small" id="soSave">Save</button></div>
+        <div class="hint">They show at the bottom of every page. The 📸 Instagram and 📘 Facebook buttons below copy the caption and give you the flyer to post. Posting by itself needs a Meta app connected to the page (one-time setup).</div>
+        <div class="msg" id="soMsg"></div>
+      </div>
       <div class="card" style="margin-bottom:12px">
         <h3 style="margin:0 0 6px">📤 Send new listings to the WhatsApp groups</h3>
         <div class="hint">Press <b>Share</b>, pick the group in WhatsApp, send, then come back. Each listing goes with its flyer and link. When a group has more new listings than the number below, you get one <b>daily digest</b> message for it instead. Seller numbers stay hidden — buyers contact them from the site.</div>
@@ -249,7 +297,7 @@
         <button type="button" data-m="watch"><img class="lg" alt="" data-brand="watch">Watches</button>
         <button type="button" data-m="car"><img class="lg" alt="" data-brand="car">Cars</button>
         <button type="button" data-m="equine"><img class="lg" alt="" data-brand="equine">Equine</button>
-        <button type="button" data-m="boat"><img class="lg" alt="" data-brand="boat">Yachts & boats</button>
+        <button type="button" data-m="boat"><img class="lg" alt="" data-brand="boat">Marine</button>
         <button type="button" data-m="art"><span class="ic">🎨</span>Modern & art</button>
         <button type="button" data-m="estate"><span class="ic">🏠</span>Real estate</button>
         <button type="button" data-m="bag" data-boutique hidden><span class="ic">👜</span>The Boutique</button>
@@ -403,13 +451,13 @@
     </div>
   </section>
 </main>
-<footer><div class="checker"></div><p>High End Communities, est. 2024</p><p class="copyr">© 2024–2026 High End Communities. All rights reserved.<br>The site design, code, logos, photos and content may not be copied, reproduced or reused without written permission.</p><p class="supportwrap" hidden><button type="button" class="supportbtn" data-member>⭐ Membership — unlimited bikes &amp; cars</button></p></footer>
+<footer><div class="checker"></div><p>High End Communities, est. 2024</p><p class="copyr">© 2024–2026 High End Communities. All rights reserved.<br>The site design, code, logos, photos and content may not be copied, reproduced or reused without written permission.</p><p class="socials" hidden></p><p class="supportwrap" hidden><button type="button" class="supportbtn" data-member>⭐ Membership — unlimited bikes &amp; cars</button></p></footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="config.js"></script>
-<script src="common.js?v=44ab7730"></script>
+<script src="common.js?v=ad2d642f"></script>
 
 <script>
 initHeader();
@@ -520,7 +568,9 @@ function renderShare(){
       sk.onclick=()=>markShared([it.id]);
       const ig=document.createElement("button"); ig.type="button"; ig.className="btn ghost small"; ig.textContent="📸 Instagram";
       ig.onclick=()=>shareInsta(it,ig);
-      const w=document.createElement("span"); w.style.cssText="display:flex;gap:6px;flex-wrap:wrap"; w.append(b,ig,sk); r.append(t,w); c.appendChild(r);
+      const fb=document.createElement("button"); fb.type="button"; fb.className="btn ghost small"; fb.textContent="📘 Facebook";
+      fb.onclick=()=>shareFb(it,fb);
+      const w=document.createElement("span"); w.style.cssText="display:flex;gap:6px;flex-wrap:wrap"; w.append(b,ig,fb,sk); r.append(t,w); c.appendChild(r);
     });
     box.appendChild(c);
   });
@@ -553,25 +603,97 @@ async function flyerFile(it){
 function instaCaption(it){
   const L=it.L, g=GROUP[L.type];
   const tags={moto:"#motorcycles #bikersofegypt #harleydavidson #bmwmotorrad #ducati",car:"#cars #carsforsale #luxurycars #4x4",watch:"#watches #rolex #omega #watchcollector",
-    boat:"#yachts #boats #marine",equine:"#horses #equestrian #arabianhorse",bag:"#luxurybags #hermes #chanel #preloved",art:"#art #collectibles",estate:"#realestate #luxuryhomes"}[g]||"";
+    boat:"#yachts #boats #jetski #marine",equine:"#horses #equestrian #arabianhorse",bag:"#luxurybags #hermes #chanel #preloved",art:"#art #collectibles",estate:"#realestate #luxuryhomes"}[g]||"";
   return `${ICONS[L.type]||""} ${titleOf(L)}\n💰 ${priceStr(L.f)}\n\n${rows(L).slice(0,6).map(([k,v])=>k+": "+v).join("\n")}\n\n📸 Photos, details & contact: link in bio — or search "${titleOf(L)}" on ${baseUrl().replace(/^https?:\/\//,"")}\n\n#HighEndCommunities #forsale ${tags}`;
 }
-async function shareInsta(it, btn){
-  btn.disabled=true; const old=btn.textContent; btn.textContent="Preparing…";
-  const cap=instaCaption(it); let copied=false;
-  try{ await navigator.clipboard.writeText(cap); copied=true; }catch(e){}
-  let f=null; try{ f=await flyerFile(it); }catch(e){}
-  btn.disabled=false; btn.textContent=old;
-  if (f && navigator.canShare && navigator.canShare({files:[f]})){
-    alert((copied?"The caption is copied — paste it in Instagram.":"")+"\n\nNext: choose Instagram → Feed, then paste the caption.");
-    try{ await navigator.share({files:[f]}); }catch(e){}
-    return;
-  }
-  // computer: save the flyer, the caption is on the clipboard, open Instagram
-  if (f){ const u=URL.createObjectURL(f); const a=document.createElement("a"); a.href=u; a.download=f.name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),30000); }
-  alert("The flyer is downloaded"+(copied?" and the caption is copied":"")+". Instagram opens now: press + → Post, pick the flyer, paste the caption.");
-  window.open("https://www.instagram.com/","_blank","noopener");
+/* ---------- Social posts: an Instagram portrait (1080×1350) and a Facebook landscape (1200×630), each in its own look ---------- */
+const SO={ink:"#1d1b18", cream:"#f7f3e8", gold:"#b08d57", mute:"#8a8478", line:"#e4dccb"};
+function soCover(x,img,dx,dy,dw,dh){ const r=Math.max(dw/img.naturalWidth, dh/img.naturalHeight), sw=dw/r, sh=dh/r;
+  x.drawImage(img,(img.naturalWidth-sw)/2,(img.naturalHeight-sh)/2,sw,sh,dx,dy,dw,dh); }
+function soWrap(x,t,maxW,lines){ const w=String(t).split(/\s+/), out=[]; let cur="";
+  for (const word of w){ const tr=cur?cur+" "+word:word; if (x.measureText(tr).width<=maxW) cur=tr; else { if(cur) out.push(cur); cur=word; } if(out.length===lines) break; }
+  if (out.length<lines && cur) out.push(cur);
+  if (out.length===lines && w.join(" ").length>out.join(" ").length){ let l=out[lines-1]; while(l && x.measureText(l+"…").width>maxW) l=l.slice(0,-1); out[lines-1]=l.replace(/\s+$/,"")+"…"; }
+  return out; }
+function soSpaced(x,t,X,Y,sp){ let cx=X; for (const ch of t){ x.fillText(ch,cx,Y); cx+=x.measureText(ch).width+sp; } return cx-X; }
+function soSpacedW(x,t,sp){ let w=0; for (const ch of t) w+=x.measureText(ch).width+sp; return w-sp; }
+function soSpecs(L,n){ const SKIP=["Add-ons","Options & extras","Item type","Accessory type","Type","Part type","Property type","Phone number"]; return rows(L).filter(([k])=>!SKIP.includes(k)).slice(0,n); }
+function soSection(L){ return (GROUP_NAMES[GROUP[L.type]]||LABELS[L.type]||"").replace(/^High End\s+/,"").replace(/\s+Community$/,""); }
+async function soPrep(it){ const L=noPhone(it.L); await ensureFonts(); if (!L.photos||!L.photos.length) L.photos=await loadPhotos({id:it.id,L});
+  const ph=await loadPhotoImgs(L.photos,3); let logo=null; try{ logo=await loadSrc(BRAND_ART); }catch(e){} return {L,ph,logo}; }
+function soRound(x,X,Y,w,h,r){ x.beginPath(); x.moveTo(X+r,Y); x.arcTo(X+w,Y,X+w,Y+h,r); x.arcTo(X+w,Y+h,X,Y+h,r); x.arcTo(X,Y+h,X,Y,r); x.arcTo(X,Y,X+w,Y,r); x.closePath(); }
+function soLogo(x,logo,cx,cy,r){ x.save(); x.beginPath(); x.arc(cx,cy,r,0,7); x.fillStyle=SO.cream; x.fill(); x.lineWidth=3; x.strokeStyle=SO.gold; x.stroke(); x.clip();
+  if (logo){ const k=Math.min(1.7*r/logo.naturalWidth,1.7*r/logo.naturalHeight); x.drawImage(logo,cx-logo.naturalWidth*k/2,cy-logo.naturalHeight*k/2,logo.naturalWidth*k,logo.naturalHeight*k); } x.restore(); }
+async function instaImage(it){
+  const {L,ph,logo}=await soPrep(it); const W=1080,H=1350, c=document.createElement("canvas"); c.width=W; c.height=H; const x=c.getContext("2d");
+  x.fillStyle=SO.cream; x.fillRect(0,0,W,H);
+  const PH=860;
+  if (ph[0]) soCover(x,ph[0],0,0,W,PH); else { x.fillStyle=SO.ink; x.fillRect(0,0,W,PH); }
+  const g=x.createLinearGradient(0,0,0,260); g.addColorStop(0,"rgba(0,0,0,.45)"); g.addColorStop(1,"rgba(0,0,0,0)"); x.fillStyle=g; x.fillRect(0,0,W,260);
+  soLogo(x,logo,104,104,58);
+  x.font='600 24px Inter'; x.fillStyle="#fff"; x.textBaseline="middle"; const sec=soSection(L).toUpperCase(), sw=soSpacedW(x,sec,5);
+  x.strokeStyle="rgba(255,255,255,.85)"; x.lineWidth=2; soRound(x,W-64-sw-48,76,sw+48,56,28); x.stroke(); soSpaced(x,sec,W-64-sw-24,105,5);
+  ph.slice(1,3).forEach((im,i)=>{ const s=170, X=W-64-s, Y=PH-110-s-i*(s+24); x.fillStyle="#fff"; x.fillRect(X-6,Y-6,s+12,s+12); soCover(x,im,X,Y,s,s); });
+  const cy=PH-70; x.fillStyle=SO.cream; soRound(x,48,cy,W-96,H-cy-48,30); x.fill();
+  x.fillStyle=SO.gold; x.fillRect(96,cy+52,70,4);
+  x.textBaseline="alphabetic"; x.fillStyle=SO.ink; x.font='700 58px "Roboto Slab"';
+  const tl=soWrap(x,titleOf(L),W-192,2); tl.forEach((l,i)=>x.fillText(l,96,cy+130+i*68));
+  let y=cy+130+(tl.length-1)*68+56;
+  x.font='400 27px Inter'; x.fillStyle=SO.mute; const tt=titleOf(L).toLowerCase(), sp=soSpecs(L,8).map(([k,v])=>v).filter(v=>v && !tt.includes(String(v).toLowerCase())).slice(0,3); let sx=96;
+  for (let i=0;i<sp.length;i++){ const t=String(sp[i]); const tw=x.measureText(t).width; if (sx+tw>W-96) break; x.fillText(t,sx,y); sx+=tw;
+    if(i<sp.length-1){ x.fillStyle=SO.gold; x.fillText("  ·  ",sx,y); sx+=x.measureText("  ·  ").width; x.fillStyle=SO.mute; } }
+  y+=78; x.font='700 64px "Roboto Slab"'; x.fillStyle=SO.ink; x.fillText(priceStr(L.f),96,y);
+  x.fillStyle=SO.line; x.fillRect(96,H-150,W-192,2);
+  x.font='600 24px Inter'; x.fillStyle=SO.gold; soSpaced(x,"HIGH END COMMUNITIES",96,H-100,4);
+  x.font='400 24px Inter'; x.fillStyle=SO.mute; x.textAlign="right"; x.fillText("Details & contact: link in bio",W-96,H-100); x.textAlign="left";
+  const b=await new Promise(r=>c.toBlob(r,"image/jpeg",0.9)); return b?new File([b],fileBase(L)+"-instagram.jpg",{type:"image/jpeg"}):null;
 }
+async function fbImage(it){
+  const {L,ph,logo}=await soPrep(it); const W=1200,H=630, c=document.createElement("canvas"); c.width=W; c.height=H; const x=c.getContext("2d");
+  x.fillStyle=SO.ink; x.fillRect(0,0,W,H);
+  const PW=700;
+  if (ph[0]) soCover(x,ph[0],0,0,PW,H);
+  if (ph[1]){ const s=150; x.fillStyle=SO.cream; x.fillRect(28,H-28-s-8,s+16,s+16); soCover(x,ph[1],36,H-28-s,s,s); }
+  const g=x.createLinearGradient(PW-120,0,PW,0); g.addColorStop(0,"rgba(29,27,24,0)"); g.addColorStop(1,"rgba(29,27,24,1)"); x.fillStyle=g; x.fillRect(PW-120,0,120,H);
+  const X=PW+40, R=W-48, w=R-X;
+  soLogo(x,logo,X+38,78,38);
+  x.font='600 18px Inter'; x.fillStyle=SO.gold; x.textBaseline="middle"; soSpaced(x,soSection(L).toUpperCase(),X+92,78,4); x.textBaseline="alphabetic";
+  x.fillStyle=SO.cream; x.font='700 44px "Roboto Slab"'; const tl=soWrap(x,titleOf(L),w,3); tl.forEach((l,i)=>x.fillText(l,X,186+i*52));
+  let y=186+(tl.length-1)*52+30; x.fillStyle=SO.gold; x.fillRect(X,y,56,3); y+=44;
+  x.font='400 21px Inter'; soSpecs(L,4).forEach(([k,v])=>{ x.fillStyle="#a8a294"; x.fillText(k,X,y); x.fillStyle=SO.cream; x.textAlign="right"; let t=String(v); while(t && x.measureText(t).width>w-x.measureText(k).width-24) t=t.slice(0,-1); x.fillText(t,R,y); x.textAlign="left"; y+=34; });
+  const py=H-118; x.fillStyle=SO.cream; soRound(x,X,py,w,62,31); x.fill();
+  x.fillStyle=SO.ink; x.font='700 32px "Roboto Slab"'; x.textAlign="center"; x.fillText(priceStr(L.f),X+w/2,py+42);
+  x.font='400 18px Inter'; x.fillStyle="#a8a294"; x.fillText(baseUrl().replace(/^https?:\/\//,""),X+w/2,H-24); x.textAlign="left";
+  const b=await new Promise(r=>c.toBlob(r,"image/jpeg",0.9)); return b?new File([b],fileBase(L)+"-facebook.jpg",{type:"image/jpeg"}):null;
+}
+async function socialPost(it, btn, kind){
+  btn.disabled=true; const old=btn.textContent; btn.textContent="Preparing…";
+  const cap=instaCaption(it); let copied=false; try{ await navigator.clipboard.writeText(kind==="fb"?cap.replace(/link in bio/,linkFor(it.id)):cap); copied=true; }catch(e){}
+  let f=null; try{ f=await (kind==="fb"?fbImage(it):instaImage(it)); }catch(e){ console.warn(e); }
+  btn.disabled=false; btn.textContent=old;
+  const app=kind==="fb"?"Facebook":"Instagram";
+  if (f && navigator.canShare && navigator.canShare({files:[f]})){
+    alert((copied?"The caption is copied. ":"")+`Next: choose ${app}, then paste the caption.`);
+    try{ await navigator.share({files:[f]}); }catch(e){} return;
+  }
+  if (f){ const u=URL.createObjectURL(f); const a=document.createElement("a"); a.href=u; a.download=f.name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),30000); }
+  alert(`The ${app} picture is downloaded`+(copied?" and the caption is copied":"")+`. ${app} opens now: make a new post, add the picture, paste the caption.`);
+  const st=SITE_ST||{}; window.open(kind==="fb"?(st.social_fb||"https://www.facebook.com/"):(st.social_ig||"https://www.instagram.com/"),"_blank","noopener");
+}
+function shareInsta(it,btn){ return socialPost(it,btn,"ig"); }
+function shareFb(it,btn){ return socialPost(it,btn,"fb"); }
+(async function(){
+  if (!sb) return; const {data}=await sb.from("settings").select("social_fb,social_ig").eq("id",1).maybeSingle();
+  if (data){ $("#soFb").value=data.social_fb||""; $("#soIg").value=data.social_ig||""; SITE_ST=Object.assign(SITE_ST||{},data); }
+})();
+$("#soSave").onclick=async()=>{
+  const fb=$("#soFb").value.trim(), ig=$("#soIg").value.trim();
+  if (fb && !/^https:\/\/(www\.|m\.)?(facebook|fb)\.com\/[A-Za-z0-9._\/?=&%-]{1,200}$/.test(fb)){ showMsg("Facebook: paste the page link, e.g. https://www.facebook.com/highend","err",$("#soMsg")); return; }
+  if (ig && !/^https:\/\/(www\.)?instagram\.com\/[A-Za-z0-9._\/-]{1,100}$/.test(ig)){ showMsg("Instagram: paste the account link, e.g. https://www.instagram.com/highend","err",$("#soMsg")); return; }
+  const {error}=await sb.from("settings").update({social_fb:fb||null, social_ig:ig||null}).eq("id",1);
+  showMsg(error?(/column/.test(error.message||"")?"Run update18 in Supabase first.":niceError(error)):"Saved.", error?"err":"ok", $("#soMsg"));
+  if(!error) SITE_ST=Object.assign(SITE_ST||{},{social_fb:fb||null,social_ig:ig||null});
+};
 async function shareOne(it, btn){
   btn.disabled=true; const old=btn.textContent; btn.textContent="Preparing…";
   let files=null;
@@ -762,7 +884,7 @@ async function loadMoney(){
   if (err){ showMsg(/admin_money|payments|members|does not exist/.test(err.message||"") ? "Run the latest update SQL (update14) in Supabase first." : niceError(err),"err",$("#mnMsg")); return; }
   showMsg("","",$("#mnMsg"));
   moneyInfo=mi.data||{}; moneyPays=pays.data||[]; moneyMembers=mems.data||[];
-  renderMoney();
+  renderMoney(); loadFees();
 }
 function renderMoney(){
   const m=moneyInfo||{};
@@ -797,12 +919,12 @@ function renderMoney(){
   un.forEach(x=>{ const r=document.createElement("div"); r.className="payrow"; r.style.alignItems="center";
     r.innerHTML=`<span><a href="${esc(itemHref(x.id))}" target="_blank" rel="noopener"><b>${esc(titleOf(x.L))}</b></a><br><small>${esc(phoneOf(x.L))} · ${fmtDate(x.L.at||Date.now())}</small></span>`;
     const ok=document.createElement("button"); ok.type="button"; ok.className="btn primary small"; ok.textContent="Paid ✓";
-    ok.onclick=async()=>{ const amt=prompt("Amount received (EGP)", String((SITE_ST||{}).extra_vehicle_fee??1000)); if(amt===null) return;
+    ok.onclick=async()=>{ const amt=prompt("Amount received (EGP)", String(feeOfType(x.L.type))); if(amt===null) return;
       const how=prompt("Paid by (InstaPay / Wallet / Cash…)","InstaPay"); if(how===null) return;
       const {error}=await sb.rpc("admin_mark_paid",{p_listing:x.id, p_amount:Number(amt)||0, p_method:how}); if(error){ toast(niceError(error)); return; }
       toast("Recorded — the listing is out."); await loadAll(); loadMoney(); };
     const wa=document.createElement("a"); wa.className="btn ghost small"; wa.target="_blank"; wa.rel="noopener"; wa.textContent="WhatsApp";
-    wa.href="https://wa.me/"+waNum(phoneOf(x.L))+"?text="+encodeURIComponent(`Hello, about your listing "${titleOf(x.L)}" on ${MARKET_NAME}: it goes live once the extra vehicle fee (${egp((SITE_ST||{}).extra_vehicle_fee??1000)}) is received.`);
+    wa.href="https://wa.me/"+waNum(phoneOf(x.L))+"?text="+encodeURIComponent(`Hello, about your listing "${titleOf(x.L)}" on ${MARKET_NAME}: it goes live once the extra listing fee (${egp(feeOfType(x.L.type))}) is received.`);
     const bx=document.createElement("span"); bx.style.cssText="display:flex;gap:6px"; bx.append(ok,wa); r.appendChild(bx); ub.appendChild(r); });
   renderPeople(); renderPays();
 }
@@ -824,7 +946,7 @@ function renderPeople(){
 }
 $("#mnFind").addEventListener("input", renderPeople);
 function renderPays(){
-  const t=$("#mnPays"); const kinds={membership:"Membership",extra_vehicle:"Extra vehicle",promote:"Promoted",ad:"Sponsor / ad",other:"Other"};
+  const t=$("#mnPays"); const kinds={membership:"Membership",extra_vehicle:"Extra vehicle",extra_listing:"Extra listing",pack:"Monthly pack",promote:"Promoted",ad:"Sponsor / ad",other:"Other"};
   t.innerHTML="<tr><th>Date</th><th>Number</th><th>For</th><th class='n'>EGP</th><th></th></tr>";
   if (!moneyPays.length){ t.insertAdjacentHTML("beforeend","<tr><td colspan='5' class='muted'>No payments yet.</td></tr>"); return; }
   moneyPays.slice(0,200).forEach(p=>{ const tr=document.createElement("tr");
@@ -854,9 +976,85 @@ $("#mpSave").onclick=async()=>{
   showMsg(kind==="membership" ? `Saved. ${ph} is a member for ${(SITE_ST||{}).member_days||365} days more; their waiting vehicles are out.` : "Saved.","ok",$("#mpMsg"));
   $("#mpAmount").value=""; $("#mpNote").value=""; if (kind==="membership") await loadAll(); loadMoney();
 };
+/* ---------- Free listings, fees & promotions ---------- */
+const FEE_KEYS=["watch","bag","art","estate","boat","equine","moto","car"];
+let feeSt={rules:{}, packs:[]};
+function feeGrpOf(t){ return (t==="bike"||t==="car")?"vehicle":({gear:"moto",acc:"moto",carpart:"car",boatpart:"boat",equinepart:"equine"}[t]||t); }
+function feeOfType(t){ const st=SITE_ST||{}, g=feeGrpOf(t); const fee = g==="vehicle" ? (st.extra_vehicle_fee??1000) : Number(((st.fee_rules||{})[g]||{}).fee||0);
+  const sale = Number(st.fee_sale_pct||0)>0 && (!st.fee_sale_until || Date.parse(st.fee_sale_until)>Date.now()) ? Number(st.fee_sale_pct) : 0; return feeAfter(fee, sale); }
+function feeGrpSelect(sel, withAll){ sel.innerHTML=""; if(withAll) sel.add(new Option("All sections","all")); Object.entries(FEE_GROUPS).forEach(([k,v])=>sel.add(new Option(v,k))); }
+function drawFeeRules(){
+  const t=$("#feRules"); t.innerHTML="<tr><th>Section</th><th class='n'>Free</th><th class='n'>Fee (EGP)</th></tr>";
+  FEE_KEYS.forEach(k=>{ const r=feeSt.rules[k]||{}; if(!can(k==="bag"?"bag":k)) return; const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${FEE_ICON[k]} ${esc(FEE_GROUPS[k])}</td><td class="n"><input data-free="${k}" type="number" min="0" max="1000" inputmode="numeric" style="width:70px" value="${r.free??""}"></td><td class="n"><input data-fee="${k}" type="number" min="0" inputmode="numeric" style="width:90px" value="${r.fee??""}"></td>`; t.appendChild(tr); });
+}
+function drawPacks(){
+  const t=$("#fePacks"); t.innerHTML="<tr><th>Section</th><th class='n'>Listings</th><th class='n'>Price</th><th class='n'>Days</th><th></th></tr>";
+  if(!feeSt.packs.length) t.insertAdjacentHTML("beforeend","<tr><td colspan='5' class='muted'>No packs.</td></tr>");
+  feeSt.packs.forEach((p,i)=>{ const tr=document.createElement("tr");
+    tr.innerHTML=`<td><select data-k="grp" style="min-width:130px"></select></td><td class="n"><input data-k="n" type="number" min="1" style="width:60px" value="${Number(p.n)||""}"></td><td class="n"><input data-k="price" type="number" min="0" style="width:80px" value="${Number(p.price)||""}"></td><td class="n"><input data-k="days" type="number" min="1" style="width:60px" value="${Number(p.days)||30}"></td>`;
+    const sel=tr.querySelector("select"); feeGrpSelect(sel); sel.value=p.grp||"watch";
+    tr.querySelectorAll("[data-k]").forEach(el=>el.onchange=()=>{ p[el.dataset.k]= el.dataset.k==="grp"?el.value:Number(el.value); });
+    const td=document.createElement("td"); const d=document.createElement("button"); d.type="button"; d.className="btn ghost small"; d.textContent="✕";
+    d.onclick=()=>{ feeSt.packs.splice(i,1); drawPacks(); }; td.appendChild(d); tr.appendChild(td); t.appendChild(tr); });
+  const fp=$("#fpPack"); fp.innerHTML="";
+  feeSt.packs.forEach((p,i)=>fp.add(new Option(`${FEE_GROUPS[p.grp]||p.grp}: ${p.n} listings / ${Number(p.days)||30} days · ${fmtMoney(p.price)}`, i)));
+  fp.onchange=()=>{ const p=feeSt.packs[fp.value]; if(p) $("#fpAmount").value=p.price; }; fp.onchange();
+}
+async function loadFees(){
+  const {data,error}=await sb.from("settings").select("fee_rules,fee_packs,fee_sale_pct,fee_sale_until,fee_sale_note").eq("id",1).maybeSingle();
+  if(error){ showMsg(/fee_/.test(error.message||"")?"Run update18 in Supabase first.":niceError(error),"err",$("#feMsg")); return; }
+  feeSt={rules:JSON.parse(JSON.stringify(data.fee_rules||{})), packs:JSON.parse(JSON.stringify(data.fee_packs||[]))};
+  $("#feSalePct").value=data.fee_sale_pct||0; $("#feSaleUntil").value=data.fee_sale_until?data.fee_sale_until.slice(0,10):""; $("#feSaleNote").value=data.fee_sale_note||"";
+  drawFeeRules(); drawPacks(); loadFeeCodes(); loadCredits();
+}
+$("#fePackAdd").onclick=()=>{ feeSt.packs.push({grp:"watch",n:5,price:0,days:30}); drawPacks(); };
+$("#feSave").onclick=async()=>{
+  const rules={...feeSt.rules};
+  document.querySelectorAll("#feRules [data-free]").forEach(el=>{ const k=el.dataset.free, fe=document.querySelector(`#feRules [data-fee="${k}"]`);
+    if(el.value===""&&fe.value===""){ delete rules[k]; return; } rules[k]={free: el.value===""?null:Math.max(0,Math.round(Number(el.value))), fee: Math.max(0,Number(fe.value)||0)}; });
+  const packs=feeSt.packs.filter(p=>Number(p.n)>0&&Number(p.price)>0).map(p=>({grp:p.grp, n:Math.round(Number(p.n)), price:Number(p.price), days:Math.round(Number(p.days))||30}));
+  const pct=Math.min(90,Math.max(0,Math.round(Number($("#feSalePct").value)||0))), u=$("#feSaleUntil").value;
+  const {error}=await sb.from("settings").update({fee_rules:rules, fee_packs:packs, fee_sale_pct:pct, fee_sale_until:u?new Date(u+"T23:59:59").toISOString():null, fee_sale_note:$("#feSaleNote").value.trim()||null}).eq("id",1);
+  showMsg(error?niceError(error):"Saved.", error?"err":"ok", $("#feMsg")); if(!error){ SITE_ST=Object.assign(SITE_ST||{},{fee_rules:rules,fee_packs:packs,fee_sale_pct:pct}); loadFees(); }
+};
+$("#fpSave").onclick=async()=>{
+  const ph=normPhone($("#fpPhone").value,"EG")||normPhone($("#fpPhone").value,getMarket()); const p=feeSt.packs[$("#fpPack").value];
+  if(!ph){ showMsg("Enter a valid WhatsApp number.","err",$("#fpMsg")); return; } if(!p){ showMsg("Add a pack first.","err",$("#fpMsg")); return; }
+  const {data,error}=await sb.rpc("admin_add_credits",{p_phone:ph,p_grp:p.grp,p_n:Number(p.n),p_amount:Number($("#fpAmount").value)||0,p_method:$("#fpMethod").value,p_days:Number(p.days)||30});
+  if(error){ showMsg(niceError(error),"err",$("#fpMsg")); return; }
+  showMsg(`Started. ${Number(p.n)-Number(data)} waiting listing(s) went out; ${data} left as credit for ${Number(p.days)||30} days.`,"ok",$("#fpMsg")); $("#fpPhone").value="";
+  await loadAll(); loadMoney(); loadCredits();
+};
+async function loadCredits(){
+  const {data}=await sb.from("seller_credits").select("*").order("updated_at",{ascending:false}).limit(300);
+  const t=$("#feCredits"); const rows=(data||[]).filter(c=>c.n>0).filter(c=>!c.expires_at||Date.parse(c.expires_at)>Date.now());
+  t.innerHTML=rows.length?"<tr><th>Number</th><th>Section</th><th class='n'>Left</th><th>Until</th></tr>":"";
+  rows.forEach(c=>t.insertAdjacentHTML("beforeend",`<tr><td>${esc(c.phone)}</td><td>${esc(FEE_GROUPS[c.grp]||c.grp)}</td><td class="n">${c.n}</td><td>${c.expires_at?fmtDate(c.expires_at):"–"}</td></tr>`));
+}
+async function loadFeeCodes(){
+  const [c,u]=await Promise.all([sb.from("fee_codes").select("*").order("created_at",{ascending:false}), sb.from("fee_code_uses").select("code")]);
+  const n={}; (u.data||[]).forEach(x=>n[x.code]=(n[x.code]||0)+1);
+  const t=$("#feCodes"); t.innerHTML=(c.data||[]).length?"<tr><th>Code</th><th class='n'>Off</th><th>Section</th><th class='n'>Used</th><th></th></tr>":"";
+  (c.data||[]).forEach(x=>{ const tr=document.createElement("tr"); const over=x.until&&Date.parse(x.until)<Date.now();
+    tr.innerHTML=`<td><b>${esc(x.code)}</b>${x.note?"<br><small>"+esc(x.note)+"</small>":""}${over?"<br><small>ended</small>":x.until?"<br><small>until "+fmtDate(x.until)+"</small>":""}</td><td class="n">${x.pct}%</td><td>${x.grp==="all"?"All":esc(FEE_GROUPS[x.grp]||x.grp)}</td><td class="n">${n[x.code]||0}${x.max_uses?" / "+x.max_uses:""}</td>`;
+    const td=document.createElement("td"); const d=document.createElement("button"); d.type="button"; d.className="btn ghost small"; d.textContent="🗑";
+    d.onclick=async()=>{ if(!confirm("Delete code "+x.code+"?")) return; const {error}=await sb.from("fee_codes").delete().eq("code",x.code); if(error){ toast(niceError(error)); return; } loadFeeCodes(); };
+    td.appendChild(d); tr.appendChild(td); t.appendChild(tr); });
+}
+$("#fcSave").onclick=async()=>{
+  const code=$("#fcCode").value.trim().toUpperCase(), pct=Math.round(Number($("#fcPct").value)), u=$("#fcUntil").value, mx=Number($("#fcMax").value)||null;
+  if(!/^[A-Z0-9]{3,20}$/.test(code)){ showMsg("Code: 3 to 20 letters or numbers.","err",$("#fcMsg")); return; }
+  if(!(pct>=1&&pct<=100)){ showMsg("% off: 1 to 100.","err",$("#fcMsg")); return; }
+  const {error}=await sb.from("fee_codes").insert({code,pct,grp:$("#fcGrp").value,until:u?new Date(u+"T23:59:59").toISOString():null,max_uses:mx,note:$("#fcNote").value.trim()||null});
+  if(error){ showMsg(/duplicate/.test(error.message||"")?"This code already exists.":niceError(error),"err",$("#fcMsg")); return; }
+  showMsg("Added. Send the code to the seller; they type it when paying.","ok",$("#fcMsg")); ["#fcCode","#fcPct","#fcUntil","#fcMax","#fcNote"].forEach(i=>$(i).value=""); loadFeeCodes();
+};
+feeGrpSelect($("#fcGrp"), true);
+
 /* ---------- Wanted ads from High End ---------- */
 (function(){
-  const g=$("#hwGrp"); [["watch","Watches"],["bag","The Boutique"],["moto","Motorcycles"],["car","Cars"],["boat","Yachts & boats"],["equine","Equine"],["art","Modern & art"],["estate","Real estate"],["other","Other"]].forEach(([v,t])=>g.add(new Option(t,v)));
+  const g=$("#hwGrp"); [["watch","Watches"],["bag","The Boutique"],["moto","Motorcycles"],["car","Cars"],["boat","Marine"],["equine","Equine"],["art","Modern & art"],["estate","Real estate"],["other","Other"]].forEach(([v,t])=>g.add(new Option(t,v)));
   const m=$("#hwMarket"); MARKETS.forEach(x=>m.add(new Option(x.name,x.id)));
 })();
 $("#hwPost").onclick=async()=>{
@@ -869,7 +1067,7 @@ $("#hwPost").onclick=async()=>{
 /* ---------- Wanted requests ---------- */
 let wantedAll=[];
 async function loadWanted(){
-  const {data,error}=await sb.from("requests").select("id,created_at,status,market,grp,title,details,budget,budget_unit,name,kind,link,source,quote,quoted_at").neq("status","rejected").order("created_at",{ascending:false}).limit(500);
+  const {data,error}=await sb.from("requests").select("id,created_at,status,market,grp,title,details,budget,budget_unit,name,kind,link,source,quote,quoted_at,photo").neq("status","rejected").order("created_at",{ascending:false}).limit(500);
   if (error){ showMsg(/requests/.test(error.message||"") ? "Run update11.sql in Supabase to turn on Wanted." : niceError(error),"err",$("#wqMsg")); return; }
   wantedAll=data||[]; await adminPhones("request", wantedAll, r=>r.id, (r,ph)=>{ r.phone=ph; }); renderWanted();
 }
@@ -886,9 +1084,10 @@ function renderWanted(){
     pill.textContent = imp ? ({pending:"🌍 Needs a price",quoted:"🌍 Price sent",closed:"🌍 Closed"}[r.status]||r.status) : ({pending:"Waiting",live:"Showing",closed:"Closed"}[r.status]||r.status); b.appendChild(pill);
     const sp=document.createElement("span");
     sp.textContent = imp
-      ? `Order from abroad · from ${r.source||"?"} · ${marketName(r.market)} · ${r.name||""} ${r.phone} · ${fmtDate(Date.parse(r.created_at))}`+(r.details?"\n"+r.details:"")+(r.quote?"\nPrice sent: "+r.quote:"")
+      ? `Order from abroad${r.source?" · from "+r.source:""} · ${marketName(r.market)} · ${r.name||""} ${r.phone} · ${fmtDate(Date.parse(r.created_at))}`+(r.details?"\n"+r.details:"")+(r.quote?"\nPrice sent: "+r.quote:"")
       : `${GROUP_NAMES[r.grp]||r.grp} · ${marketName(r.market)} · ${r.budget?fmt(r.budget)+" "+(r.budget_unit||""):"no budget"} · ${r.name||""} ${r.phone} · ${fmtDate(Date.parse(r.created_at))}`+(r.details?"\n"+r.details:"");
     sp.style.whiteSpace="pre-line"; x.append(b,sp);
+    if (r.photo && /^data:image\/jpeg;base64,/.test(r.photo)){ const im=document.createElement("img"); im.src=r.photo; im.alt=""; im.style.cssText="display:block;max-width:220px;max-height:220px;border-radius:10px;margin:6px 0;cursor:zoom-in"; im.onclick=()=>{ const w=window.open(); if(w) w.document.write('<img src="'+r.photo+'" style="max-width:100%">'); }; x.appendChild(im); }
     if (imp && r.link && /^https?:\/\//.test(r.link)){ const a=document.createElement("a"); a.href=r.link; a.target="_blank"; a.rel="noopener noreferrer"; a.textContent="Open product link"; a.style.display="block"; x.appendChild(a); }
     const tools=document.createElement("div"); tools.className="admin"; tools.style.border="0"; tools.style.margin="0"; tools.style.padding="0";
     const set=st=>async()=>{ const {error}=await sb.from("requests").update({status:st}).eq("id",r.id); if(error) throw error; r.status=st; if (st==="rejected") wantedAll=wantedAll.filter(z=>z!==r); renderWanted(); };
