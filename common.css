@@ -688,3 +688,13 @@ body.ladies .ann b{color:#5e2a20}
 .packs [data-pack].on{outline:2px solid var(--gold,#b8913a);background:rgba(184,145,58,.08)}
 footer .socials{display:flex;gap:16px;justify-content:center;margin:10px 0}
 footer .socials a{color:inherit;text-decoration:underline;text-underline-offset:3px}
+/* schools, rentals, tours & safaris */
+.svcbar{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 14px}
+.svcbtn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line,#e5e0d4);background:#fff;border-radius:999px;padding:8px 14px;font:inherit;font-size:14px;cursor:pointer;color:inherit}
+.svcbtn small{background:#1d1b18;color:#f7f3e8;border-radius:999px;padding:1px 7px;font-size:12px}
+.svcbtn.join{border-style:dashed;background:transparent}
+.svclist .svcitems{display:grid;gap:12px;margin:10px 0;max-height:60vh;overflow:auto}
+.svc{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line,#e5e0d4);border-radius:14px;padding:10px;background:#fff}
+.svc img{width:88px;height:88px;object-fit:cover;border-radius:10px;flex:none}
+.svct{flex:1;min-width:0}.svct b{display:block}.svct small{color:#77736b}.svct p{margin:6px 0;font-size:14px}
+.svct .row{display:flex;gap:6px;flex-wrap:wrap}

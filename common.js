@@ -5,7 +5,7 @@ const DISCLAIMER = "High End Communities only lists items and is not responsible
 const PHOTO_MAX_EDGE = 480;      // longest side in pixels (very low resolution)
 const PHOTO_MAX_BYTES = 35000;   // target size per photo (~35 KB)
 const MAX_PHOTOS = 4;
-const SMALL_TYPES = ["gear","acc","carpart","boatpart","equinepart"];   // small items & spare parts: 2 photos, up to 20 per seller
+const SMALL_TYPES = ["gear","acc","carpart","boatpart","equinepart","dunepart"];   // small items & spare parts: 2 photos, up to 20 per seller
 const BULK_TYPES = ["watch", "bag", ...SMALL_TYPES];                          // up to 20 listings per seller
 function maxPhotos(t){ return SMALL_TYPES.includes(t || type) ? 3 : MAX_PHOTOS; }
 function photoRuleText(){ return SMALL_TYPES.includes(type)
@@ -26,6 +26,8 @@ const ACC_RANGES = {
 const WATCH_RANGE = [4000, 2000000];
 const CAR_RANGE = [300000, 50000000];
 const HORSE_RANGE = [20000, 20000000];
+const DUNE_RANGES = { "Dune buggy / UTV":[150000,15000000], "ATV / quad":[50000,3000000], "Sand / dirt bike":[50000,3000000], "Sand rail":[200000,10000000], "Other":[30000,15000000] };
+const DUNEPART_RANGES = { "Helmet & goggles":[500,80000], "Riding gear":[300,80000], "Sand tires & wheels":[1000,200000], "Whip flag & lights":[200,50000], "Recovery gear":[300,100000], "GPS & radio":[500,150000], "Parts":[100,500000], "Other":[100,500000] };
 const EQUINE_RANGES = { "Saddle":[2000,500000], "Bridle & tack":[300,100000], "Rugs & blankets":[300,50000], "Grooming":[100,30000],
   "Riding wear & helmets":[300,100000], "Stable & yard equipment":[500,500000], "Horse trailer / box":[30000,3000000], "Other":[100,500000] };
 const CARPART_RANGES = { "Wheels & tyres":[1000,500000], "Body parts":[500,300000], "Engine & mechanical":[500,1000000], "Lights":[300,150000],
@@ -319,6 +321,31 @@ const SCHEMAS = {
     {k:"price", l:"Price", req:1, type:"price", units:["EGP","USD"]},
     {k:"phone", l:"Phone number", req:1, type:"phone"}
   ],
+  dune: [
+    {k:"category", l:"Type", req:1, type:"select", opts:Object.keys(DUNE_RANGES), def:"Dune buggy / UTV"},
+    {k:"brand", l:"Brand", req:1, ph:"e.g. Polaris, Can-Am, Yamaha, Honda, KTM, CFMoto, Segway"},
+    {k:"model", l:"Model", req:1, ph:"e.g. RZR Pro R, Maverick X3, YFZ450R"},
+    {k:"year", l:"Model year", type:"number", min:1980, max:thisYear+1, ph:"e.g. 2022"},
+    {k:"cc", l:"Engine (cc)", type:"number", min:50, max:3000, ph:"e.g. 999"},
+    {k:"hours", l:"Engine hours", type:"number", min:0, max:100000, ph:"e.g. 120"},
+    {k:"seats", l:"Seats", type:"select", opts:["1","2","4","6"], def:"2"},
+    {k:"papers", l:"Licence / papers", type:"select", opts:["Licensed","Customs cleared, not licensed","No papers"], def:"Licensed"},
+    {k:"addons", l:"Add-ons", ph:"e.g. roof, winch, sand tires, LED bar, GPS"},
+    {k:"condition", l:"Condition", req:1, type:"select", opts:["New","Used"], def:"Used"},
+    {k:"price", l:"Price", req:1, type:"price", units:["EGP","USD"]},
+    {k:"phone", l:"Phone number", req:1, type:"phone"}
+  ],
+  dunepart: [
+    {k:"category", l:"Item type", req:1, type:"select", opts:Object.keys(DUNEPART_RANGES), def:"Helmet & goggles"},
+    {k:"name", l:"Item name", req:1, ph:"e.g. Paddle sand tires 30x11-14"},
+    {k:"brand", l:"Brand", req:1, ph:"e.g. Fox, Maxxis, Sandcraft"},
+    {k:"compat", l:"Fits / compatible with", ph:"e.g. Polaris RZR, Can-Am X3"},
+    {k:"size", l:"Size", ph:"e.g. L, 30x11-14"},
+    {k:"stock", l:"Quantity in stock", type:"number", min:1, max:9999, ph:"leave empty if you have 1", hint:"For oils, filters, parts you have several of"},
+    {k:"condition", l:"Condition", req:1, type:"select", opts:["New","Used"], def:"Used"},
+    {k:"price", l:"Price", req:1, type:"price", units:["EGP","USD"]},
+    {k:"phone", l:"Phone number", req:1, type:"phone"}
+  ],
   equinepart: [
     {k:"category", l:"Item type", req:1, type:"select", opts:Object.keys(EQUINE_RANGES), def:"Saddle"},
     {k:"name", l:"Item name", req:1, ph:"e.g. Dressage saddle 17.5\""},
@@ -331,26 +358,27 @@ const SCHEMAS = {
     {k:"phone", l:"Phone number", req:1, type:"phone"}
   ]
 };
-const LABELS = {bike:"Motorcycle", gear:"Safety gear", acc:"Moto accessory", watch:"Watch", car:"Car", carpart:"Car part / accessory", equine:"Horse", equinepart:"Equine accessory", boatpart:"Marine part / accessory", bag:"Boutique item", boat:"Marine", art:"Modern & art", estate:"Real estate"};
-const ICONS = {bag:"👜", bike:"🏍️", gear:"🪖", acc:"🔧", watch:"⌚", car:"🚗", carpart:"🔩", equinepart:"🏇", boatpart:"⚓", equine:"🐎", boat:"🛥️", art:"🎨", estate:"🏠"};
-const GROUP = {bag:"bag", bike:"moto", gear:"moto", acc:"moto", watch:"watch", car:"car", carpart:"car", equinepart:"equine", boatpart:"boat", equine:"equine", boat:"boat", art:"art", estate:"estate"};
-const RANGES = {bag:BAG_RANGES, bike:BIKE_RANGE, gear:GEAR_RANGES, acc:ACC_RANGES, watch:WATCH_RANGE, car:CAR_RANGE, carpart:CARPART_RANGES, equine:HORSE_RANGE, equinepart:EQUINE_RANGES, boatpart:BOATPART_RANGES, boat:BOAT_RANGES, art:ART_RANGES, estate:ESTATE_RANGES};
+const LABELS = {bike:"Motorcycle", gear:"Safety gear", acc:"Moto accessory", watch:"Watch", car:"Car", carpart:"Car part / accessory", equine:"Horse", equinepart:"Equine accessory", boatpart:"Marine part / accessory", bag:"Boutique item", boat:"Marine", art:"Modern & art", estate:"Real estate", dune:"Buggy / ATV / sand bike", dunepart:"Desert gear & parts"};
+const ICONS = {bag:"👜", bike:"🏍️", gear:"🪖", acc:"🔧", watch:"⌚", car:"🚗", carpart:"🔩", equinepart:"🏇", boatpart:"⚓", equine:"🐎", boat:"🛥️", art:"🎨", estate:"🏠", dune:"🏜️", dunepart:"🧭"};
+const GROUP = {bag:"bag", bike:"moto", gear:"moto", acc:"moto", watch:"watch", car:"car", carpart:"car", equinepart:"equine", boatpart:"boat", equine:"equine", boat:"boat", art:"art", estate:"estate", dune:"desert", dunepart:"desert"};
+const RANGES = {bag:BAG_RANGES, bike:BIKE_RANGE, gear:GEAR_RANGES, acc:ACC_RANGES, watch:WATCH_RANGE, car:CAR_RANGE, carpart:CARPART_RANGES, equine:HORSE_RANGE, equinepart:EQUINE_RANGES, boatpart:BOATPART_RANGES, boat:BOAT_RANGES, art:ART_RANGES, estate:ESTATE_RANGES, dune:DUNE_RANGES, dunepart:DUNEPART_RANGES};
 const SUBTYPES = {
   moto:  [["bike","🏍️","Motorcycle"],["gear","🪖","Safety gear"],["acc","🔧","Accessory"]],
   car:   [["car","🚗","Car"],["carpart","🔩","Parts & accessories"]],
   boat:  [["boat","🛥️","Boats, yachts & jet skis"],["boatpart","⚓","Parts & accessories"]],
-  equine:[["equine","🐎","Horse"],["equinepart","🏇","Saddles, tack & accessories"]]
+  equine:[["equine","🐎","Horse"],["equinepart","🏇","Saddles, tack & accessories"]],
+  desert:[["dune","🏜️","Buggies, ATVs & sand bikes"],["dunepart","🧭","Gear & parts"]]
 };
 const SECTION_NAMES = {bike:"Motorcycles", gear:"Safety gear & helmets", acc:"Motorcycle accessories & parts", watch:"Watches",
   car:"Cars", carpart:"Car parts & accessories", boat:"Boats, yachts & jet skis", boatpart:"Marine parts & accessories",
-  equine:"Horses", equinepart:"Equine accessories", art:"Modern & art", estate:"Real estate", bag:"The Boutique", "4x4":"4x4 & off-road"};
+  equine:"Horses", equinepart:"Equine accessories", art:"Modern & art", estate:"Real estate", bag:"The Boutique", "4x4":"4x4 & off-road", dune:"Buggies, ATVs & sand bikes", dunepart:"Desert gear & parts"};
 // 4x4 is a view of the cars, not its own type: the seller's "Drive" answer, or 4x4 words in the ad
 function is4x4(L){ const f=L.f||{}; if (L.type!=="car") return false;
   if (/4x4|awd/i.test(f.drive||"")) return true;
   return /\b(4x4|4wd|awd|off[- ]?road|g[- ]?class|g ?63|wrangler|defender|land cruiser|prado|patrol|hilux|raptor|bronco|4matic|xdrive|quattro)\b/i.test([f.model,f.brand,f.addons].join(" ")); }
 const GROUP_NAMES = {moto:"High End Motorcycles Community", car:"High End Cars Community", boat:"High End Marine Community", equine:"EQUINE HAVEN Community",
-  watch:"High End Watches", art:"Modern & art", estate:"Real estate", bag:"The Boutique"};
-const GROUP_ORDER=["moto","watch","car","boat","equine","art","estate","bag"];
+  watch:"High End Watches", art:"Modern & art", estate:"Real estate", bag:"The Boutique", desert:"High End Dune Riders"};
+const GROUP_ORDER=["moto","watch","car","boat","desert","equine","art","estate","bag"];
 const TYPE_ORDER = GROUP_ORDER.flatMap(g => SUBTYPES[g] ? SUBTYPES[g].map(x=>x[0]) : Object.keys(GROUP).filter(t=>GROUP[t]===g));
 function bySection(items){ return TYPE_ORDER.map(t=>[t, items.filter(x=>x.L.type===t)]).filter(([,xs])=>xs.length); }
 /* ---------- announcements the admin posts to a category (or to everyone) ---------- */
@@ -558,7 +586,7 @@ function unitStr(f, k, v){
 
 let CAT_PICKED = false;      // true once the person taps a category themselves
 function initCategoryPicker(){
-  const lastSub = {moto:"bike", car:"car", boat:"boat", equine:"equine"};
+  const lastSub = {moto:"bike", car:"car", boat:"boat", equine:"equine", desert:"dune"};
   const box = $("#types");
   function drawSubs(group){
     const subs = SUBTYPES[group];
@@ -781,7 +809,7 @@ function shareText(L,id){
   return `${icon} *${MARKET_NAME}*${isFeatured(L)?" ⭐":""}\n\n${listingText(L)}` + (L.discount ? `\n🏷️ *${L.discount}% off* — get your discount code on the site` : "") + (INCLUDE_LINK ? `\n\n📸 Photos & details: ${linkFor(id)}` : "") + `\n\n_⚠️ ${DISCLAIMER}_`;
 }
 function catalogueText(items){
-  const groups = {bike:"🏍️ *Motorcycles*", gear:"🪖 *Safety gear*", acc:"🔧 *Moto accessories*", watch:"⌚ *Watches*", car:"🚗 *Cars*", carpart:"🔩 *Car parts & accessories*", bag:"👜 *The Boutique*", equinepart:"🏇 *Equine accessories*", boatpart:"⚓ *Marine parts & accessories*", equine:"🐎 *Equine*", boat:"🛥️ *Marine: boats, yachts & jet skis*", art:"🎨 *Modern & art*", estate:"🏠 *Real estate*"};
+  const groups = {bike:"🏍️ *Motorcycles*", gear:"🪖 *Safety gear*", acc:"🔧 *Moto accessories*", watch:"⌚ *Watches*", car:"🚗 *Cars*", carpart:"🔩 *Car parts & accessories*", bag:"👜 *The Boutique*", equinepart:"🏇 *Equine accessories*", boatpart:"⚓ *Marine parts & accessories*", dune:"🏜️ *Buggies, ATVs & sand bikes*", dunepart:"🧭 *Desert gear & parts*", equine:"🐎 *Equine*", boat:"🛥️ *Marine: boats, yachts & jet skis*", art:"🎨 *Modern & art*", estate:"🏠 *Real estate*"};
   let t = `📒 *${MARKET_NAME} — ${CAT_TITLE ? CAT_TITLE+" catalogue" : "Catalogue"}*\n`;
   let n = 0;
   for (const [g, all] of bySection(items)){
@@ -1069,6 +1097,8 @@ const KEYWORDS = {
        "شكمان","فلتر","زيت","شمع","منظف","بطارية","جنزير"],
   boat:["yacht","boat","jet ski","jetski","sea-doo","seadoo","azimut","ferretti","sunseeker","princess","riva","sailboat","speedboat","marina","يخت","مركب","لانش"],
   equine:["horse","mare","stallion","gelding","filly","colt","arabian","حصان","فرس","مهر"],
+  dune:["buggy","dune buggy","utv","atv","quad","sand rail","sand bike","rzr","maverick","can-am","polaris","yfz","raptor 700","banshee","بيتش باجي","باجي","كواد","بيتش","رملي"],
+  dunepart:["sand tires","paddle tires","whip flag","sand flag","recovery boards","goggles","tow strap","كاوتش رملي"],
   equinepart:["saddle","bridle","girth","stirrup","horse rug","numnah","saddle pad","riding boots","riding helmet","horse trailer","horse box","سرج","لجام","ركاب"],
   carpart:["tyre","tyres","tire","tires","rim","rims","wheels","bumper","headlight","tail light","spare part","spare parts","car part","brake","exhaust system","قطع غيار","كاوتش","جنط","كشاف"],
   boatpart:["outboard","propeller","fishfinder","fish finder","chartplotter","life jacket","anchor","boat trailer","marine","bimini","wakeboard","water ski","موتور بحري","رفاص"],
@@ -1092,7 +1122,7 @@ function parseDump(raw, forced){
   // 2) keyword score — an item for a vehicle mentions the vehicle, so item words weigh more than brand words
   if (forced && SCHEMAS[forced]) out.type = forced;
   if (!out.type){
-    const PART = ["acc","gear","carpart","boatpart","equinepart"], VEH = ["bike","car","boat","equine"];
+    const PART = ["acc","gear","carpart","boatpart","equinepart","dunepart"], VEH = ["bike","car","boat","equine","dune"];
     const sc = {};
     const has = w => new RegExp("(^|[^\\p{L}])"+w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"($|[^\\p{L}])","iu").test(low);
     for (const [k,words] of Object.entries(KEYWORDS)){
@@ -1448,9 +1478,9 @@ function openMembership(prefill){
 }
 /* ===================== Extra listings: every section can have a free limit, then a fee =====================
    The admin sets free listings + fee per section, a sale (% off for a period), discount codes and packs. */
-const FEE_GROUPS = {vehicle:"Motorcycles & cars", moto:"Motorcycle gear & accessories", car:"Car parts & accessories", watch:"Watches",
+const FEE_GROUPS = {vehicle:"Motorcycles & cars", moto:"Motorcycle gear & accessories", car:"Car parts & accessories", watch:"Watches", desert:"Dune Riders (desert)",
   boat:"Marine", equine:"Horses & equine", art:"Modern & art", estate:"Real estate", bag:"Ladies boutique"};
-const FEE_ICON = {vehicle:"🏍️", moto:"🪖", car:"🔧", watch:"⌚", boat:"🛥️", equine:"🐎", art:"🖼️", estate:"🏠", bag:"👜"};
+const FEE_ICON = {desert:"🏜️", vehicle:"🏍️", moto:"🪖", car:"🔧", watch:"⌚", boat:"🛥️", equine:"🐎", art:"🖼️", estate:"🏠", bag:"👜"};
 async function listingQuota(phone, type){ try{ const {data,error}=await sb.rpc("listing_quota",{p_phone:phone, p_type:type}); return error?null:data; }catch(e){ return null; } }
 function feeNeeded(q){ return !!(q && q.pay_enabled && !(q.member && q.grp==="vehicle") && q.free!=null && Number(q.fee)>0 && q.used>=q.free && !(q.credits>0)); }
 function feeAfter(fee, pct){ return Math.round(Number(fee||0)*(100-Number(pct||0))/100); }

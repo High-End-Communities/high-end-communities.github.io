@@ -18,17 +18,17 @@
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=f4eb5f92">
+<link rel="stylesheet" href="common.css?v=2344da5e">
 </head>
 <body>
-<script src="i18n.js?v=3d170bf9"></script>
+<script src="i18n.js?v=868a2598"></script>
 <header class="mast">
   <div class="checker"></div>
   <button type="button" class="langbtn" id="langBtn" lang="ar">العربية</button>
   <div class="mast-in">
     <a class="mast-logo" href="./"><img id="mainLogo" alt="High End Communities"></a>
     <p class="mast-line">Motorcycles, watches and cars, sold owner to owner.</p>
-    <p class="mast-sub">Also marine &amp; jet skis, horses, art and real estate. New and used.</p>
+    <p class="mast-sub">Also marine &amp; jet skis, desert buggies &amp; ATVs, horses, art and real estate. New and used.</p>
     <div class="brands" id="brands"></div>
   </div>
 </header>
@@ -57,7 +57,7 @@
       <button type="button" data-tab="codes">🏷️ Codes <span id="nCodes"></span></button>
       <button type="button" data-tab="sponsors">Sponsors</button>
       <button type="button" data-tab="limits">🏍️ Limits</button>
-      <button type="button" data-tab="inspect">🔧 Inspection</button>
+      <button type="button" data-tab="inspect">🔧 Partners <span id="nSvc"></span></button>
       <button type="button" data-tab="wanted">🔎 Wanted <span id="nWanted"></span></button>
       <button type="button" data-tab="announce">📢 Announce <span id="nAnn"></span></button>
       <button type="button" data-tab="share">📤 Share <span id="nShare"></span></button>
@@ -243,6 +243,12 @@
     </div>
     <div data-pane="inspect" hidden>
       <div class="card" style="margin-bottom:12px">
+        <h3 style="margin:0 0 6px">🎓 Schools, rentals, tours &amp; safaris</h3>
+        <div class="hint" style="margin-bottom:8px">Businesses send these from the site. Approve to show them in their section; Hide takes one off the site.</div>
+        <div id="svList"></div>
+        <div class="msg" id="svMsg"></div>
+      </div>
+      <div class="card" style="margin-bottom:12px">
         <h3 style="margin:0 0 6px">Inspection partners</h3>
         <div class="hint" style="margin-bottom:10px">Workshops do the technical check for motorcycles, cars and boats. Experts authenticate watches, bags, art, horses and property. Buyers see the ones that match the item's category and country.</div>
         <input type="hidden" id="exId">
@@ -304,6 +310,7 @@
         <button type="button" data-m="moto" class="on"><img class="lg" alt="" data-brand="moto">Motorcycles</button>
         <button type="button" data-m="watch"><img class="lg" alt="" data-brand="watch">Watches</button>
         <button type="button" data-m="car"><img class="lg" alt="" data-brand="car">Cars</button>
+        <button type="button" data-m="desert"><span class="ic">🏜️</span>Dune Riders</button>
         <button type="button" data-m="equine"><img class="lg" alt="" data-brand="equine">Equine</button>
         <button type="button" data-m="boat"><img class="lg" alt="" data-brand="boat">Marine</button>
         <button type="button" data-m="art"><span class="ic">🎨</span>Modern & art</button>
@@ -467,7 +474,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="config.js"></script>
-<script src="common.js?v=f4eb5f92"></script>
+<script src="common.js?v=2344da5e"></script>
 
 <script>
 initHeader();
@@ -512,7 +519,7 @@ $("#logout").onclick = async ()=>{ await sb.auth.signOut(); location.reload(); }
 let ME = {root:false, full:true, perms:[]};
 const TAB_PERM = {pending:"listings", live:"listings", sold:"listings", add:"listings", codes:"codes", sponsors:"sponsors", limits:"settings",
   inspect:"inspect", wanted:"wanted", announce:"announce", share:"share", money:"money", stats:"stats"};
-const PERM_SECTIONS = [["moto","🏍️ Motorcycles"],["watch","⌚ Watches"],["car","🚗 Cars"],["boat","🛥️ Marine"],["equine","🐎 Equine"],["art","🎨 Art"],["estate","🏠 Real estate"],["bag","👜 The Boutique (ladies)"]];
+const PERM_SECTIONS = [["moto","🏍️ Motorcycles"],["watch","⌚ Watches"],["car","🚗 Cars"],["boat","🛥️ Marine"],["desert","🏜️ Dune Riders"],["equine","🐎 Equine"],["art","🎨 Art"],["estate","🏠 Real estate"],["bag","👜 The Boutique (ladies)"]];
 const PERM_FEATURES = [["listings","Listings: review, edit, add"],["share","Share to WhatsApp"],["announce","Announcements"],["wanted","Wanted requests"],["codes","Discount codes"],
   ["sponsors","Sponsors & ads"],["inspect","Inspection partners"],["confirm","Confirm payments (no totals)"],["stats","Stats"]];   // money, fees, totals and site settings: full admins only
 function can(p){ if (p==="money"||p==="settings") return !!ME.full; return ME.full || ME.perms.includes(p); }
@@ -525,6 +532,7 @@ function applyPerms(){
   document.querySelectorAll("[data-pane=money] .fullonly").forEach(el=>{ if(!can("money")) el.hidden=true; });
   $("#mnStaffHint").hidden=can("money");
   if (!can("money")){ const k=$("#mpKind"); [...k.options].forEach(o=>{ if(o.value!=="membership") o.remove(); }); }
+  if (can("inspect")) loadSvcAdmin();
   if (!ME.full){ $("#who").textContent += " · limited: "+PERM_SECTIONS.filter(([k])=>can(k)).map(([,l])=>l).join(", "); }
   if (first) tab(first);
 }
@@ -535,7 +543,7 @@ function tab(t){
   document.querySelectorAll("[data-pane]").forEach(p=>p.hidden = p.dataset.pane!==t);
   if (t==="stats") loadStats();
   if (t==="codes") loadCodes();
-  if (t==="inspect") loadExpertsAdmin();
+  if (t==="inspect"){ loadExpertsAdmin(); loadSvcAdmin(); }
   if (t==="wanted") loadWanted();
   if (t==="announce") loadAnn();
   if (t==="share") loadShare();
@@ -545,7 +553,7 @@ document.querySelectorAll("#adminView .tabs button").forEach(b=>b.onclick=()=>ta
 
 /* ---------- send new listings to the WhatsApp groups ---------- */
 const WA_GROUP = {moto:"High End Motorcycles Community", car:"High End Cars Community", watch:"High End Watches", boat:"High End Marine Community",
-  equine:"EQUINE HAVEN Community", art:"High End General Talks", estate:"🏠 Real estate group", bag:"The Boutique group"};
+  desert:"High End Dune Riders", equine:"EQUINE HAVEN Community", art:"High End General Talks", estate:"🏠 Real estate group", bag:"The Boutique group"};
 let SHARED = {};                 // listing id -> shared_at
 function noPhone(L){ const f={...L.f}; delete f.phone; return {...L, f}; }
 async function loadShare(){
@@ -589,7 +597,7 @@ function renderShare(){
     box.appendChild(c);
   });
 }
-const GROUP_ICON_A={moto:"🏍️",car:"🚗",watch:"⌚",bag:"👜",boat:"🛥️",equine:"🐎",art:"🎨",estate:"🏠"};
+const GROUP_ICON_A={moto:"🏍️",car:"🚗",watch:"⌚",bag:"👜",boat:"🛥️",desert:"🏜️",equine:"🐎",art:"🎨",estate:"🏠"};
 async function markShared(ids){
   const now=new Date().toISOString();
   const {error}=await sb.from("listings").update({shared_at:now}).in("id",ids);
@@ -617,7 +625,7 @@ async function flyerFile(it){
 function instaCaption(it){
   const L=it.L, g=GROUP[L.type];
   const tags={moto:"#motorcycles #bikersofegypt #harleydavidson #bmwmotorrad #ducati",car:"#cars #carsforsale #luxurycars #4x4",watch:"#watches #rolex #omega #watchcollector",
-    boat:"#yachts #boats #jetski #marine",equine:"#horses #equestrian #arabianhorse",bag:"#luxurybags #hermes #chanel #preloved",art:"#art #collectibles",estate:"#realestate #luxuryhomes"}[g]||"";
+    boat:"#yachts #boats #jetski #marine",equine:"#horses #equestrian #arabianhorse",desert:"#dunebuggy #atv #sandbike #desert #offroad #utv",bag:"#luxurybags #hermes #chanel #preloved",art:"#art #collectibles",estate:"#realestate #luxuryhomes"}[g]||"";
   return `${ICONS[L.type]||""} ${titleOf(L)}\n💰 ${priceStr(L.f)}\n\n${rows(L).slice(0,6).map(([k,v])=>k+": "+v).join("\n")}\n\n📸 Photos, details & contact: link in bio — or search "${titleOf(L)}" on ${baseUrl().replace(/^https?:\/\//,"")}\n\n#HighEndCommunities #forsale ${tags}`;
 }
 /* ---------- Social posts: an Instagram portrait (1080×1350) and a Facebook landscape (1200×630), each in its own look ---------- */
@@ -1024,10 +1032,34 @@ async function loadAlerts(){
 }
 $("#mnAlertSeen").onclick=async()=>{ const {error}=await sb.from("money_alerts").update({seen:true}).eq("seen",false); if(error){ toast(niceError(error)); return; } loadAlerts(); };
 
+/* ---------- Schools, rentals, tours & safaris (applications from the site) ---------- */
+const SVC_KINDS_A = {school:"🎓 Riding school", rental:"🔑 Rental", tour:"🧭 Guided tours", safari:"🏜️ Desert safari", sea:"🌊 Sea trips & safari"};
+async function loadSvcAdmin(){
+  const {data,error}=await sb.from("providers").select("*").neq("status","rejected").order("created_at",{ascending:false}).limit(500);
+  const box=$("#svList"); if (!box) return;
+  if (error){ box.innerHTML=""; showMsg(/providers/.test(error.message||"")?"Run update21 in Supabase first.":niceError(error),"err",$("#svMsg")); return; }
+  const list=(data||[]).sort((a,b)=>(a.status==="pending"?0:1)-(b.status==="pending"?0:1));
+  const pend=list.filter(x=>x.status==="pending").length; $("#nSvc").textContent=pend?`(${pend})`:"";
+  box.innerHTML=list.length?"":'<div class="muted" style="font-size:14px">No applications yet.</div>';
+  list.forEach(p=>{ const r=document.createElement("div"); r.className="sp-row";
+    const x=document.createElement("div"); x.className="x";
+    if (p.photo && /^data:image\/jpeg;base64,/.test(p.photo)){ const im=document.createElement("img"); im.src=p.photo; im.alt=""; im.style.cssText="width:72px;height:72px;object-fit:cover;border-radius:10px;float:left;margin-right:10px"; x.appendChild(im); }
+    const st={pending:"Waiting",live:"Showing",hidden:"Hidden"}[p.status]||p.status;
+    x.insertAdjacentHTML("beforeend",`<b dir="auto">${esc(p.name)} <span class="pill${p.status==="live"?"":" off"}">${st}</span></b><span style="white-space:pre-line">${SVC_KINDS_A[p.kind]||p.kind} · ${(p.groups||[]).map(g=>GROUP_NAMES[g]||g).join(", ")} · ${esc(marketName(p.market))}${p.city?" · "+esc(p.city):""}${p.price_from?" · from "+esc(p.price_from):""}
+${esc(p.phone)} · ${fmtDate(Date.parse(p.created_at))}${p.about?"\n"+esc(p.about):""}</span>${p.link&&/^https:\/\//.test(p.link)?`<a href="${esc(p.link)}" target="_blank" rel="noopener noreferrer" style="display:block">Open their page</a>`:""}`);
+    const tools=document.createElement("div"); tools.className="admin"; tools.style.cssText="border:0;margin:0;padding:0";
+    const set=stt=>async()=>{ const {error}=await sb.from("providers").update({status:stt}).eq("id",p.id); if(error){ toast(niceError(error)); return; } loadSvcAdmin(); };
+    if (p.status!=="live") tools.append(btn("✅ Approve","",set("live")));
+    if (p.status==="live") tools.append(btn("Hide","",set("hidden")));
+    if (p.status==="pending") tools.append(btn("✕ Reject","",set("rejected")));
+    const wa=document.createElement("a"); wa.className="btn ghost small"; wa.target="_blank"; wa.rel="noopener"; wa.textContent="WhatsApp"; wa.href="https://wa.me/"+waNum(p.phone); tools.append(wa);
+    r.append(x,tools); box.appendChild(r); });
+}
+
 /* ---------- Free listings, fees & promotions ---------- */
-const FEE_KEYS=["watch","bag","art","estate","boat","equine","moto","car"];
+const FEE_KEYS=["watch","bag","art","estate","boat","desert","equine","moto","car"];
 let feeSt={rules:{}, packs:[]};
-function feeGrpOf(t){ return (t==="bike"||t==="car")?"vehicle":({gear:"moto",acc:"moto",carpart:"car",boatpart:"boat",equinepart:"equine"}[t]||t); }
+function feeGrpOf(t){ return (t==="bike"||t==="car")?"vehicle":({gear:"moto",acc:"moto",carpart:"car",boatpart:"boat",equinepart:"equine",dune:"desert",dunepart:"desert"}[t]||t); }
 function feeOfType(t){ const st=SITE_ST||{}, g=feeGrpOf(t); const fee = g==="vehicle" ? (st.extra_vehicle_fee??1000) : Number(((st.fee_rules||{})[g]||{}).fee||0);
   const sale = Number(st.fee_sale_pct||0)>0 && (!st.fee_sale_until || Date.parse(st.fee_sale_until)>Date.now()) ? Number(st.fee_sale_pct) : 0; return feeAfter(fee, sale); }
 function feeGrpSelect(sel, withAll){ sel.innerHTML=""; if(withAll) sel.add(new Option("All sections","all")); Object.entries(FEE_GROUPS).forEach(([k,v])=>sel.add(new Option(v,k))); }
@@ -1103,7 +1135,7 @@ feeGrpSelect($("#fcGrp"), true);
 
 /* ---------- Wanted ads from High End ---------- */
 (function(){
-  const g=$("#hwGrp"); [["watch","Watches"],["bag","The Boutique"],["moto","Motorcycles"],["car","Cars"],["boat","Marine"],["equine","Equine"],["art","Modern & art"],["estate","Real estate"],["other","Other"]].forEach(([v,t])=>g.add(new Option(t,v)));
+  const g=$("#hwGrp"); [["watch","Watches"],["bag","The Boutique"],["moto","Motorcycles"],["car","Cars"],["boat","Marine"],["desert","Dune Riders"],["equine","Equine"],["art","Modern & art"],["estate","Real estate"],["other","Other"]].forEach(([v,t])=>g.add(new Option(t,v)));
   const m=$("#hwMarket"); MARKETS.forEach(x=>m.add(new Option(x.name,x.id)));
 })();
 $("#hwPost").onclick=async()=>{
