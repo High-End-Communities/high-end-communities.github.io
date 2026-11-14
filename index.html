@@ -29,10 +29,10 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=944036b8">
+<link rel="stylesheet" href="common.css?v=cc9f3f34">
 </head>
 <body>
-<script src="i18n.js?v=1055e7e5"></script>
+<script src="i18n.js?v=2ad90ea3"></script>
 <header class="mast">
   <div class="checker"></div>
   <button type="button" class="langbtn" id="langBtn" lang="ar">العربية</button>
@@ -103,7 +103,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="config.js"></script>
-<script src="common.js?v=944036b8"></script>
+<script src="common.js?v=cc9f3f34"></script>
 
 <script>
 if (/^#l-[A-Za-z0-9-]{1,60}$/.test(location.hash)) location.replace("item.html?id="+location.hash.slice(3));   // old shared links
@@ -276,6 +276,8 @@ function render(){
   document.body.classList.toggle("value", Q.value);
   const inCat = all.filter(x=>x.L.f && SCHEMAS[x.L.type] && (FIXED || GROUP[x.L.type]!=="bag") && (GROUP[x.L.type]!=="estate" || filter==="estate") && marketOf(x.L)===MARKET && (filter==="all" || GROUP[x.L.type]===filter) && (sub==="all" || x.L.type===sub || (sub==="4x4" && is4x4(x.L))) && matchesSearch(x.L, Q));
   CAT_TITLE = sub!=="all" ? (SECTION_NAMES[sub]||"") : (filter!=="all" ? (GROUP_NAMES[filter]||"") : "");
+  { const ph = filter==="equine" ? "Search breed, name, anything…" : filter==="estate" ? "Search area, compound, anything…" : "Search brand, model, anything…";
+    const q=$("#q"); if (q && q.dataset.ph!==ph){ q.dataset.ph=ph; q.setAttribute("placeholder", ph); } }
   $("#catPdf").textContent = (CAT_TITLE ? CAT_TITLE+" PDF" : "Catalogue PDF");
   $("#catShare").textContent = "Share " + (CAT_TITLE ? CAT_TITLE.toLowerCase() : "catalogue") + " on WhatsApp";
   let live = sortListings(inCat.filter(x=>x.L.status!=="sold")), sold = inCat.filter(x=>x.L.status==="sold");

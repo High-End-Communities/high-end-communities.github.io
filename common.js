@@ -2159,10 +2159,10 @@ function openRate(opts){
       <label for="rateTxt">Your review (optional)</label><textarea id="rateTxt" maxlength="400" rows="3"></textarea>
       <label for="rateName">Your name</label><input id="rateName" maxlength="60" autocomplete="name">
       <label for="ratePhone">Your WhatsApp number</label><input id="ratePhone" type="tel" inputmode="tel">
-      <div class="hint">Not shown on the page. High End may message you to check the rating is real. Only your first name is shown.</div>
+      <div class="hint">Not shown on the page. Only your first name is shown.</div>
       <div class="actions"><button type="button" class="btn primary" id="rateGo">Send rating</button><button type="button" class="btn ghost" data-close>Close</button></div>
     </div>
-    <div id="rateDone" hidden><p>Thank you! Your rating shows after the High End team checks it.</p><div class="actions"><button type="button" class="btn primary" data-close>Done</button></div></div>
+    <div id="rateDone" hidden><p>Thank you! Your rating has been sent.</p><div class="actions"><button type="button" class="btn primary" data-close>Done</button></div></div>
     <div class="msg" id="rateMsg"></div></div>`;
   document.body.appendChild(ov);
   $("#rateH").textContent = opts.target==="seller" ? "⭐ Rate the seller" : "⭐ Rate this business";
