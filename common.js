@@ -779,6 +779,7 @@ function collect(){
     }
     if (v!=="" && v!=null) data[f.k] = v;
   }
+  const sp = $("#showPhone"); if (sp && sp.checked) data.show_phone = true;   // the seller allows their number on the flyer image the admin shares
   const tw = $("#termsWrap");
   if (!$("#terms").checked){ ok=false; tw.classList.add("bad"); } else tw.classList.remove("bad");
   if (!photos.length){ ok=false; $(".photos").classList.add("bad"); $("#photoHint").textContent = "Add at least one photo."; }
@@ -1025,8 +1026,13 @@ async function adminPhones(kind, list, idOf, put){
     const m=new Map(data.map(r=>[r.id,r.phone])); list.forEach(x=>{ const ph=m.get(idOf(x)); if(ph) put(x,ph); });
   }
 }
-function contactBarText(L){ const p=phoneOf(L); return p ? "Call / WhatsApp   "+p : "Contact the seller: "+baseUrl().replace(/^https?:\/\//,""); }
-function contactBarLink(L,id){ const p=phoneOf(L); return p ? "https://wa.me/"+waNum(p) : linkFor(id); }
+// The seller's number goes on a flyer only when the seller ticked "Show my number" AND it is the image made in the admin page.
+// PDFs, the seller's own flyer and the public site never show it.
+let FLYER_IMAGE = false;
+const ADMIN_PAGE = /admin\.html$/.test(location.pathname);
+function flyerPhone(L){ const p=phoneOf(L); return (FLYER_IMAGE && ADMIN_PAGE && L.f && L.f.show_phone && p) ? p : ""; }
+function contactBarText(L){ const p=flyerPhone(L); return p ? "Call / WhatsApp   "+p : "Contact the seller: "+baseUrl().replace(/^https?:\/\//,""); }
+function contactBarLink(L,id){ const p=flyerPhone(L); return p ? "https://wa.me/"+waNum(p) : linkFor(id); }
 function rowToItem(r){
   return { id:r.id, L:{ type:r.type, f:r.f||{}, thumb:r.thumb||null, photos:Array.isArray(r.photos)?r.photos:null,
     at:Date.parse(r.created_at)||Date.now(), status:r.status, views:r.views||0, soldAt:r.sold_at?Date.parse(r.sold_at):null, note:r.note||null,
@@ -1737,7 +1743,7 @@ async function ensureFonts(){ try{ await Promise.all([document.fonts.load('700 2
 async function exportImage(L,id){
   await ensureFonts(); if (!L.photos || !L.photos.length) L.photos = await loadPhotos({id,L});
   const k = 1080/FW; const c=document.createElement("canvas"); c.width=1080; c.height=Math.round(FH*k);
-  const ctx=c.getContext("2d"); await drawFlyer(canvasPainter(ctx,k),L,id);
+  const ctx=c.getContext("2d"); FLYER_IMAGE=true; try{ await drawFlyer(canvasPainter(ctx,k),L,id); } finally{ FLYER_IMAGE=false; }
   const blob = await new Promise(r=>c.toBlob(r,"image/jpeg",0.82));
   await saveFile(fileBase(L)+".jpg", blob, c.toDataURL("image/jpeg",0.82));
 }
@@ -2013,7 +2019,7 @@ async function exportHD(L, id, asPdf, sources){
       await saveFile(fileBase(L)+"-HD.pdf", doc.output("blob"));
     } else {
       const k = 2160/FW, c=document.createElement("canvas"); c.width=2160; c.height=Math.round(H*k);
-      await drawFlyerHD(canvasPainter(c.getContext("2d"),k), L, id, ph);
+      FLYER_IMAGE=true; try{ await drawFlyerHD(canvasPainter(c.getContext("2d"),k), L, id, ph); } finally{ FLYER_IMAGE=false; }
       const blob = await new Promise(r=>c.toBlob(r,"image/jpeg",0.9));
       await saveFile(fileBase(L)+"-HD.jpg", blob);
     }
