@@ -114,7 +114,10 @@ startBannerRotation();
 loadSponsors().then(startBannerRotation);
 countPage("post");
 $("#submitBtn").textContent = "Publish my listing";
-function hashCategory(){ const m=(location.hash||"").slice(1); const b=m && document.querySelector(`#mains button[data-m="${m}"]`); if (b) b.click(); }
+// Real estate is posted only through its own link (post.html#estate), shared in the WhatsApp groups
+function estateGate(){ const b=document.querySelector('#mains button[data-m="estate"]'); if (b) b.hidden = (location.hash||"")!=="#estate"; }
+estateGate();
+function hashCategory(){ estateGate(); const m=(location.hash||"").slice(1); const b=m && document.querySelector(`#mains button[data-m="${m}"]`); if (b) b.click(); }
 hashCategory(); window.addEventListener("hashchange", hashCategory);
 
 $("#dumpBtn").onclick = ()=>{

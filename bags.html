@@ -62,7 +62,6 @@
       <button class="chip" data-f="equine">Equine</button>
       <button class="chip" data-f="boat">Marine</button>
       <button class="chip" data-f="art">Modern & art</button>
-      <button class="chip" data-f="estate">Real estate</button>
       <button class="chip wantedchip" data-f="wanted">Wanted</button>
     </div>
   </div>
@@ -114,6 +113,8 @@ if (/^#l-[A-Za-z0-9-]{1,60}$/.test(location.hash)) location.replace("item.html?i
 const FIXED = window.FIXED_GROUP || null;     // bags.html shows one category only
 runIntro(FIXED ? "he_intro_"+FIXED : "he_intro");   // the bags page has its own intro too
 let all = [], filter = FIXED || "all", sub = "all", MARKET = getMarket();
+// Real estate is not in the main catalogue: it opens only from its own link, ?cat=estate (shared in the real estate group)
+if (!FIXED && /[?&]cat=estate\b/.test(location.search)) filter = "estate";
 function drawMarkets(){
   const box=$("#markets"); if (!box) return;
   const n = id => all.filter(x=>marketOf(x.L)===id && x.L.status==="live" && (!FIXED || GROUP[x.L.type]===FIXED)).length;
@@ -274,7 +275,7 @@ function render(){
   $("#searchbar").hidden = false; $("#pcur").textContent = mainCur();
   const Q = searchState();
   document.body.classList.toggle("value", Q.value);
-  const inCat = all.filter(x=>x.L.f && SCHEMAS[x.L.type] && (FIXED || GROUP[x.L.type]!=="bag") && marketOf(x.L)===MARKET && (filter==="all" || GROUP[x.L.type]===filter) && (sub==="all" || x.L.type===sub || (sub==="4x4" && is4x4(x.L))) && matchesSearch(x.L, Q));
+  const inCat = all.filter(x=>x.L.f && SCHEMAS[x.L.type] && (FIXED || GROUP[x.L.type]!=="bag") && (GROUP[x.L.type]!=="estate" || filter==="estate") && marketOf(x.L)===MARKET && (filter==="all" || GROUP[x.L.type]===filter) && (sub==="all" || x.L.type===sub || (sub==="4x4" && is4x4(x.L))) && matchesSearch(x.L, Q));
   CAT_TITLE = sub!=="all" ? (SECTION_NAMES[sub]||"") : (filter!=="all" ? (GROUP_NAMES[filter]||"") : "");
   $("#catPdf").textContent = (CAT_TITLE ? CAT_TITLE+" PDF" : "Catalogue PDF");
   $("#catShare").textContent = "Share " + (CAT_TITLE ? CAT_TITLE.toLowerCase() : "catalogue") + " on WhatsApp";
@@ -451,7 +452,7 @@ function openRequestForm(){
     m=document.createElement("div"); m.className="modal"; m.id="reqModal";
     m.innerHTML=`<div class="card"><h3>Post a request</h3>
       <p class="muted" style="font-size:14px">Tell sellers what you want. It shows in "Wanted" after a quick review.</p>
-      <label for="rq_grp">Category</label><select id="rq_grp">${GROUP_ORDER.map(g=>`<option value="${g}">${esc(GROUP_NAMES[g])}</option>`).join("")}</select>
+      <label for="rq_grp">Category</label><select id="rq_grp">${GROUP_ORDER.filter(g=>g!=="estate").map(g=>`<option value="${g}">${esc(GROUP_NAMES[g])}</option>`).join("")}</select>
       <label for="rq_title">What are you looking for?</label><input id="rq_title" maxlength="80" placeholder="e.g. BMW R 1250 GS 2020 or newer">
       <label for="rq_details">Description (optional)</label><textarea id="rq_details" maxlength="500" placeholder="Colour, year, condition, city…"></textarea>
       <div id="rq_photo"></div>
