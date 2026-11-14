@@ -733,3 +733,15 @@ article.item.picked{outline:3px solid #b08d57;outline-offset:-3px}
 .rate-modal .card{max-width:420px}
 .svct .rating{margin:2px 0}
 .linkbtn{border:0;background:none;padding:6px 0;color:#7d5f33;font-weight:600;cursor:pointer;text-decoration:underline}
+/* marketplace drop-down + language list */
+.mkwrap{position:relative;display:inline-flex}
+.mksel{appearance:none;-webkit-appearance:none;background:transparent;border:1px solid #cfccc4;border-radius:2px;padding:8px 34px 8px 12px;font:500 14px var(--sans);color:var(--text);cursor:pointer;min-width:170px}
+.mkwrap::after{content:"▾";position:absolute;inset-inline-end:12px;top:50%;transform:translateY(-52%);pointer-events:none;color:var(--muted);font-size:13px}
+.mksel:focus-visible{outline:2px solid var(--brass2);outline-offset:2px}
+body.ladies .mksel{border-color:#d9b9ae}
+select.langbtn{appearance:none;-webkit-appearance:none;padding-inline-end:12px}
+select.langbtn option{color:#1d1b18}
+.editbar{background:#fbf6ea;border:1px solid #e3d6b8;border-radius:4px;padding:12px 14px;margin:12px 0;font-size:14px;color:#5b4a2c}
+.editbar b{display:block;font-size:16px;margin-bottom:4px;color:#2f2114}
+.locked{opacity:.55;pointer-events:none}
+select.langbtn{width:auto;min-width:0}

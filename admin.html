@@ -18,10 +18,10 @@
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=cc9f3f34">
+<link rel="stylesheet" href="common.css?v=f937c6d7">
 </head>
 <body>
-<script src="i18n.js?v=2ad90ea3"></script>
+<script src="i18n.js?v=f0a841a8"></script>
 <header class="mast">
   <div class="checker"></div>
   <button type="button" class="langbtn" id="langBtn" lang="ar">العربية</button>
@@ -535,15 +535,28 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="config.js"></script>
-<script src="common.js?v=cc9f3f34"></script>
+<script src="common.js?v=f937c6d7"></script>
 
 <script>
 initHeader();
 let items = [], editing = null, sponsorsAll = [], spEditing = null, spImage = null;
 const REASONS = ["Missing photos","Photos not clear","Missing ownership papers","Price looks wrong","Missing details","Duplicate listing","Item already sold","Not allowed in this group"];
-const reasonMsg = (L,r,kind)=> kind==="changes"
-  ? `Hello, this is the ${MARKET_NAME} admin.\n\nAbout your listing "${titleOf(L)}": please update it before we publish it.\nWhat's needed: ${r}.\n\nReply here with the fix (or new photos) and we'll update it. Thank you!`
-  : `Hello, this is the ${MARKET_NAME} admin.\n\nYour listing "${titleOf(L)}" was not published / was removed.\nReason: ${r}.\n\nYou're welcome to post it again once it's fixed. Thank you!`;
+// message to the seller, in the language they posted in, with the link to fix it themselves using their seller code
+const REASONS_AR = {"Missing photos":"الصور ناقصة","Photos not clear":"الصور مش واضحة","Missing ownership papers":"أوراق الملكية ناقصة","Price looks wrong":"السعر شكله غلط","Missing details":"التفاصيل ناقصة","Duplicate listing":"الإعلان متكرر","Item already sold":"القطعة اتباعت خلاص","Not allowed in this group":"مش مسموح في الجروب ده"};
+const REASONS_FR = {"Missing photos":"photos manquantes","Photos not clear":"photos pas nettes","Missing ownership papers":"papiers de propriété manquants","Price looks wrong":"le prix semble incorrect","Missing details":"détails manquants","Duplicate listing":"annonce en double","Item already sold":"article déjà vendu","Not allowed in this group":"non autorisé dans ce groupe"};
+const editLink = id => baseUrl()+"/post.html#edit="+id;
+const reasonMsg = (L,r,kind,id)=>{
+  const lang = (L.f && L.f._lang) || "en", t = titleOf(L), fix = id ? editLink(id) : "";
+  if (lang==="ar") return kind==="changes"
+    ? `أهلاً، معاك أدمن ${MARKET_NAME}.\n\nبخصوص إعلانك "${t}": محتاج تعديل قبل ما ننشره.\nالمطلوب: ${REASONS_AR[r]||r}.\n\n${fix?`تقدر تعدّله بنفسك بكود البائع من هنا:\n${fix}\n\n`:""}أو ابعتلنا التعديل (أو الصور الجديدة) هنا. شكرًا!`
+    : `أهلاً، معاك أدمن ${MARKET_NAME}.\n\nإعلانك "${t}" مااتنشرش / اتشال.\nالسبب: ${REASONS_AR[r]||r}.\n\nتقدر تنشره تاني بعد ما يتصلّح. شكرًا!`;
+  if (lang==="fr") return kind==="changes"
+    ? `Bonjour, ici l'admin de ${MARKET_NAME}.\n\nAu sujet de votre annonce « ${t} » : merci de la modifier avant publication.\nÀ corriger : ${REASONS_FR[r]||r}.\n\n${fix?`Vous pouvez la modifier vous-même avec votre code vendeur ici :\n${fix}\n\n`:""}Ou envoyez-nous la correction (ou les nouvelles photos) ici. Merci !`
+    : `Bonjour, ici l'admin de ${MARKET_NAME}.\n\nVotre annonce « ${t} » n'a pas été publiée / a été retirée.\nRaison : ${REASONS_FR[r]||r}.\n\nVous pouvez la republier une fois corrigée. Merci !`;
+  return kind==="changes"
+    ? `Hello, this is the ${MARKET_NAME} admin.\n\nAbout your listing "${t}": please update it before we publish it.\nWhat's needed: ${r}.\n\n${fix?`You can edit it yourself with your seller code here:\n${fix}\n\n`:""}Or reply here with the fix (or new photos) and we'll update it. Thank you!`
+    : `Hello, this is the ${MARKET_NAME} admin.\n\nYour listing "${t}" was not published / was removed.\nReason: ${r}.\n\nYou're welcome to post it again once it's fixed. Thank you!`;
+};
 
 /* ---------- login ---------- */
 async function enter(){
@@ -1511,7 +1524,7 @@ function adminTools(item){
   const sel=document.createElement("select"); REASONS.forEach(r=>{ const o=document.createElement("option"); o.textContent=r; sel.appendChild(o); });
   const ask=document.createElement("a"); ask.className="btn ghost small"; ask.target="_blank"; ask.rel="noopener";
   const upd=()=>{ ask.textContent = L.status==="pending"?"✏️ Ask for changes":"✉️ Tell seller";
-    ask.href="https://wa.me/"+waNum(phone)+"?text="+encodeURIComponent(reasonMsg(L, sel.value, L.status==="pending"?"changes":"removed")); };
+    ask.href="https://wa.me/"+waNum(phone)+"?text="+encodeURIComponent(reasonMsg(L, sel.value, L.status==="pending"?"changes":"removed", item.id)); };
   sel.onchange=upd; upd();
   ask.addEventListener("click",()=>{ if (L.status==="pending") sb.from("listings").update({note:"Changes requested: "+sel.value}).eq("id",item.id).then(()=>{ L.note="Changes requested: "+sel.value; renderAll(); }); });
   const edit=btn("✎ Edit","",()=>startEdit(item));
@@ -1717,6 +1730,7 @@ $("#form").addEventListener("submit", async e=>{
   $("#done").classList.remove("show");
   const f = collect();
   if (!f){ showMsg("Please fix the highlighted fields.","err"); return; }
+  if (editing && editing.L.f && editing.L.f._lang) f._lang = editing.L.f._lang;   // keep the seller's language for messages
   $("#submitBtn").disabled=true; showMsg("Saving…","info");
   try{
     const pics=photos.slice(0, maxPhotos()).map(p=>p.url); f._np=pics.length;

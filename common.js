@@ -737,7 +737,7 @@ function renderThumbs(){
   });
   if (photos.length){
     const saved = photos.reduce((a,p)=>a+p.orig,0), now = photos.slice(0,online).reduce((a,p)=>a+p.bytes,0);
-    $("#photoHint").textContent = `${Math.min(photos.length,online)}/${online} photos go online (reduced from ${(saved/1048576).toFixed(1)} MB to ${Math.round(now/1024)} KB)`
+    $("#photoHint").textContent = `${Math.min(photos.length,online)}/${online} photos go online` + (saved ? ` (reduced from ${(saved/1048576).toFixed(1)} MB to ${Math.round(now/1024)} KB)` : "")
       + (photos.length>online ? ` · all ${photos.length} go in your HD flyer` : ` · add up to ${FLYER_MAX_PHOTOS} for the HD flyer`);
   } else $("#photoHint").textContent = "";
   $(".photos").classList.remove("bad");
@@ -779,7 +779,8 @@ function collect(){
     }
     if (v!=="" && v!=null) data[f.k] = v;
   }
-  const sp = $("#showPhone"); if (sp && sp.checked) data.show_phone = true;   // the seller allows their number on the flyer image the admin shares
+  const sp = $("#showPhone"); if (sp && sp.checked) data.show_phone = true;
+  data._lang = window.HE_LANG || "en";   // the language it was posted in: admin messages use it   // the seller allows their number on the flyer image the admin shares
   const tw = $("#termsWrap");
   if (!$("#terms").checked){ ok=false; tw.classList.add("bad"); } else tw.classList.remove("bad");
   if (!photos.length){ ok=false; $(".photos").classList.add("bad"); $("#photoHint").textContent = "Add at least one photo."; }
@@ -1357,7 +1358,7 @@ function flyerSponsor(opt){ return pickWeighted(sponsorsFor("flyer", opt)); }
 
 
 /* ===================== Seller tools & discount codes (catalogue and listing pages) ===================== */
-const SELLER_MODALS = "<div class=\"modal\" id=\"soldModal\" hidden>\n  <div class=\"card\">\n    <h3>Seller tools</h3>\n    <p class=\"muted\" id=\"soldTitle\" style=\"font-size:14px\"></p>\n    <label for=\"soldCode\">Your 6-digit seller code</label>\n    <input id=\"soldCode\" inputmode=\"numeric\" maxlength=\"12\" placeholder=\"e.g. 482913\">\n    <div class=\"hint\">You got it when you posted. Lost it? Ask the admin on WhatsApp.</div>\n    <div id=\"stockBox\" hidden style=\"margin-top:10px\">\n      <label for=\"stockIn\">Quantity in stock now</label>\n      <div class=\"unitrow\"><input id=\"stockIn\" inputmode=\"numeric\" placeholder=\"e.g. 12\"><button type=\"button\" class=\"btn ghost small\" id=\"stockGo\">Update stock</button></div>\n      <div class=\"hint\">Put 0 when everything is sold.</div>\n    </div>\n    <div class=\"actions\">\n      <button type=\"button\" class=\"btn primary\" id=\"soldGo\">Mark as sold</button>\n      <a class=\"btn ghost\" id=\"soldAsk\" target=\"_blank\" rel=\"noopener\">Ask the admin</a>\n      <button type=\"button\" class=\"btn ghost\" id=\"soldClose\">Close</button>\n    </div>\n    <div class=\"msg\" id=\"soldMsg\"></div>\n  </div>\n</div>\n<div class=\"modal\" id=\"discModal\" hidden>\n  <div class=\"card\">\n    <h3>\ud83c\udff7\ufe0f Get your discount code</h3>\n    <p class=\"muted\" id=\"discTitle\" style=\"font-size:14px\"></p>\n    <div id=\"discAsk\">\n      <label for=\"discPhone\">Your mobile number</label>\n      <input id=\"discPhone\" type=\"tel\" inputmode=\"tel\" placeholder=\"01xxxxxxxxx\">\n      <div class=\"actions\"><button type=\"button\" class=\"btn primary\" id=\"discGo\">Get my code</button><button type=\"button\" class=\"btn ghost\" id=\"discClose\">Close</button></div>\n    </div>\n    <div id=\"discDone\" hidden style=\"text-align:center\">\n      <div class=\"code\" id=\"discCode\"></div>\n      <p style=\"font-size:14px;margin:6px 0 10px\">Send this code to High End on WhatsApp to get <b id=\"discPct\"></b> off. The code works once and only for this item.</p>\n      <a class=\"btn wa\" id=\"discSend\" target=\"_blank\" rel=\"noopener\">Send code on WhatsApp</a>\n      <div class=\"actions\" style=\"justify-content:center\"><button type=\"button\" class=\"btn ghost small\" id=\"discClose2\">Close</button></div>\n    </div>\n    <div class=\"msg\" id=\"discMsg\"></div>\n  </div>\n</div>";
+const SELLER_MODALS = "<div class=\"modal\" id=\"soldModal\" hidden>\n  <div class=\"card\">\n    <h3>Seller tools</h3>\n    <p class=\"muted\" id=\"soldTitle\" style=\"font-size:14px\"></p>\n    <label for=\"soldCode\">Your 6-digit seller code</label>\n    <input id=\"soldCode\" inputmode=\"numeric\" maxlength=\"12\" placeholder=\"e.g. 482913\">\n    <div class=\"hint\">You got it when you posted. Lost it? Ask the admin on WhatsApp.</div>\n    <div id=\"stockBox\" hidden style=\"margin-top:10px\">\n      <label for=\"stockIn\">Quantity in stock now</label>\n      <div class=\"unitrow\"><input id=\"stockIn\" inputmode=\"numeric\" placeholder=\"e.g. 12\"><button type=\"button\" class=\"btn ghost small\" id=\"stockGo\">Update stock</button></div>\n      <div class=\"hint\">Put 0 when everything is sold.</div>\n    </div>\n    <div class=\"actions\">\n      <button type=\"button\" class=\"btn primary\" id=\"soldEdit\">✏️ Edit my listing</button>\n      <button type=\"button\" class=\"btn ghost\" id=\"soldGo\">Mark as sold</button>\n      <a class=\"btn ghost\" id=\"soldAsk\" target=\"_blank\" rel=\"noopener\">Ask the admin</a>\n      <button type=\"button\" class=\"btn ghost\" id=\"soldClose\">Close</button>\n    </div>\n    <div class=\"msg\" id=\"soldMsg\"></div>\n  </div>\n</div>\n<div class=\"modal\" id=\"discModal\" hidden>\n  <div class=\"card\">\n    <h3>\ud83c\udff7\ufe0f Get your discount code</h3>\n    <p class=\"muted\" id=\"discTitle\" style=\"font-size:14px\"></p>\n    <div id=\"discAsk\">\n      <label for=\"discPhone\">Your mobile number</label>\n      <input id=\"discPhone\" type=\"tel\" inputmode=\"tel\" placeholder=\"01xxxxxxxxx\">\n      <div class=\"actions\"><button type=\"button\" class=\"btn primary\" id=\"discGo\">Get my code</button><button type=\"button\" class=\"btn ghost\" id=\"discClose\">Close</button></div>\n    </div>\n    <div id=\"discDone\" hidden style=\"text-align:center\">\n      <div class=\"code\" id=\"discCode\"></div>\n      <p style=\"font-size:14px;margin:6px 0 10px\">Send this code to High End on WhatsApp to get <b id=\"discPct\"></b> off. The code works once and only for this item.</p>\n      <a class=\"btn wa\" id=\"discSend\" target=\"_blank\" rel=\"noopener\">Send code on WhatsApp</a>\n      <div class=\"actions\" style=\"justify-content:center\"><button type=\"button\" class=\"btn ghost small\" id=\"discClose2\">Close</button></div>\n    </div>\n    <div class=\"msg\" id=\"discMsg\"></div>\n  </div>\n</div>";
 function ensureSellerModals(){
   if (document.getElementById("soldModal")) return;
   const w=document.createElement("div"); w.innerHTML=SELLER_MODALS; while (w.firstElementChild) document.body.appendChild(w.firstElementChild);
@@ -1382,6 +1383,7 @@ function openSold(item){
     }catch(e){ showMsg(niceError(e),"err",$("#soldMsg")); }
     finally{ $("#soldGo").disabled = false; }
   };
+  $("#soldEdit").onclick = ()=>sellerOpenEdit(item.id, $("#soldCode").value, $("#soldMsg"), $("#soldEdit"));
   const hasStock = item.L.stock!==null && item.L.stock!==undefined;
   $("#stockBox").hidden = !hasStock; if (hasStock) $("#stockIn").value = item.L.stock;
   $("#stockGo").onclick = async ()=>{
@@ -1399,6 +1401,40 @@ function openSold(item){
     finally{ $("#stockGo").disabled = false; }
   };
   $("#soldModal").hidden = false;
+}
+/* ---- the seller edits their own listing with the seller code ---- */
+const EDIT_MSGS = {wrong:"That code is not right. Please check it.", locked:"Too many wrong tries. Ask the admin.", no_code:"This listing has no seller code. Ask the admin.",
+  sold:"This listing is sold. Sold listings can't be edited.", not_found:"This listing can't be changed any more.", expired:"This edit session has ended. Enter your seller code again.",
+  too_many:"Too many saves. Enter your seller code again.", bad_photos:"A photo couldn't be used. Please add it again.", bad:"Something went wrong."};
+async function sellerOpenEdit(id, codeIn, msgEl, btn){
+  const code = String(codeIn||"").replace(/\D/g,"");
+  if (code.length<4){ showMsg("Enter your seller code.","err",msgEl); return null; }
+  if (btn) btn.disabled = true; showMsg("Opening your listing…","info",msgEl);
+  try{
+    const {data, error} = await sb.rpc("seller_open_edit",{p_id:id, p_code:code});
+    if (error) throw error;
+    const d = typeof data==="string" ? JSON.parse(data) : data;
+    if (!d || d.r!=="ok"){ showMsg(EDIT_MSGS[d&&d.r]||"Something went wrong.","err",msgEl); return null; }
+    try{ sessionStorage.setItem("he_edit", JSON.stringify({...d, id, at:Date.now()})); }catch(e){}
+    if (!/post\.html$/.test(location.pathname)) location.href = "post.html#edit="+id;
+    return d;
+  }catch(e){ showMsg(niceError(e),"err",msgEl); return null; }
+  finally{ if (btn) btn.disabled = false; }
+}
+// the WhatsApp message to the admin about a new or edited listing, with its link, in the language it was posted in
+function adminListingMsg(L, id, kind){
+  const lang = (L.f && L.f._lang) || window.HE_LANG || "en";
+  const link = linkFor(id);
+  if (lang==="ar"){
+    const t = window.T_LANG || (x=>x);
+    const head = kind==="edit" ? "✏️ *إعلان اتعدّل*" : kind==="live" ? "🆕 *إعلان جديد اتنشر*" : "🆕 *إعلان جديد مستني المراجعة*";
+    let b = `${head}\n\n${t(LABELS[L.type])}: ${titleOf(L)}\n`;
+    for (const [k,v] of rows(L)) b += `${t(k)}: ${t(v)}\n`;
+    b += `السعر: ${priceStr(L.f)}` + (phoneOf(L) ? `\nرقم الموبايل: ${phoneOf(L)}` : "");
+    return b + `\n\n🔗 اللينك: ${link}\nRef: ${id}`;
+  }
+  const head = kind==="edit" ? "✏️ *Listing edited by the seller*" : kind==="live" ? "🆕 *New listing is live*" : "🆕 *New listing waiting for review*";
+  return `${head}\n\n${listingText(L)}\n\n🔗 Link: ${link}\nRef: ${id}`;
 }
 function openDiscount(item){
   ensureSellerModals();
