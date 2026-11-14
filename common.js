@@ -279,6 +279,7 @@ const SCHEMAS = {
     {k:"phone", l:"Phone number", req:1, type:"phone"}
   ],
   estate: [
+    {k:"deal", l:"For sale or rent", req:1, type:"select", opts:["For sale","For rent"], def:"For sale"},
     {k:"category", l:"Property type", req:1, type:"select", opts:Object.keys(ESTATE_RANGES), def:"Apartment"},
     {k:"name", l:"Compound / project", req:1, ph:"e.g. compound or building name"},
     {k:"location", l:"City / area", req:1, ph:"e.g. New Cairo, 5th Settlement"},
@@ -290,6 +291,7 @@ const SCHEMAS = {
     {k:"delivery", l:"Delivery", type:"select", opts:["Ready to move","Under construction"], def:"Ready to move"},
     {k:"payment", l:"Payment", type:"select", opts:["Cash","Installments","Cash or installments"], def:"Cash"},
     {k:"condition", l:"Condition", req:1, type:"select", opts:["New","Used"], def:"Used", hint:"New = first sale from the developer · Used = resale"},
+    {k:"rent_period", l:"Rent is per", type:"select", opts:["Month","Year","Day"], def:"Month", hint:"Only for rent"},
     {k:"price", l:"Price", req:1, type:"price", units:["EGP","USD"]},
     {k:"phone", l:"Phone number", req:1, type:"phone"}
   ],
@@ -463,7 +465,9 @@ let photos = []; // {url, bytes, w, h}
 const $ = s => document.querySelector(s);
 const fmt = n => Number(n).toLocaleString("en-US");
 
+const RENT_RANGE = [500, 50000000];   // rent per day, month or year
 function priceRange(){
+  if (type==="estate" && ($("#f_deal")||{}).value==="For rent") return RENT_RANGE;
   const r = RANGES[type];
   if (Array.isArray(r)) return r;
   const cat = ($("#f_category")||{}).value;
@@ -578,7 +582,8 @@ function updateUnitHint(f){
   const u = ($("#u_"+f.k)||{}).value; const h=$("#h_"+f.k); if (!h || !f.unitRange) return;
   const [a,b] = f.unitRange[u]; h.textContent = u==="ci" ? `Cubic inches (${a}–${b}). Harley 107 ci ≈ 1,753 cc, 114 ci ≈ 1,868 cc` : `Cubic centimetres (${fmt(a)}–${fmt(b)})`;
 }
-function priceStr(f){ const c=f.price_unit||"EGP"; return c==="USD" ? "$"+fmt(f.price) : c==="EUR" ? "€"+fmt(f.price) : fmt(f.price)+" "+c; }
+function priceStr(f){ const c=f.price_unit||"EGP"; const p = c==="USD" ? "$"+fmt(f.price) : c==="EUR" ? "€"+fmt(f.price) : fmt(f.price)+" "+c;
+  return f.deal==="For rent" ? p+" / "+({Year:"year",Day:"day"}[f.rent_period]||"month") : p; }
 function unitStr(f, k, v){
   const u = f[k+"_unit"];
   if (k==="mileage"){
@@ -781,7 +786,7 @@ function collect(){
 function titleOf(L){
   const f = L.f||{};
   if (f.model) return `${f.brand||""} ${f.model}${f.year?" "+f.year:""}`.trim();
-  if (L.type==="estate") return `${f.category||""} — ${f.name||""}${f.location?", "+f.location:""}`;
+  if (L.type==="estate") return `${f.deal==="For rent"?"For rent: ":""}${f.category||""} — ${f.name||""}${f.location?", "+f.location:""}`;
   if (L.type==="art") return `${f.name||""}${f.artist?" — "+f.artist:""}`;
   if (L.type==="equine") return `${f.name||""}${f.breed?" — "+f.breed:""}`;
   return `${f.brand||""} ${f.name||""}`.trim();
@@ -789,7 +794,7 @@ function titleOf(L){
 function rows(L){
   const out = [];
   for (const f of SCHEMAS[L.type]){
-    if (["price","phone","model","name","stock"].includes(f.k)) continue;
+    if (["price","phone","model","name","stock","rent_period"].includes(f.k)) continue;   // rent period shows in the price
     let v = L.f[f.k]; if (v===undefined||v==="") continue;
     const us = unitStr(L.f, f.k, v);
     const num = !isNaN(Number(String(v).replace(/,/g,"")));
