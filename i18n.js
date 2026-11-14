@@ -235,6 +235,8 @@ var D = {
 "Seller? Edit, update stock or mark sold":"البائع؟ عدّل، حدّث المخزون أو علّمه كمباع",
 "Seller? Edit or mark as sold":"البائع؟ عدّل إعلانك أو علّمه كمباع",
 "Also marine & jet skis, desert buggies & ATVs, horses, art and real estate. New and used.":"وكمان يخوت وجت سكي، باجي وATV، خيل، فن وعقارات. جديد ومستعمل.",
+"Choose your best 4 photos, then tap the best one to make it the main photo. Only 4 go online — any extra photos are dropped from the listing (they stay only in your HD flyer).":"اختار أحسن 4 صور، وبعدين دوس على أحلى واحدة عشان تبقى الصورة الرئيسية. 4 صور بس اللي بتتنشر — أي صور زيادة مش هتظهر في الإعلان (بتفضل في الفلاير عالي الدقة بس).",
+"Choose your best 3 photos, then tap the best one to make it the main photo. Only 3 go online — any extra photos are dropped from the listing (they stay only in your HD flyer).":"اختار أحسن 3 صور، وبعدين دوس على أحلى واحدة عشان تبقى الصورة الرئيسية. 3 صور بس اللي بتتنشر — أي صور زيادة مش هتظهر في الإعلان (بتفضل في الفلاير عالي الدقة بس).",
 "Keep this seller code — you need it to edit your listing or mark it as sold:":"احتفظ بكود البائع — هتحتاجه عشان تعدّل إعلانك أو تعلّمه كمباع:",
 "Inspect before you buy":"افحصها قبل الشراء","📍 See it & check":"📍 المعاينة والفحص","Authenticate before you buy":"تأكد من الأصالة قبل الشراء",
 "Technical inspection":"فحص فني","Expert authentication":"تأكيد الأصالة من خبير",
@@ -921,7 +923,9 @@ D = {
 "View my listing": "Voir mon annonce",
 "Seller? Edit, update stock or mark sold": "Vendeur ? Modifier, mettre à jour le stock ou marquer vendu",
 "Seller? Edit or mark as sold": "Vendeur ? Modifier ou marquer comme vendu",
-"Also marine & jet skis, desert buggies & ATVs, horses, art and real estate. New and used.": "Aussi bateaux et jet-skis, buggies et quads, chevaux, art et immobilier. Neuf et d'occasion."
+"Also marine & jet skis, desert buggies & ATVs, horses, art and real estate. New and used.": "Aussi bateaux et jet-skis, buggies et quads, chevaux, art et immobilier. Neuf et d'occasion.",
+"Choose your best 4 photos, then tap the best one to make it the main photo. Only 4 go online — any extra photos are dropped from the listing (they stay only in your HD flyer).": "Choisissez vos 4 meilleures photos, puis touchez la meilleure pour en faire la photo principale. Seules 4 photos sont publiées — les photos en plus ne figurent pas dans l'annonce (elles restent seulement dans votre flyer HD).",
+"Choose your best 3 photos, then tap the best one to make it the main photo. Only 3 go online — any extra photos are dropped from the listing (they stay only in your HD flyer).": "Choisissez vos 3 meilleures photos, puis touchez la meilleure pour en faire la photo principale. Seules 3 photos sont publiées — les photos en plus ne figurent pas dans l'annonce (elles restent seulement dans votre flyer HD)."
 };
 MON = {Jan:"janv.",Feb:"févr.",Mar:"mars",Apr:"avr.",May:"mai",Jun:"juin",Jul:"juil.",Aug:"août",Sep:"sept.",Oct:"oct.",Nov:"nov.",Dec:"déc."};
 CUR = {"MAD":"DH","TND":"DT","DZD":"DA"};

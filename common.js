@@ -9,8 +9,8 @@ const SMALL_TYPES = ["gear","acc","carpart","boatpart","equinepart","dunepart"];
 const BULK_TYPES = ["watch", "bag", ...SMALL_TYPES];                          // up to 20 listings per seller
 function maxPhotos(t){ return SMALL_TYPES.includes(t || type) ? 3 : MAX_PHOTOS; }
 function photoRuleText(){ return SMALL_TYPES.includes(type)
-  ? "(1–3 photos go online, up to 10 for your HD flyer — tap a photo to make it the main one)"
-  : "(1–4 photos go online, up to 10 for your HD flyer — tap a photo to make it the main one)"; }
+  ? "Choose your best 3 photos, then tap the best one to make it the main photo. Only 3 go online — any extra photos are dropped from the listing (they stay only in your HD flyer)."
+  : "Choose your best 4 photos, then tap the best one to make it the main photo. Only 4 go online — any extra photos are dropped from the listing (they stay only in your HD flyer)."; }
 const BIKE_RANGE = [100000, 2000000];
 const GEAR_RANGES = {            // EGP
   "Helmet":[1500,80000], "Jacket":[2000,60000], "Gloves":[500,20000], "Boots":[2000,40000],

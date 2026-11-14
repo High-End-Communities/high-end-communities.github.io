@@ -745,3 +745,4 @@ select.langbtn option{color:#1d1b18}
 .editbar b{display:block;font-size:16px;margin-bottom:4px;color:#2f2114}
 .locked{opacity:.55;pointer-events:none}
 select.langbtn{width:auto;min-width:0}
+#photoRule{display:block;margin:6px 0 2px;padding:8px 10px;border-radius:4px;background:#fff7e0;border:1px solid #ecd9a6;color:#6b4a00;font-size:13.5px;line-height:1.45}
