@@ -18,7 +18,7 @@
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=f937c6d7">
+<link rel="stylesheet" href="common.css?v=a7dc302b">
 </head>
 <body>
 <script src="i18n.js?v=f0a841a8"></script>
@@ -535,7 +535,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="config.js"></script>
-<script src="common.js?v=f937c6d7"></script>
+<script src="common.js?v=a7dc302b"></script>
 
 <script>
 initHeader();
@@ -872,6 +872,18 @@ async function loadAll(){
   if (!ME.full) items = items.filter(it=>can(GROUP[it.L.type]));
   await adminPhones("listing", items, it=>it.id, (it,ph)=>{ it.L.f.phone=ph; });
   renderAll();
+  focusFromLink();
+}
+// admin.html?review=<listing id> (from the seller's WhatsApp message): open that listing
+let FOCUSED=false;
+function focusFromLink(){
+  const id=(location.search.match(/[?&]review=([0-9a-f-]{36})/)||[])[1]; if (!id || FOCUSED) return; FOCUSED=true;
+  const it=items.find(x=>x.id===id);
+  if (!it){ showMsg("That listing isn't in the list any more (it may have been removed or rejected).","err",$("#listMsg")); return; }
+  const pend = it.L.status==="pending" || (it.L.status==="live" && !it.L.reviewed);
+  tab(pend ? "pending" : it.L.status==="sold" ? "sold" : "live");
+  setTimeout(()=>{ const c=document.querySelector(`[data-pane="${pend?"pending":it.L.status}"] [data-lid="${id}"]`) || document.querySelector(`[data-lid="${id}"]`);
+    if (c){ c.scrollIntoView({behavior:"smooth", block:"center"}); c.style.outline="3px solid #d4a017"; c.style.outlineOffset="3px"; setTimeout(()=>{ c.style.outline=""; },6000); } }, 300);
 }
 async function loadSettings(){
   const {data} = await sb.from("settings").select("*").eq("id",1).maybeSingle();

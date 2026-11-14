@@ -1424,6 +1424,8 @@ async function sellerOpenEdit(id, codeIn, msgEl, btn){
 // the WhatsApp message to the admin about a new or edited listing, with its link, in the language it was posted in
 function adminListingMsg(L, id, kind){
   const lang = (L.f && L.f._lang) || window.HE_LANG || "en";
+  const live = kind==="live" || L.status==="live";           // a listing waiting for review has no public page yet
+  const review = baseUrl()+"/admin.html?review="+id;           // opens it in the admin Review tab
   const link = linkFor(id);
   if (lang==="ar"){
     const t = window.T_LANG || (x=>x);
@@ -1431,10 +1433,10 @@ function adminListingMsg(L, id, kind){
     let b = `${head}\n\n${t(LABELS[L.type])}: ${titleOf(L)}\n`;
     for (const [k,v] of rows(L)) b += `${t(k)}: ${t(v)}\n`;
     b += `السعر: ${priceStr(L.f)}` + (phoneOf(L) ? `\nرقم الموبايل: ${phoneOf(L)}` : "");
-    return b + `\n\n🔗 اللينك: ${link}\nRef: ${id}`;
+    return b + `\n\n✅ للمراجعة والموافقة: ${review}` + (live ? `\n🔗 الإعلان: ${link}` : "") + `\nRef: ${id}`;
   }
   const head = kind==="edit" ? "✏️ *Listing edited by the seller*" : kind==="live" ? "🆕 *New listing is live*" : "🆕 *New listing waiting for review*";
-  return `${head}\n\n${listingText(L)}\n\n🔗 Link: ${link}\nRef: ${id}`;
+  return `${head}\n\n${listingText(L)}\n\n✅ Review & approve: ${review}` + (live ? `\n🔗 Listing: ${link}` : "") + `\nRef: ${id}`;
 }
 function openDiscount(item){
   ensureSellerModals();
