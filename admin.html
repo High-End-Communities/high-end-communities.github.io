@@ -18,10 +18,10 @@
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=13cb47a0">
+<link rel="stylesheet" href="common.css?v=eeac90b0">
 </head>
 <body>
-<script src="i18n.js?v=8b0ec188"></script>
+<script src="i18n.js?v=30d0f6da"></script>
 <header class="mast">
   <div class="checker"></div>
   <button type="button" class="langbtn" id="langBtn" lang="ar">العربية</button>
@@ -58,6 +58,7 @@
       <button type="button" data-tab="sponsors">Sponsors</button>
       <button type="button" data-tab="limits">🏍️ Limits</button>
       <button type="button" data-tab="inspect">🔧 Partners <span id="nSvc"></span></button>
+      <button type="button" data-tab="ratings">⭐ Ratings <span id="nRatings"></span></button>
       <button type="button" data-tab="wanted">🔎 Wanted <span id="nWanted"></span></button>
       <button type="button" data-tab="announce">📢 Announce <span id="nAnn"></span></button>
       <button type="button" data-tab="share">📤 Share <span id="nShare"></span></button>
@@ -244,6 +245,18 @@
         <div class="msg" id="anMsg"></div>
       </div>
       <div id="anList"></div>
+    </div>
+    <div data-pane="ratings" hidden>
+      <div class="card" style="margin-bottom:12px">
+        <h3 style="margin:0 0 6px">⭐ Ratings</h3>
+        <div class="hint" style="margin-bottom:10px">Ratings of sellers and of schools, rentals, tours and safaris. Nothing shows on the site until you approve it, and only approved ratings count in the stars. If a rating looks fake, message the person on WhatsApp first, then approve it or mark it fake.</div>
+        <div class="row" style="gap:8px;flex-wrap:wrap;align-items:center">
+          <select id="rtShow" aria-label="Show"><option value="pending">Waiting for review</option><option value="approved">Approved</option><option value="rejected">Marked fake</option></select>
+          <button type="button" class="btn primary small" id="rtApproveAll" hidden>✓ Approve all shown</button>
+        </div>
+      </div>
+      <div class="msg" id="rtMsg"></div>
+      <div id="rtList"></div>
     </div>
     <div data-pane="inspect" hidden>
       <div class="card" style="margin-bottom:12px" id="chkCard">
@@ -515,7 +528,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="config.js"></script>
-<script src="common.js?v=13cb47a0"></script>
+<script src="common.js?v=eeac90b0"></script>
 
 <script>
 initHeader();
@@ -541,7 +554,7 @@ async function enter(){
   $("#submitBtn").textContent = "Publish now";
   applyPerms();
   await Promise.all([can("listings")?loadAll():null, can("sponsors")?loadSponsorsAdmin():null, loadSettings(), can("listings")?loadTrusted():null]);
-  if (can("wanted")) loadWanted(); if (can("money")) loadMoney(); loadAdmins();
+  if (can("wanted")) loadWanted(); if (can("money")) loadMoney(); loadAdmins(); ratingsCount();
   if (can("codes")) loadCodes();
   loadSponsors();
 }
@@ -559,10 +572,10 @@ $("#logout").onclick = async ()=>{ await sb.auth.signOut(); location.reload(); }
 /* ---------- what this admin may manage (set by the root admin) ---------- */
 let ME = {root:false, full:true, perms:[]};
 const TAB_PERM = {pending:"listings", live:"listings", sold:"listings", add:"listings", codes:"codes", sponsors:"sponsors", limits:"settings",
-  inspect:"inspect", wanted:"wanted", announce:"announce", share:"share", money:"money", stats:"stats"};
+  inspect:"inspect", ratings:"ratings", wanted:"wanted", announce:"announce", share:"share", money:"money", stats:"stats"};
 const PERM_SECTIONS = [["moto","🏍️ Motorcycles"],["watch","⌚ Watches"],["car","🚗 Cars"],["boat","🛥️ Marine"],["desert","🏜️ Dune Riders"],["equine","🐎 Equine"],["art","🎨 Art"],["estate","🏠 Real estate"],["bag","👜 The Boutique (ladies)"]];
 const PERM_FEATURES = [["listings","Listings: review, edit, add"],["share","Share to WhatsApp"],["announce","Announcements"],["wanted","Wanted requests"],["codes","Discount codes"],
-  ["sponsors","Sponsors & ads"],["inspect","Inspection partners"],["confirm","Confirm payments (no totals)"],["stats","Stats"]];   // money, fees, totals and site settings: full admins only
+  ["sponsors","Sponsors & ads"],["inspect","Inspection partners"],["ratings","Ratings: approve or mark fake"],["confirm","Confirm payments (no totals)"],["stats","Stats"]];   // money, fees, totals and site settings: full admins only
 function can(p){ if (p==="money"||p==="settings") return !!ME.full; return ME.full || ME.perms.includes(p); }
 function applyPerms(){
   let first=null;
@@ -585,6 +598,7 @@ function tab(t){
   if (t==="stats") loadStats();
   if (t==="codes") loadCodes();
   if (t==="inspect"){ loadExpertsAdmin(); loadSvcAdmin(); loadChecks(); }
+  if (t==="ratings") loadRatings();
   if (t==="wanted") loadWanted();
   if (t==="announce") loadAnn();
   if (t==="share") loadShare();
@@ -1596,6 +1610,64 @@ $("#revApproveSel").onclick=()=>revApprove(revList.filter(x=>revSel.has(x.id)));
   if (!revList.length) return;
   if (!armed){ const b=$("#revApproveAll"); b.textContent=`Tap again: approve all ${revList.length}`; armed=setTimeout(()=>{ armed=null; revUi(); },4000); return; }
   clearTimeout(armed); armed=null; revApprove(revList.slice()); }; }
+
+/* ---------- ratings: approve, mark fake, delete ---------- */
+let RT_LIST=[];
+async function ratingsCount(){
+  if (!can("ratings")) return;
+  const {count,error}=await sb.from("ratings").select("id",{count:"exact",head:true}).eq("status","pending");
+  const el=$("#nRatings"); if (!el) return; el.textContent = !error && count ? String(count) : "";
+  const tb=document.querySelector('[data-tab="ratings"]'); if (tb) tb.classList.toggle("hasnew", !error && count>0);
+}
+async function loadRatings(){
+  const box=$("#rtList"); if (!box || !can("ratings")) return;
+  const st=$("#rtShow").value;
+  const {data,error}=await sb.from("ratings").select("*").eq("status",st).order("created_at",{ascending:st==="pending"}).limit(300);
+  if (error){ box.innerHTML=""; showMsg(/ratings/.test(error.message||"")&&/exist|schema/i.test(error.message||"")?"Run update23 in Supabase to turn ratings on.":niceError(error),"err",$("#rtMsg")); return; }
+  RT_LIST=data||[];
+  const lids=[...new Set(RT_LIST.map(r=>r.listing_id).filter(Boolean))], pids=[...new Set(RT_LIST.map(r=>r.provider_id).filter(Boolean))];
+  const [ls,ps]=await Promise.all([lids.length?sb.from("listings").select("id,type,f").in("id",lids):{data:[]}, pids.length?sb.from("providers").select("id,name,kind").in("id",pids):{data:[]}]);
+  const LT={}, PN={}; (ls.data||[]).forEach(r=>LT[r.id]=titleOf(rowToItem({...r,status:"live"}).L)); (ps.data||[]).forEach(r=>PN[r.id]=r.name);
+  // how each seller / business stands now (approved only)
+  const sellers=[...new Set(RT_LIST.map(r=>r.seller_phone).filter(Boolean))];
+  const AGG={};
+  if (sellers.length || pids.length){
+    const q=await sb.from("ratings").select("seller_phone,provider_id,stars").eq("status","approved").or([sellers.length?`seller_phone.in.(${sellers.join(",")})`:null, pids.length?`provider_id.in.(${pids.join(",")})`:null].filter(Boolean).join(","));
+    (q.data||[]).forEach(r=>{ const k=r.seller_phone||r.provider_id; (AGG[k]=AGG[k]||{s:0,n:0}); AGG[k].s+=r.stars; AGG[k].n++; });
+  }
+  $("#rtApproveAll").hidden = st!=="pending" || RT_LIST.length<2; $("#rtApproveAll").textContent=`✓ Approve all shown (${RT_LIST.length})`;
+  box.innerHTML = RT_LIST.length ? "" : `<div class="muted" style="font-size:14px;padding:6px 2px">${st==="pending"?"No ratings waiting. 🎉":"Nothing here."}</div>`;
+  RT_LIST.forEach(r=>{
+    const c=document.createElement("div"); c.className="card rt-row"; c.style.marginBottom="10px";
+    const who = r.target==="seller" ? `Seller of: ${LT[r.listing_id]||"(listing removed)"}` : `Business: ${PN[r.provider_id]||"(removed)"}`;
+    const k=r.seller_phone||r.provider_id, ag=AGG[k];
+    c.innerHTML=`<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline">
+        <b class="stars" style="color:#c99a2e;font-size:20px;letter-spacing:1px">${starText(r.stars)}</b>
+        <small class="muted">${esc(new Date(r.created_at).toLocaleString("en-GB",{day:"numeric",month:"short",hour:"numeric",minute:"2-digit"}))}</small></div>
+      <div style="margin:4px 0" dir="auto">${r.comment?esc(r.comment):'<span class="muted">No written review</span>'}</div>
+      <div class="hint" style="white-space:pre-line">${esc(who)}${r.seller_phone?"\nSeller's number: "+esc(r.seller_phone):""}
+From: ${esc(r.rater_name)} · ${esc(r.rater_phone)}${ag?`\nNow: ${(ag.s/ag.n).toFixed(1)} ★ from ${ag.n} approved`:"\nNo approved ratings yet"}${r.reviewed_by?"\nReviewed by "+esc(r.reviewed_by):""}</div>`;
+    const tools=document.createElement("div"); tools.className="admin";
+    const wa=document.createElement("a"); wa.className="btn ghost small"; wa.target="_blank"; wa.rel="noopener"; wa.textContent="✉️ Check with them";
+    wa.href="https://wa.me/"+waNum(r.rater_phone)+"?text="+encodeURIComponent(`Hello ${r.rater_name}, this is High End Communities. Thank you for rating ${r.target==="seller"?"the seller of "+(LT[r.listing_id]||"a listing"):(PN[r.provider_id]||"a business")} ${r.stars}★. Can you confirm you dealt with them?`);
+    tools.appendChild(wa);
+    const set=v=>async()=>{ const {error}=await sb.from("ratings").update({status:v}).eq("id",r.id); if (error) throw error; await loadRatings(); ratingsCount(); };
+    if (r.status!=="approved") tools.appendChild(btn("✓ Approve","ok",set("approved")));
+    if (r.status!=="rejected") tools.appendChild(btn("✕ Fake — don't count","bad",set("rejected")));
+    if (r.status!=="pending") tools.appendChild(btn("↺ Back to waiting","",set("pending")));
+    if (can("money")) tools.appendChild(btn("🗑 Delete","bad",async()=>{ const {error}=await sb.from("ratings").delete().eq("id",r.id); if (error) throw error; await loadRatings(); ratingsCount(); },"Tap again: delete for good"));
+    c.appendChild(tools); box.appendChild(c);
+  });
+}
+$("#rtShow").onchange=loadRatings;
+{ let armed=null; $("#rtApproveAll").onclick=async()=>{
+  const b=$("#rtApproveAll"), ids=RT_LIST.map(r=>r.id); if (!ids.length) return;
+  if (!armed){ b.textContent=`Tap again: approve ${ids.length}`; armed=setTimeout(()=>{ armed=null; b.textContent=`✓ Approve all shown (${ids.length})`; },4000); return; }
+  clearTimeout(armed); armed=null; b.disabled=true;
+  try{ for (let i=0;i<ids.length;i+=100){ const {error}=await sb.from("ratings").update({status:"approved"}).in("id",ids.slice(i,i+100)); if (error) throw error; }
+    showMsg(`Approved ${ids.length} ratings.`,"ok",$("#rtMsg")); }
+  catch(e){ showMsg(niceError(e),"err",$("#rtMsg")); }
+  finally{ b.disabled=false; loadRatings(); ratingsCount(); } }; }
 /* ---------- add / edit ---------- */
 $("#dumpBtn").onclick = ()=>{
   const t=$("#dumpIn").value.trim(); if(!t){ $("#dumpHint").textContent="Paste the message first."; return; }

@@ -194,7 +194,7 @@ var D = {
 "Your listing appears in this country's marketplace, with its currency and phone code.":"يظهر منتجك في سوق هذه الدولة، بعملتها وكود هاتفها.",
 "SAR":"ر.س","AED":"د.إ","QAR":"ر.ق","BHD":"د.ب","TRY":"ل.ت","MAD":"د.م","TND":"د.ت","DZD":"د.ج","LYD":"د.ل",
 "Enter your WhatsApp number: Egypt 01xxxxxxxxx, or with the country code (+966, +971, +973, +90, +212, +213, +216, +218).":"أدخل رقم الواتساب: مصر 01xxxxxxxxx، أو بكود الدولة (+966، +971، +973، +90، +212، +213، +216، +218).",
-"Inspect before you buy":"افحصها قبل الشراء","📍 See it & check":"📍 المعاينة والفحص","Authenticate before you buy":"تأكد من الأصالة قبل الشراء",
+"Seller rating":"تقييم البائع","No ratings yet":"لا توجد تقييمات بعد","(1 rating)":"(تقييم واحد)","⭐ Rate the seller":"⭐ قيّم البائع","⭐ Rate this business":"⭐ قيّم هذا النشاط","⭐ Rate":"⭐ قيّم","Reviews":"الآراء","From people who dealt with this seller, checked by the High End team.":"من ناس تعاملوا مع البائع، ويراجعها فريق High End.","Your review (optional)":"رأيك (اختياري)","Your name":"اسمك","Not shown on the page. High End may message you to check the rating is real. Only your first name is shown.":"رقمك مش بيظهر. ممكن فريق High End يكلمك يتأكد إن التقييم حقيقي. بيظهر اسمك الأول بس.","Send rating":"ابعت التقييم","Done":"تم","Thank you! Your rating shows after the High End team checks it.":"شكراً! تقييمك هيظهر بعد ما فريق High End يراجعه.","Tap the stars to choose 1 to 5.":"اضغط على النجوم واختار من 1 لـ 5.","Write your name.":"اكتب اسمك.","No written reviews yet.":"لسه مفيش آراء مكتوبة.","You have already rated them. Thank you!":"إنت قيّمتهم قبل كده. شكراً!","You cannot rate yourself.":"مينفعش تقيّم نفسك.","This listing cannot be rated.":"الإعلان ده مينفعش يتقيّم.","This business cannot be rated.":"النشاط ده مينفعش يتقيّم.","Too many ratings from this number today. Try again tomorrow.":"تقييمات كتير من الرقم ده النهارده. جرّب بكرة.","Ratings are paused for a moment. Please try again later.":"التقييمات متوقفة شوية. جرّب كمان شوية.","Inspect before you buy":"افحصها قبل الشراء","📍 See it & check":"📍 المعاينة والفحص","Authenticate before you buy":"تأكد من الأصالة قبل الشراء",
 "Technical inspection":"فحص فني","Expert authentication":"تأكيد الأصالة من خبير",
 "Before you pay, have it checked by an independent workshop: engine, chassis and engine numbers, accident history and papers.":"قبل الدفع، افحصها في ورشة مستقلة: المحرك، رقم الشاسيه والموتور، تاريخ الحوادث والأوراق.",
 "Before you pay, have an independent expert confirm it is authentic and in the condition described.":"قبل الدفع، اطلب من خبير مستقل التأكد من أنها أصلية وبالحالة الموصوفة.",
@@ -211,6 +211,8 @@ var CUR = {"EGP":"ج.م","USD":"دولار","SAR":"ر.س","AED":"د.إ","QAR":"�
 function mk(n){ return D[n] || n; }
 var P = [
   [/^(\d+) results$/, function(m){ return m[1] + " نتيجة"; }],
+  [/^\((\d+) ratings\)$/, function(m){ return "(" + m[1] + " تقييم)"; }],
+  [/^Show all (\d+) reviews$/, function(m){ return "اعرض كل الآراء (" + m[1] + ")"; }],
   [/^Wanted in (.+)$/, function(m){ return "مطلوب في " + mk(m[1]); }],
   [/^Budget up to ([\d,.]+) ([A-Z]{3})$/, function(m){ return "الميزانية لحد " + m[1] + " " + (CUR[m[2]]||m[2]); }],
   [/^Featured listings show first in their category with a Featured mark\.(?: Price: (.+)\.)?$/, function(m){ return "الإعلانات المميزة بتظهر الأول في قسمها بعلامة مميز." + (m[1] ? " السعر: " + m[1] + "." : ""); }],

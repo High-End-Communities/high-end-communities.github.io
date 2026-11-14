@@ -1058,7 +1058,7 @@ function isFeatured(L){ return !!L.promoted && (!L.promotedUntil || L.promotedUn
 function sortListings(list){ return list.slice().sort((a,b)=>(isFeatured(b.L)-isFeatured(a.L)) || ((b.L.at||0)-(a.L.at||0))); }
 function niceError(e){
   const m = (e && (e.message||e.error_description||e.msg)) || String(e||"");
-  if (/queue is full|already has|can post|a month/i.test(m)) return m;
+  if (/queue is full|already has|can post|a month|already rated|rate yourself|cannot be rated|Too many ratings|Ratings are paused/i.test(m)) return m;
   if (/Failed to fetch|NetworkError|network/i.test(m)) return "No connection — check your internet and try again.";
   if (/Invalid login/i.test(m)) return "Wrong email or password.";
   return "Something went wrong: " + m;
@@ -2111,4 +2111,69 @@ function runIntro(key){ key = key || "he_intro";
   else music.play().then(()=>{ if (!started) { music.pause(); start(); } }).catch(()=>{ if (!started) gate.hidden=false; });
   setTimeout(()=>{ if (!started && !counting) start(); }, 12000);     // nobody tapped: go ahead (silent if the browser insists)
   setTimeout(()=>{ if (!counting) countdown(); }, 26000);              // never stay stuck
+}
+
+
+/* ===================== Ratings: sellers and businesses (every rating waits for an admin) ===================== */
+function starText(avg){ const n=Math.round(Number(avg)||0); return "★★★★★".slice(0,n)+"☆☆☆☆☆".slice(0,5-n); }
+function ratingLine(avg, n){
+  const d=document.createElement("span"); d.className="rating";
+  if (!n){ d.classList.add("none"); d.textContent="No ratings yet"; return d; }
+  const st=document.createElement("b"); st.className="stars"; st.setAttribute("aria-hidden","true"); st.setAttribute("data-noi18n",""); st.textContent=starText(avg);
+  const v=document.createElement("span"); v.setAttribute("data-noi18n",""); v.textContent=` ${Number(avg).toFixed(1)} `;
+  const c=document.createElement("small"); c.textContent=n===1?"(1 rating)":`(${n} ratings)`;
+  d.setAttribute("aria-label",`${Number(avg).toFixed(1)} out of 5, ${n} ratings`); d.append(st,v,c); return d;
+}
+function reviewList(list){
+  const box=document.createElement("div"); box.className="reviews";
+  (list||[]).forEach(r=>{ const it=document.createElement("div"); it.className="review";
+    const h=document.createElement("div"); h.className="rh";
+    const st=document.createElement("b"); st.className="stars"; st.setAttribute("data-noi18n",""); st.textContent=starText(r.stars);
+    const nm=document.createElement("span"); nm.setAttribute("data-noi18n",""); nm.setAttribute("dir","auto"); nm.textContent=r.name||"";
+    const dt=document.createElement("small"); dt.className="muted"; dt.setAttribute("data-noi18n",""); try{ dt.textContent=new Date(r.at).toLocaleDateString(document.documentElement.lang==="ar"?"ar-EG":"en-GB",{day:"numeric",month:"short",year:"numeric"}); }catch(e){}
+    h.append(st,nm,dt); it.appendChild(h);
+    if (r.comment){ const p=document.createElement("p"); p.setAttribute("dir","auto"); p.setAttribute("data-noi18n",""); p.textContent=r.comment; it.appendChild(p); }
+    box.appendChild(it); });
+  return box;
+}
+// opts: {target:"seller", listingId, title, market} or {target:"provider", providerId, title, market}
+function openRate(opts){
+  let ov=$("#rateModal"); if (ov) ov.remove();
+  ov=document.createElement("div"); ov.className="modal rate-modal"; ov.id="rateModal";
+  ov.innerHTML=`<div class="card"><h3 id="rateH"></h3><p class="muted" id="rateFor" style="margin:0 0 10px;font-size:14px" dir="auto" data-noi18n></p>
+    <div id="rateAsk">
+      <div class="starpick" role="radiogroup" aria-label="Stars">${[1,2,3,4,5].map(i=>`<button type="button" role="radio" aria-checked="false" aria-label="${i}" data-s="${i}">☆</button>`).join("")}</div>
+      <label for="rateTxt">Your review (optional)</label><textarea id="rateTxt" maxlength="400" rows="3"></textarea>
+      <label for="rateName">Your name</label><input id="rateName" maxlength="60" autocomplete="name">
+      <label for="ratePhone">Your WhatsApp number</label><input id="ratePhone" type="tel" inputmode="tel">
+      <div class="hint">Not shown on the page. High End may message you to check the rating is real. Only your first name is shown.</div>
+      <div class="actions"><button type="button" class="btn primary" id="rateGo">Send rating</button><button type="button" class="btn ghost" data-close>Close</button></div>
+    </div>
+    <div id="rateDone" hidden><p>Thank you! Your rating shows after the High End team checks it.</p><div class="actions"><button type="button" class="btn primary" data-close>Done</button></div></div>
+    <div class="msg" id="rateMsg"></div></div>`;
+  document.body.appendChild(ov);
+  $("#rateH").textContent = opts.target==="seller" ? "⭐ Rate the seller" : "⭐ Rate this business";
+  $("#rateFor").textContent = opts.title||"";
+  const mk=opts.market||MARKET; $("#ratePhone").placeholder=(MARKET_BY_ID[mk]||MARKET_BY_ID.EG).local;
+  try{ const p=localStorage.getItem("mm_phone"); if (p) $("#ratePhone").value=p; const n=localStorage.getItem("mm_name"); if (n) $("#rateName").value=n; }catch(e){}
+  let stars=0; const btns=[...ov.querySelectorAll(".starpick button")];
+  const paint=()=>btns.forEach(b=>{ const on=+b.dataset.s<=stars; b.textContent=on?"★":"☆"; b.classList.toggle("on",on); b.setAttribute("aria-checked", +b.dataset.s===stars?"true":"false"); });
+  btns.forEach(b=>b.onclick=()=>{ stars=+b.dataset.s; paint(); });
+  const close=()=>ov.remove(); ov.querySelectorAll("[data-close]").forEach(b=>b.onclick=close); ov.onclick=e=>{ if(e.target===ov) close(); };
+  $("#rateGo").onclick=async()=>{
+    const ph=anyPhone($("#ratePhone").value, mk), name=$("#rateName").value.trim();
+    if (!stars) return showMsg("Tap the stars to choose 1 to 5.","err",$("#rateMsg"));
+    if (name.length<2) return showMsg("Write your name.","err",$("#rateMsg"));
+    if (!ph) return showMsg(PHONE_HELP,"err",$("#rateMsg"));
+    const row={target:opts.target, stars, comment:$("#rateTxt").value.trim()||null, rater_name:name, rater_phone:ph};
+    if (opts.target==="seller") row.listing_id=opts.listingId; else row.provider_id=opts.providerId;
+    $("#rateGo").disabled=true;
+    try{
+      const {error}=await sb.from("ratings").insert(row); if (error) throw error;
+      try{ localStorage.setItem("mm_phone",ph); localStorage.setItem("mm_name",name); }catch(e){}
+      $("#rateAsk").hidden=true; $("#rateDone").hidden=false; showMsg("","info",$("#rateMsg"));
+    }catch(e){ showMsg(niceError(e),"err",$("#rateMsg")); }
+    finally{ $("#rateGo").disabled=false; }
+  };
+  ov.hidden=false; setTimeout(()=>btns[0].focus(),50);
 }

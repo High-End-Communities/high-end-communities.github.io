@@ -717,3 +717,19 @@ article.item{position:relative}
 .revpick input{width:20px;height:20px}
 article.item.picked{outline:3px solid #b08d57;outline-offset:-3px}
 .tabs button.hasnew #nPending{display:inline-block;min-width:20px;padding:1px 7px;border-radius:999px;background:#c0392b;color:#fff;font-size:12px;line-height:18px}
+.rating{display:inline-flex;align-items:baseline;gap:2px;font-size:14px;color:#1d1b18}
+.rating .stars,.review .stars{color:#c99a2e;letter-spacing:1px}
+.rating small{color:#5f5a50}.rating.none{color:#5f5a50;font-size:13px}
+.sellerrate{margin:14px 0 4px;padding:12px 14px;border:1px solid #e3d9c3;border-radius:14px;background:#fffdf8}
+.sellerrate .top{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between}
+.sellerrate .hint{margin-top:4px}
+.reviews{display:grid;gap:8px;margin-top:10px}
+.review{padding:8px 10px;border-radius:10px;background:#f7f3e8}
+.review .rh{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;font-size:13px}
+.review p{margin:4px 0 0;font-size:14px;line-height:1.45}
+.starpick{display:flex;gap:4px;margin:4px 0 10px}
+.starpick button{font-size:34px;line-height:1;padding:2px 4px;border:0;background:none;color:#c99a2e;cursor:pointer;border-radius:8px}
+.starpick button:focus-visible{outline:2px solid #b08d57}
+.rate-modal .card{max-width:420px}
+.svct .rating{margin:2px 0}
+.linkbtn{border:0;background:none;padding:6px 0;color:#7d5f33;font-weight:600;cursor:pointer;text-decoration:underline}
