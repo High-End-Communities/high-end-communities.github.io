@@ -18,10 +18,10 @@
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=2344da5e">
+<link rel="stylesheet" href="common.css?v=13cb47a0">
 </head>
 <body>
-<script src="i18n.js?v=868a2598"></script>
+<script src="i18n.js?v=8b0ec188"></script>
 <header class="mast">
   <div class="checker"></div>
   <button type="button" class="langbtn" id="langBtn" lang="ar">العربية</button>
@@ -75,6 +75,10 @@
     <div class="card" id="boutCard" style="margin-bottom:12px">
       <label class="showsold" style="color:var(--text);font-weight:600"><input type="checkbox" id="boutOn"> ✨ Show The Boutique (ladies section)</label>
       <div class="hint">Off: the Boutique tab, its page and the "Boutique" choice on the post form are hidden. Preview it any time: <a href="bags.html?preview=1" target="_blank" rel="noopener">bags.html?preview=1</a></div>
+    </div>
+    <div class="card" id="introCard" style="margin-bottom:12px">
+      <label class="showsold" style="color:var(--text);font-weight:600"><input type="checkbox" id="introMuted"> 🔇 Intro starts with the sound off</label>
+      <div class="hint">On: the welcome video plays silently and visitors tap 🔇 to hear the music. Off: it tries to start with sound and shows "Tap to enter" when the phone asks first.</div>
     </div>
     <div class="card" id="admCard" style="margin-bottom:12px">
       <h3 style="margin:0 0 6px">👥 Admins</h3>
@@ -242,6 +246,33 @@
       <div id="anList"></div>
     </div>
     <div data-pane="inspect" hidden>
+      <div class="card" style="margin-bottom:12px" id="chkCard">
+        <h3 style="margin:0 0 6px">📅 Booked checks</h3>
+        <div class="hint" style="margin-bottom:8px">Book one from a live listing: Live tab → 📅 Book a check. Each booking has ready WhatsApp messages for the owner, the buyer and the partner. Phone numbers are never put in the messages.</div>
+        <label class="showsold" style="margin-bottom:8px"><input type="checkbox" id="chkAll"> Show done and cancelled</label>
+        <div id="chkList"></div>
+        <div class="msg" id="chkMsg"></div>
+      </div>
+      <div class="card" style="margin-bottom:12px" id="svaCard">
+        <h3 style="margin:0 0 6px">➕ Add a business for its owner</h3>
+        <div class="hint" style="margin-bottom:10px">When an owner sends their details on WhatsApp, add them here. It skips the review queue.</div>
+        <input type="hidden" id="svaId">
+        <div class="grid">
+          <div><label for="svaKind">What they offer</label><select id="svaKind"><option value="school">🎓 Riding school</option><option value="rental">🔑 Rental</option><option value="tour">🧭 Guided tours</option><option value="safari">🏜️ Desert safari</option><option value="sea">🌊 Sea trips &amp; safari</option></select></div>
+          <div><label for="svaMarket">Country</label><select id="svaMarket"></select></div>
+          <div><label for="svaName">Business name</label><input id="svaName" maxlength="80" placeholder="e.g. Siwa Dune Safari"></div>
+          <div><label for="svaPhone">Owner's WhatsApp number</label><input id="svaPhone" type="tel" inputmode="tel" placeholder="01xxxxxxxxx or +9665…"></div>
+          <div><label for="svaCity">City / area</label><input id="svaCity" maxlength="60" placeholder="e.g. Siwa"></div>
+          <div><label for="svaPrice">Prices from (optional)</label><input id="svaPrice" maxlength="40" placeholder="e.g. 2,500 EGP / person"></div>
+          <div class="full"><label for="svaLink">Website, Instagram or Facebook (optional)</label><input id="svaLink" type="url" placeholder="https://…"></div>
+          <div class="full"><label for="svaAbout">What they offer</label><textarea id="svaAbout" maxlength="400" rows="3" placeholder="e.g. Sunset buggy safari with dinner, 3 hours, pick-up included"></textarea></div>
+          <div class="full"><label>Show in</label><div class="checks" id="svaGroups"></div></div>
+          <div class="full" id="svaPhotoBox"></div>
+          <div class="full"><label class="showsold"><input type="checkbox" id="svaLive" checked> Show on the site now</label></div>
+        </div>
+        <div class="actions"><button type="button" class="btn primary small" id="svaSave">Save business</button><button type="button" class="btn ghost small" id="svaClear">Clear</button></div>
+        <div class="msg" id="svaMsg"></div>
+      </div>
       <div class="card" style="margin-bottom:12px">
         <h3 style="margin:0 0 6px">🎓 Schools, rentals, tours &amp; safaris</h3>
         <div class="hint" style="margin-bottom:8px">Businesses send these from the site. Approve to show them in their section; Hide takes one off the site.</div>
@@ -291,6 +322,16 @@
         <label class="showsold" style="color:var(--text);font-weight:600"><input type="checkbox" id="autoApprove"> Publish new listings straight away (auto-approve)</label>
         <span class="muted" id="autoHint"></span>
       </div>
+      <div class="revbar" id="revBar" hidden>
+        <div class="revcount"><b id="revN">0</b> <span id="revTxt">waiting for review</span></div>
+        <div class="revbtns">
+          <button type="button" class="btn ghost small" id="revSel">☑ Select</button>
+          <button type="button" class="btn ghost small" id="revSelAll" hidden>Select all</button>
+          <button type="button" class="btn primary small" id="revApproveSel" hidden disabled>✓ Approve selected</button>
+          <button type="button" class="btn primary small" id="revApproveAll">✓ Approve all</button>
+        </div>
+      </div>
+      <div class="msg" id="revMsg"></div>
       <div class="list" id="pendingList"></div>
     </div>
     <div data-pane="live" hidden><div class="list" id="liveList"></div></div>
@@ -474,7 +515,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="config.js"></script>
-<script src="common.js?v=2344da5e"></script>
+<script src="common.js?v=13cb47a0"></script>
 
 <script>
 initHeader();
@@ -526,7 +567,7 @@ function can(p){ if (p==="money"||p==="settings") return !!ME.full; return ME.fu
 function applyPerms(){
   let first=null;
   document.querySelectorAll("#adminView .tabs button").forEach(b=>{ const ok=b.dataset.tab==="money" ? (can("money")||can("confirm")) : can(TAB_PERM[b.dataset.tab]||"settings"); b.hidden=!ok; if (ok && !first) first=b.dataset.tab; });
-  ["#maintCard","#boutCard","#moveCard","#payCard"].forEach(id=>{ const el=$(id); if (el) el.hidden=!can("settings"); });
+  ["#maintCard","#boutCard","#introCard","#moveCard","#payCard"].forEach(id=>{ const el=$(id); if (el) el.hidden=!can("settings"); });
   const aa=$("#autoApprove"); if (aa) aa.closest(".disc").hidden=!can("settings");
   const so=$("#soSave"); if (so) so.closest(".card").hidden=!can("settings");
   document.querySelectorAll("[data-pane=money] .fullonly").forEach(el=>{ if(!can("money")) el.hidden=true; });
@@ -543,7 +584,7 @@ function tab(t){
   document.querySelectorAll("[data-pane]").forEach(p=>p.hidden = p.dataset.pane!==t);
   if (t==="stats") loadStats();
   if (t==="codes") loadCodes();
-  if (t==="inspect"){ loadExpertsAdmin(); loadSvcAdmin(); }
+  if (t==="inspect"){ loadExpertsAdmin(); loadSvcAdmin(); loadChecks(); }
   if (t==="wanted") loadWanted();
   if (t==="announce") loadAnn();
   if (t==="share") loadShare();
@@ -804,7 +845,7 @@ async function loadSettings(){
   if (data) $("#payOn").checked=!!data.pay_enabled;
   if (data){ $("#payLink").value=data.pay_link||""; $("#payInsta").value=data.pay_instapay||""; $("#payWallet").value=data.pay_wallet||""; $("#adminWa").value=data.admin_wa||ADMIN_WA; $("#cashWa").value=data.cash_wa||""; $("#promoPrice").value=data.promo_price||""; $("#valueMax").value=data.value_max_egp||"";
     $("#freeVeh").value=data.free_vehicles??1; $("#vehFee").value=data.extra_vehicle_fee??1000; $("#memPrice").value=data.member_price||""; $("#memDays").value=data.member_days||365;
-    $("#mnAdPrice").value=data.ad_price_month||""; $("#moveUrl").value=data.redirect_url||""; moveUi(); $("#boutOn").checked=!!data.boutique_on; }
+    $("#mnAdPrice").value=data.ad_price_month||""; $("#moveUrl").value=data.redirect_url||""; moveUi(); $("#boutOn").checked=!!data.boutique_on; $("#introMuted").checked=!!data.intro_muted; }
   const on = !data || data.auto_approve!==false;
   $("#autoApprove").checked = on; autoHint(on);
 }
@@ -833,6 +874,11 @@ $("#paySave").onclick = async ()=>{
 
 
 /* ---------- The Boutique switch ---------- */
+$("#introMuted").onchange=async()=>{ const on=$("#introMuted").checked;
+  const {error}=await sb.from("settings").update({intro_muted:on}).eq("id",1);
+  if (error){ $("#introMuted").checked=!on; showMsg(/column/.test(error.message||"")?"Run update22 in Supabase first.":niceError(error),"err",$("#listMsg")); return; }
+  showMsg(on?"The intro now starts silent.":"The intro now tries to start with sound.","ok",$("#listMsg"));
+};
 $("#boutOn").onchange=async()=>{ const on=$("#boutOn").checked;
   const {error}=await sb.from("settings").update({boutique_on:on}).eq("id",1);
   if (error){ $("#boutOn").checked=!on; showMsg(/column/.test(error.message||"")?"Run the latest update SQL (update15) in Supabase first.":niceError(error),"err",$("#listMsg")); return; }
@@ -1052,10 +1098,149 @@ ${esc(p.phone)} · ${fmtDate(Date.parse(p.created_at))}${p.about?"\n"+esc(p.abou
     if (p.status!=="live") tools.append(btn("✅ Approve","",set("live")));
     if (p.status==="live") tools.append(btn("Hide","",set("hidden")));
     if (p.status==="pending") tools.append(btn("✕ Reject","",set("rejected")));
+    tools.append(btn("✎ Edit","",async()=>svaLoad(p)));
     const wa=document.createElement("a"); wa.className="btn ghost small"; wa.target="_blank"; wa.rel="noopener"; wa.textContent="WhatsApp"; wa.href="https://wa.me/"+waNum(p.phone); tools.append(wa);
     r.append(x,tools); box.appendChild(r); });
 }
 
+
+/* ---------- add a business for its owner ---------- */
+const SVA_GROUPS=[["moto","🏍️ Motorcycles"],["desert","🏜️ Dune Riders"],["boat","🛥️ Marine"]];
+let svaPhoto=null, svaOldPhoto=null;
+(function(){
+  const ms=$("#svaMarket"); if (!ms) return; MARKETS.forEach(m=>ms.add(new Option(m.name,m.id)));
+  const gb=$("#svaGroups"); SVA_GROUPS.forEach(([k,n])=>{ const l=document.createElement("label"); l.innerHTML=`<input type="checkbox" value="${k}"> ${n}`; gb.appendChild(l); });
+  svaPhoto=photoPicker("svaPh"); $("#svaPhotoBox").appendChild(svaPhoto);
+  const kd=()=>{ if ($("#svaId").value) return; const k=$("#svaKind").value; gb.querySelectorAll("input").forEach(i=>i.checked = i.value===({school:"moto",rental:"moto",tour:"moto",safari:"desert",sea:"boat"}[k])); };
+  $("#svaKind").onchange=kd; kd();
+})();
+function svaClear(){ $("#svaId").value=""; ["svaName","svaPhone","svaCity","svaPrice","svaLink","svaAbout"].forEach(i=>$("#"+i).value=""); $("#svaLive").checked=true; svaOldPhoto=null; svaPhoto.reset(); $("#svaSave").textContent="Save business"; $("#svaKind").onchange(); }
+$("#svaClear").onclick=()=>{ svaClear(); showMsg("","",$("#svaMsg")); };
+function svaLoad(p){
+  $("#svaId").value=p.id; $("#svaKind").value=p.kind; $("#svaMarket").value=p.market; $("#svaName").value=p.name||""; $("#svaPhone").value=p.phone||"";
+  $("#svaCity").value=p.city||""; $("#svaPrice").value=p.price_from||""; $("#svaLink").value=p.link||""; $("#svaAbout").value=p.about||"";
+  $("#svaGroups").querySelectorAll("input").forEach(i=>i.checked=(p.groups||[]).includes(i.value)); $("#svaLive").checked=p.status==="live";
+  svaPhoto.reset(); svaOldPhoto=p.photo||null; $("#svaSave").textContent="Save changes";
+  showMsg(`Editing ${p.name}.`+(svaOldPhoto?" Its photo stays unless you pick a new one.":""),"info",$("#svaMsg")); $("#svaCard").scrollIntoView({behavior:"smooth"});
+}
+$("#svaSave").onclick=async()=>{
+  const mk=$("#svaMarket").value, ph=anyPhone($("#svaPhone").value,mk), name=$("#svaName").value.trim(), link=$("#svaLink").value.trim();
+  const groups=[...$("#svaGroups").querySelectorAll("input:checked")].map(i=>i.value);
+  if (name.length<2) return showMsg("Enter the business name.","err",$("#svaMsg"));
+  if (!ph) return showMsg(PHONE_HELP,"err",$("#svaMsg"));
+  if (!groups.length) return showMsg("Pick where it shows: Motorcycles, Dune Riders or Marine.","err",$("#svaMsg"));
+  if (link && !/^https:\/\/[A-Za-z0-9.-]+\.[A-Za-z]{2,}(\/[^\s"<>]*)?$/.test(link)) return showMsg("The link must start with https://","err",$("#svaMsg"));
+  const row={kind:$("#svaKind").value, groups, market:mk, name, phone:ph, city:$("#svaCity").value.trim()||null, about:$("#svaAbout").value.trim()||null,
+    price_from:$("#svaPrice").value.trim()||null, link:link||null};
+  if (svaPhoto.value) row.photo=svaPhoto.value;
+  const live=$("#svaLive").checked, id=$("#svaId").value;
+  $("#svaSave").disabled=true;
+  try{
+    let pid=id;
+    if (id){ const {error}=await sb.from("providers").update({...row, status: live?"live":"hidden"}).eq("id",id); if (error) throw error; }
+    else {
+      const {data,error}=await sb.from("providers").insert(row).select("id").single(); if (error) throw error; pid=data.id;
+      if (live){ const {error:e2}=await sb.from("providers").update({status:"live"}).eq("id",pid); if (e2) throw e2; }
+    }
+    const msg=`Hello, this is High End Communities. ${name} is now listed in ${groups.map(g=>GROUP_NAMES[g]||g).join(", ")} on ${MARKET_NAME}${live?"":" (hidden for now)"}. Customers reach you on this WhatsApp number. Send us any changes here.`;
+    showMsg("","",$("#svaMsg"));
+    const m=$("#svaMsg"); m.className="msg ok"; m.textContent=`Saved — ${name}${live?" is showing on the site.":" is saved but hidden."} `;
+    const a=document.createElement("a"); a.className="btn ghost small"; a.target="_blank"; a.rel="noopener"; a.href="https://wa.me/"+waNum(ph)+"?text="+encodeURIComponent(msg); a.textContent="✉️ Tell the owner on WhatsApp"; m.appendChild(a);
+    svaClear(); loadSvcAdmin();
+  }catch(e){ showMsg(niceError(e),"err",$("#svaMsg")); }
+  finally{ $("#svaSave").disabled=false; }
+};
+
+/* ---------- viewing slot + booked checks ---------- */
+function fmtWhen(t){ try{ return new Date(t).toLocaleString("en-GB",{weekday:"short",day:"numeric",month:"short",hour:"numeric",minute:"2-digit"}); }catch(e){ return String(t); } }
+function slotTools(item){
+  const L=item.L, a=document.createElement("div"); a.className="admin";
+  const w=document.createElement("input"); w.maxLength=120; w.placeholder="When to see it, e.g. Fri & Sat 5–9 pm"; w.value=L.checkWhen||""; w.style.cssText="flex:1 1 180px";
+  const p=document.createElement("input"); p.maxLength=160; p.placeholder="Where, e.g. Nasr City, near City Stars"; p.value=L.checkWhere||""; p.style.cssText="flex:1 1 180px";
+  a.append(w,p, btn(L.checkWhen||L.checkWhere?"📍 Update":"📍 Set viewing","",async()=>{
+    const patch={check_when:w.value.trim()||null, check_where:p.value.trim()||null};
+    const {error}=await sb.from("listings").update(patch).eq("id",item.id); if (error) throw error;
+    L.checkWhen=patch.check_when; L.checkWhere=patch.check_where; renderAll();
+  }));
+  if (can("inspect")) a.append(btn("📅 Book a check","ok",async()=>openBook(item)));
+  return a;
+}
+function checkMsgs(c){
+  const when=fmtWhen(c.at), link=c.listing_id?linkFor(c.listing_id):"", t=c.title||"the item";
+  const partner=c.partner_name?`\n🔧 ${c.partner_name}`:"";
+  return {
+    owner:`Hello, this is High End Communities about your listing *${t}*.\nA buyer${c.buyer_name?" ("+c.buyer_name+")":""} would like to see it${c.partner_name?" with "+c.partner_name:""}.\n\n🗓 ${when}\n📍 ${c.place}\n\nPlease reply to confirm, or suggest another time.`,
+    buyer:`Hello${c.buyer_name?" "+c.buyer_name:""}, this is High End Communities. Your check is booked:\n*${t}*${link?"\n"+link:""}\n\n🗓 ${when}\n📍 ${c.place}${partner}${c.note?"\n📝 "+c.note:""}\n\nReply here if you need to change it.`,
+    partner:`Hello${c.partner_name?" "+c.partner_name:""}, this is High End Communities. Please check *${t}*${link?"\n"+link:""}\n\n🗓 ${when}\n📍 ${c.place}${c.buyer_name?"\nBuyer: "+c.buyer_name:""}${c.note?"\n📝 "+c.note:""}\n\nPlease reply to confirm.`
+  };
+}
+function checkSends(c, partnerPhone){
+  const m=checkMsgs(c), d=document.createElement("div"); d.className="chk-sends";
+  const add=(ph,txt,label)=>{ if(!ph) return; const a=document.createElement("a"); a.className="btn ghost small"; a.target="_blank"; a.rel="noopener"; a.href="https://wa.me/"+waNum(ph)+"?text="+encodeURIComponent(txt); a.textContent=label; d.appendChild(a); };
+  add(c.owner_phone,m.owner,"✉️ Owner"); add(c.buyer_phone,m.buyer,"✉️ Buyer"); add(partnerPhone,m.partner,"✉️ Partner");
+  return d;
+}
+async function openBook(item){
+  const L=item.L, g=GROUP[L.type], mk=marketOf(L), kind=INSPECT[g]||"expert";
+  const ex=(await loadExperts(true)).filter(e=>e.active!==false && e.market===mk && (e.groups||[]).includes(g));
+  const ov=document.createElement("div"); ov.className="modal"; const c=document.createElement("div"); c.className="card"; c.style.maxWidth="560px";
+  const pre=new Date(Date.now()+864e5); pre.setHours(17,0,0,0); const loc=new Date(pre.getTime()-pre.getTimezoneOffset()*6e4).toISOString().slice(0,16);
+  c.innerHTML=`<h3 style="margin:0 0 4px">📅 Book a check</h3><p class="hint" style="margin:0 0 10px"></p>
+  <div class="bookgrid">
+    <div><label for="bkBuyer">Buyer's name</label><input id="bkBuyer" maxlength="60"></div>
+    <div><label for="bkBuyerPh">Buyer's WhatsApp</label><input id="bkBuyerPh" type="tel" inputmode="tel" placeholder="01xxxxxxxxx"></div>
+    <div class="full"><label for="bkPartner">Partner</label><select id="bkPartner"></select></div>
+    <div class="full" id="bkOtherBox" hidden><label for="bkOther">Partner name</label><input id="bkOther" maxlength="80"></div>
+    <div><label for="bkAt">Date and time</label><input id="bkAt" type="datetime-local"></div>
+    <div><label for="bkPlace">Place</label><input id="bkPlace" maxlength="160" placeholder="e.g. the owner's garage, Nasr City"></div>
+    <div class="full"><label for="bkNote">Note (optional)</label><input id="bkNote" maxlength="300" placeholder="e.g. bring the papers and spare key"></div>
+  </div>
+  <div class="actions"><button type="button" class="btn primary small" id="bkSave">Save booking</button><button type="button" class="btn ghost small" id="bkClose">Close</button></div>
+  <div class="msg" id="bkMsg"></div>`;
+  c.querySelector(".hint").textContent=titleOf(L)+(checkSlotText(L)?" · usually seen: "+checkSlotText(L):"");
+  ov.appendChild(c); document.body.appendChild(ov);
+  const sel=$("#bkPartner"); sel.add(new Option("No partner — the buyer checks it","")); ex.forEach(e=>sel.add(new Option(`${e.kind==="workshop"?"🔧":"🔎"} ${e.name}${e.city?" · "+e.city:""}`,e.id))); sel.add(new Option("Other partner…","other"));
+  if (ex.find(e=>e.kind===kind)) sel.value=ex.find(e=>e.kind===kind).id;
+  sel.onchange=()=>{ $("#bkOtherBox").hidden=sel.value!=="other"; }; sel.onchange();
+  $("#bkAt").value=loc; $("#bkPlace").value=L.checkWhere||"";
+  const close=()=>ov.remove(); $("#bkClose").onclick=close; ov.onclick=e=>{ if(e.target===ov) close(); };
+  $("#bkSave").onclick=async()=>{
+    const bph=$("#bkBuyerPh").value.trim()?anyPhone($("#bkBuyerPh").value,mk):null, at=$("#bkAt").value, place=$("#bkPlace").value.trim();
+    if ($("#bkBuyerPh").value.trim() && !bph) return showMsg(PHONE_HELP,"err",$("#bkMsg"));
+    if (!at || isNaN(Date.parse(at))) return showMsg("Pick the date and time.","err",$("#bkMsg"));
+    if (place.length<2) return showMsg("Write where the check happens.","err",$("#bkMsg"));
+    const e=ex.find(x=>x.id===sel.value);
+    const row={listing_id:item.id, title:titleOf(L).slice(0,160), owner_phone:(String(L.f.phone||"").replace(/\D/g,"")||null), buyer_name:$("#bkBuyer").value.trim()||null, buyer_phone:bph,
+      expert_id:e?e.id:null, partner_name:e?e.name:(sel.value==="other"?($("#bkOther").value.trim()||null):null), at:new Date(at).toISOString(), place, note:$("#bkNote").value.trim()||null, status:"booked"};
+    $("#bkSave").disabled=true;
+    const {error}=await sb.from("checks").insert(row);
+    if (error){ $("#bkSave").disabled=false; return showMsg(/checks/.test(error.message||"")&&/exist|schema/i.test(error.message||"")?"Run update22 in Supabase first.":niceError(error),"err",$("#bkMsg")); }
+    const m=$("#bkMsg"); m.className="msg ok"; m.textContent="Booked. Send the messages:"; m.appendChild(checkSends(row, e?e.phone:null));
+    $("#bkSave").hidden=true; loadChecks();
+  };
+}
+async function loadChecks(){
+  const box=$("#chkList"); if (!box || !can("inspect")) return;
+  let q=sb.from("checks").select("*").order("at",{ascending:true}).limit(300);
+  if (!$("#chkAll").checked) q=q.eq("status","booked");
+  const [{data,error}, ex]=await Promise.all([q, loadExperts(true)]);
+  if (error){ box.innerHTML=""; showMsg(/checks/.test(error.message||"")?"Run update22 in Supabase to turn this on.":niceError(error),"err",$("#chkMsg")); return; }
+  box.innerHTML=(data||[]).length?"":'<div class="muted" style="font-size:14px">No checks booked.</div>';
+  (data||[]).forEach(c=>{
+    const r=document.createElement("div"); r.className="sp-row"+(c.status==="booked"?"":" off");
+    const x=document.createElement("div"); x.className="x"; const past=c.status==="booked" && Date.parse(c.at)<Date.now()-3*36e5;
+    x.insertAdjacentHTML("beforeend",`<b dir="auto">🗓 ${esc(fmtWhen(c.at))} · ${esc(c.title||"")} <span class="pill${c.status==="booked"?"":" off"}">${c.status==="booked"?(past?"Past — mark done?":"Booked"):c.status==="done"?"Done":"Cancelled"}</span></b><span style="white-space:pre-line">📍 ${esc(c.place)}${c.partner_name?" · 🔧 "+esc(c.partner_name):""}${c.buyer_name||c.buyer_phone?"\nBuyer: "+esc(c.buyer_name||"")+(c.buyer_phone?" "+esc(c.buyer_phone):""):""}${c.note?"\n📝 "+esc(c.note):""}${c.created_by?"\nBooked by "+esc(c.created_by):""}</span>`);
+    const tools=document.createElement("div"); tools.className="admin"; tools.style.cssText="border:0;margin:0;padding:0";
+    const e=(ex||[]).find(z=>z.id===c.expert_id);
+    if (c.status==="booked"){ tools.append(...checkSends(c, e?e.phone:null).childNodes); }
+    const set=st=>async()=>{ const {error}=await sb.from("checks").update({status:st}).eq("id",c.id); if(error) throw error; loadChecks(); };
+    if (c.status==="booked") tools.append(btn("✓ Done","ok",set("done")), btn("Cancel","",set("cancelled"),"Tap again: cancel"));
+    else tools.append(btn("↺ Booked again","",set("booked")));
+    if (can("money")) tools.append(btn("🗑","bad",async()=>{ const {error}=await sb.from("checks").delete().eq("id",c.id); if(error) throw error; loadChecks(); },"Delete?"));
+    r.append(x,tools); box.appendChild(r);
+  });
+}
+$("#chkAll").onchange=loadChecks;
 /* ---------- Free listings, fees & promotions ---------- */
 const FEE_KEYS=["watch","bag","art","estate","boat","desert","equine","moto","car"];
 let feeSt={rules:{}, packs:[]};
@@ -1358,19 +1543,59 @@ function renderAll(){
     if (x.L.status==="live" || x.L.status==="sold") groups[x.L.status].push(x);
   });
   groups.live = sortListings(groups.live);
+  groups.pending.sort((a,b)=>(a.L.status==="pending"?0:1)-(b.L.status==="pending"?0:1) || (a.L.at||0)-(b.L.at||0));
+  revSel = new Set([...revSel].filter(id=>groups.pending.some(x=>x.id===id)));
+  revUi(groups.pending);
   for (const [k,list] of Object.entries(groups)){
     const box=$("#"+k+"List"); box.innerHTML="";
-    $("#n"+k[0].toUpperCase()+k.slice(1)).textContent = list.length?`(${list.length})`:"";
+    $("#n"+k[0].toUpperCase()+k.slice(1)).textContent = list.length?(k==="pending"?String(list.length):`(${list.length})`):"";
     if (!list.length){ box.innerHTML=`<div class="empty">${k==="pending"?"All new listings checked 🎉":"Nothing here."}</div>`; continue; }
     list.forEach(item=>{
       const {card, body, meta} = buildCard(item, item.L.status==="pending"?"pending":"admin");
       if (k==="pending" && item.L.status==="live"){ const nb=document.createElement("div"); nb.className="ribbon pend"; nb.style.background="#1f8a4c"; nb.textContent="NEW · LIVE"; card.prepend(nb); }
+      if (k==="pending" && revSelecting){ const lb=document.createElement("label"); lb.className="revpick"; const cb=document.createElement("input"); cb.type="checkbox"; cb.checked=revSel.has(item.id);
+        cb.onchange=()=>{ cb.checked?revSel.add(item.id):revSel.delete(item.id); card.classList.toggle("picked",cb.checked); revUi(); }; lb.append(cb, document.createTextNode(" Select")); card.classList.toggle("picked",cb.checked); card.prepend(lb); }
       if (item.L.note){ const n=document.createElement("div"); n.className="hint"; n.style.color="#b7791f"; n.textContent="📝 "+item.L.note; body.appendChild(n); }
-      body.appendChild(adminTools(item)); if (item.L.status==="live") body.appendChild(offerTools(item)); body.appendChild(meta); box.appendChild(card);
+      body.appendChild(adminTools(item)); if (item.L.status==="live"){ body.appendChild(offerTools(item)); body.appendChild(slotTools(item)); } body.appendChild(meta); box.appendChild(card);
     });
   }
 }
 
+
+/* ---------- review: count, select, approve in bulk ---------- */
+let revSel=new Set(), revSelecting=false, revList=[];
+function revUi(list){
+  if (list) revList=list;
+  const n=revList.length, np=revList.filter(x=>x.L.status==="pending").length;
+  $("#revBar").hidden=!n; $("#revN").textContent=n;
+  $("#revTxt").textContent = np===n ? (n===1?"listing waiting for review":"listings waiting for review") : `waiting for review · ${np} hidden until approved, ${n-np} already live`;
+  $("#revSel").textContent = revSelecting ? "✕ Stop selecting" : "☑ Select";
+  $("#revSelAll").hidden=!revSelecting; $("#revApproveSel").hidden=!revSelecting;
+  $("#revApproveSel").disabled=!revSel.size; $("#revApproveSel").textContent=`✓ Approve selected (${revSel.size})`;
+  $("#revApproveAll").textContent=`✓ Approve all (${n})`;
+  const t=document.querySelector('[data-tab="pending"]'); if (t) t.classList.toggle("hasnew", n>0);
+  document.title = (n?`(${n}) `:"") + document.title.replace(/^\(\d+\) /,"");
+}
+async function revApprove(list){
+  if (!list.length) return;
+  const pend=list.filter(x=>x.L.status==="pending").map(x=>x.id), live=list.filter(x=>x.L.status==="live").map(x=>x.id);
+  ["#revApproveSel","#revApproveAll"].forEach(b=>$(b).disabled=true);
+  try{
+    for (let i=0;i<pend.length;i+=100){ const {error}=await sb.from("listings").update({status:"live", note:null, reviewed:true}).in("id",pend.slice(i,i+100)); if (error) throw error; }
+    for (let i=0;i<live.length;i+=100){ const {error}=await sb.from("listings").update({reviewed:true}).in("id",live.slice(i,i+100)); if (error) throw error; }
+    list.forEach(x=>{ if (x.L.status==="pending"){ x.L.status="live"; x.L.note=null; x.L.soldAt=null; } x.L.reviewed=true; });
+    revSel.clear(); revSelecting=false;
+    showMsg(`Approved ${list.length} listing${list.length===1?"":"s"}.`,"ok",$("#revMsg"));
+  }catch(e){ showMsg(niceError(e),"err",$("#revMsg")); }
+  finally{ $("#revApproveAll").disabled=false; renderAll(); }
+}
+$("#revSel").onclick=()=>{ revSelecting=!revSelecting; if(!revSelecting) revSel.clear(); renderAll(); };
+$("#revSelAll").onclick=()=>{ const all=revSel.size===revList.length; revSel=new Set(all?[]:revList.map(x=>x.id)); renderAll(); };
+$("#revApproveSel").onclick=()=>revApprove(revList.filter(x=>revSel.has(x.id)));
+{ let armed=null; $("#revApproveAll").onclick=()=>{
+  if (!revList.length) return;
+  if (!armed){ const b=$("#revApproveAll"); b.textContent=`Tap again: approve all ${revList.length}`; armed=setTimeout(()=>{ armed=null; revUi(); },4000); return; }
+  clearTimeout(armed); armed=null; revApprove(revList.slice()); }; }
 /* ---------- add / edit ---------- */
 $("#dumpBtn").onclick = ()=>{
   const t=$("#dumpIn").value.trim(); if(!t){ $("#dumpHint").textContent="Paste the message first."; return; }

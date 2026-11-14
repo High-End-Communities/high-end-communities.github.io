@@ -102,6 +102,13 @@ async function loadExperts(force){
   const {data, error} = await sb.from("experts").select("id,kind,groups,market,city,name,phone,note,sort,active").order("sort").order("name");
   return (EXPERTS = error ? [] : (data||[]));
 }
+function checkSlotText(L){ return [L.checkWhen,L.checkWhere].filter(Boolean).join(" · "); }
+function checkSlotEl(L){
+  const t=checkSlotText(L); if (!t) return null;
+  const d=document.createElement("div"); d.className="checkslot";
+  const a=document.createElement("span"); a.textContent="📍 See it & check"; const b=document.createElement("b"); b.setAttribute("data-noi18n",""); b.setAttribute("dir","auto"); b.textContent=t;
+  d.append(a,b); return d;
+}
 function inspectLabel(L){ return INSPECT[GROUP[L.type]]==="workshop" ? "Inspect before you buy" : "Authenticate before you buy"; }
 async function openInspect(item){
   const L=item.L, g=GROUP[L.type], kind=INSPECT[g]||"expert", mk=marketOf(L), ar = window.HE_LANG==="ar";
@@ -109,6 +116,7 @@ async function openInspect(item){
   const title = titleOf(L), link = linkFor(item.id);
   const msg = ar ? `مرحبًا، أريد ${kind==="workshop"?"فحصًا فنيًا":"التأكد من أصالة"} "${title}" المعروض على ${MARKET_NAME}: ${link}`
                  : `Hello, I'd like ${kind==="workshop"?"a pre-purchase inspection of":"you to authenticate"} "${title}" listed on ${MARKET_NAME}: ${link}`;
+  const slot = checkSlotText(L); const msgS = slot ? msg + (ar ? `\nالمعاينة: ${slot}` : `\nIt can be seen: ${slot}`) : msg;
   const ov=document.createElement("div"); ov.className="modal inspect-modal";
   const c=document.createElement("div"); c.className="card";
   const h=document.createElement("h3"); h.textContent = kind==="workshop" ? "Technical inspection" : "Expert authentication";
@@ -116,7 +124,7 @@ async function openInspect(item){
   p.textContent = kind==="workshop"
     ? "Before you pay, have it checked by an independent workshop: engine, chassis and engine numbers, accident history and papers."
     : "Before you pay, have an independent expert confirm it is authentic and in the condition described.";
-  c.append(h,p);
+  c.append(h,p); const se=checkSlotEl(L); if (se) c.appendChild(se);
   const box=document.createElement("div"); box.className="inspect-list";
   if (list.length){
     list.forEach(e=>{
@@ -125,13 +133,13 @@ async function openInspect(item){
       const b=document.createElement("b"); b.textContent=e.name; b.setAttribute("data-noi18n","");
       const sp=document.createElement("span"); sp.setAttribute("data-noi18n",""); sp.textContent=[e.city,e.note].filter(Boolean).join(" · ");
       x.append(b,sp);
-      const wa=document.createElement("a"); wa.className="btn primary small"; wa.target="_blank"; wa.rel="noopener"; wa.href="https://wa.me/"+waNum(e.phone)+"?text="+encodeURIComponent(msg); wa.textContent="WhatsApp";
+      const wa=document.createElement("a"); wa.className="btn primary small"; wa.target="_blank"; wa.rel="noopener"; wa.href="https://wa.me/"+waNum(e.phone)+"?text="+encodeURIComponent(msgS); wa.textContent="WhatsApp";
       const tel=document.createElement("a"); tel.className="btn ghost small"; tel.href="tel:+"+waNum(e.phone); tel.textContent="Call";
       r.append(x,wa,tel); box.appendChild(r);
     });
   } else {
     const e=document.createElement("p"); e.className="muted"; e.textContent=`No partner listed in ${marketName(mk)} yet. Ask High End and we'll suggest one.`;
-    const a=document.createElement("a"); a.className="btn primary small"; a.target="_blank"; a.rel="noopener"; a.href=adminHref(msg); a.textContent="Ask High End on WhatsApp";
+    const a=document.createElement("a"); a.className="btn primary small"; a.target="_blank"; a.rel="noopener"; a.href=adminHref(msgS); a.textContent="Ask High End on WhatsApp";
     box.append(e,a);
   }
   const note=document.createElement("p"); note.className="hint";
@@ -984,7 +992,7 @@ function fileBase(L){ return pdfSafe(titleOf(L)).replace(/[^A-Za-z0-9]+/g,"-").r
 const sb = (window.supabase && SUPABASE_URL && !/YOUR-PROJECT/.test(SUPABASE_URL))
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {auth:{persistSession:true}})
   : null;
-const LIST_COLS = "id,created_at,status,type,f,thumb,sold_at,views,promoted,promoted_until,stock,discount_pct";
+const LIST_COLS = "id,created_at,status,type,f,thumb,sold_at,views,promoted,promoted_until,stock,discount_pct,check_when,check_where";
 /* ---------- Seller numbers are hidden: they are fetched one at a time when a buyer taps WhatsApp / Call ---------- */
 function phoneOf(L){ return String((L&&L.f&&L.f.phone)||"").trim(); }
 const CONTACT_CACHE={};
@@ -1016,7 +1024,8 @@ function rowToItem(r){
   return { id:r.id, L:{ type:r.type, f:r.f||{}, thumb:r.thumb||null, photos:Array.isArray(r.photos)?r.photos:null,
     at:Date.parse(r.created_at)||Date.now(), status:r.status, views:r.views||0, soldAt:r.sold_at?Date.parse(r.sold_at):null, note:r.note||null,
     promoted:!!r.promoted, promotedUntil:r.promoted_until?Date.parse(r.promoted_until):null,
-    stock:(r.stock===null||r.stock===undefined)?null:Number(r.stock), discount:r.discount_pct||null } };
+    stock:(r.stock===null||r.stock===undefined)?null:Number(r.stock), discount:r.discount_pct||null,
+    checkWhen:r.check_when||null, checkWhere:r.check_where||null } };
 }
 async function loadPhotos(item){
   if (item.L.photos && item.L.photos.length) return item.L.photos;
@@ -1560,6 +1569,8 @@ async function siteCheck(page, quiet){
   if (down){ if (!quiet) showMaintenance("down"); return false; }
   const st = res.data || {};
   SITE_ST = st;
+  try{ localStorage.setItem("he_intro_muted", st.intro_muted?"1":"0"); }catch(e){}
+  if (window.__introMuted) window.__introMuted(!!st.intro_muted);
   document.querySelectorAll(".supportwrap").forEach(e=>e.hidden=!st.pay_enabled);   // payments stay hidden until the admin switches them on
   document.querySelectorAll("footer .socials").forEach(e=>{ e.innerHTML="";
     [[st.social_fb,/^https:\/\/(www\.|m\.)?(facebook|fb)\.com\//,"Facebook"],[st.social_ig,/^https:\/\/(www\.)?instagram\.com\//,"Instagram"]].forEach(([u,re,n])=>{
@@ -1697,6 +1708,7 @@ function buildCard(item, mode){
     } else if (spec.textContent) body.appendChild(spec);
     body.appendChild(det);
     body.appendChild(c);
+    if (!sold){ const se=checkSlotEl(L); if (se) body.appendChild(se); }
     if (!sold && INSPECT_TYPES.includes(L.type)){ const ib=document.createElement("button"); ib.type="button"; ib.className="inspect"; ib.textContent=inspectLabel(L); ib.onclick=()=>openInspect(item); body.appendChild(ib); }
     card.appendChild(body);
     const meta=document.createElement("div"); meta.className="muted meta";
@@ -1705,6 +1717,7 @@ function buildCard(item, mode){
     return {card, body, meta, more:det};
   }
   body.append(badge,h,pr); if (tags.childNodes.length) body.appendChild(tags); body.append(dl,c);
+  if (!sold){ const se=checkSlotEl(L); if (se) body.appendChild(se); }
   const meta=document.createElement("div"); meta.className="muted";
   meta.textContent = (L.at?"Posted "+fmtDate(L.at):"") + (sold&&L.soldAt?" · Sold "+fmtDate(L.soldAt):"");
   if (L.status!=="pending"){ const v=document.createElement("span"); v.className="views"; v.textContent="  ·  👁 "+fmtViews(L.views)+(Number(L.views)===1?" view":" views"); meta.appendChild(v); }
@@ -2069,7 +2082,7 @@ function runIntro(key){ key = key || "he_intro";
   let done=false, counting=false, started=false;
   const setSnd=()=>{ snd.textContent = music.muted ? "🔇" : "🔊"; snd.setAttribute("aria-label", music.muted?"Sound on":"Sound off"); };
   const fadeOut=()=>{ const t=setInterval(()=>{ music.volume=Math.max(0,music.volume-0.1); if (music.volume<=0.05){ clearInterval(t); try{ music.pause(); }catch(e){} } },60); };
-  const finish=()=>{ if (done) return; done=true; try{ v.pause(); }catch(e){} fadeOut(); ov.classList.add("out"); setTimeout(()=>{ ov.remove(); document.body.style.overflow=""; },600); };
+  const finish=()=>{ if (done) return; done=true; window.__introMuted=null; try{ v.pause(); }catch(e){} fadeOut(); ov.classList.add("out"); setTimeout(()=>{ ov.remove(); document.body.style.overflow=""; },600); };
   const countdown=()=>{                         // the music keeps playing under the countdown
     if (counting) return; counting=true; gate.hidden=true;
     ov.querySelector(".intro-end").hidden=false; ov.classList.add("ending");
@@ -2088,8 +2101,14 @@ function runIntro(key){ key = key || "he_intro";
   ov.querySelector(".intro-skip").onclick=(e)=>{ e.stopPropagation(); finish(); };
   snd.onclick=(e)=>{ e.stopPropagation(); if (!started){ start(); return; } music.muted=!music.muted; if (!music.muted && music.paused && !done) music.play().catch(()=>{}); setSnd(); };
   gate.onclick=(e)=>{ e.stopPropagation(); start(); };
-  // try to start with sound straight away; when the browser asks for a tap first, show "Tap to enter" instead of playing silently
-  music.play().then(()=>{ music.pause(); start(); }).catch(()=>{ gate.hidden=false; });
+  // the admin can make the intro start silent (Settings → "Intro starts with the sound off"); visitors tap 🔇 to hear it
+  let touched=false; const startSilent=()=>{ if (!started) start(); if (!touched){ music.muted=true; setSnd(); } };
+  snd.addEventListener("click",()=>{ touched=true; });
+  window.__introMuted=(m)=>{ if (done) return; if (m) startSilent(); };
+  let silent=false; try{ silent = localStorage.getItem("he_intro_muted")==="1"; }catch(e){}
+  if (silent) startSilent();
+  // otherwise try to start with sound straight away; when the browser asks for a tap first, show "Tap to enter" instead of playing silently
+  else music.play().then(()=>{ if (!started) { music.pause(); start(); } }).catch(()=>{ if (!started) gate.hidden=false; });
   setTimeout(()=>{ if (!started && !counting) start(); }, 12000);     // nobody tapped: go ahead (silent if the browser insists)
   setTimeout(()=>{ if (!counting) countdown(); }, 26000);              // never stay stuck
 }

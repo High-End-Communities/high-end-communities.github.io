@@ -698,3 +698,22 @@ footer .socials a{color:inherit;text-decoration:underline;text-underline-offset:
 .svc img{width:88px;height:88px;object-fit:cover;border-radius:10px;flex:none}
 .svct{flex:1;min-width:0}.svct b{display:block}.svct small{color:#77736b}.svct p{margin:6px 0;font-size:14px}
 .svct .row{display:flex;gap:6px;flex-wrap:wrap}
+.checkslot{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline;margin:8px 0 2px;padding:7px 10px;border-radius:10px;background:#f4efe3;font-size:13px;color:#5f5a50;line-height:1.35}
+.checkslot b{color:#1d1b18;font-weight:600}
+.inspect-modal .checkslot{margin:4px 0 10px}
+.bookgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px}.bookgrid .full{grid-column:1/-1}
+.bookgrid label{display:block;font-size:12px;color:#5f5a50;margin-bottom:3px}
+.bookgrid input,.bookgrid select,.bookgrid textarea{width:100%;box-sizing:border-box}
+.chk-sends{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+@media (max-width:560px){.bookgrid{grid-template-columns:1fr}}
+.revbar{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;margin:0 0 12px;padding:10px 14px;border-radius:14px;background:#1d1b18;color:#f7f3e8;box-shadow:0 4px 14px rgba(0,0,0,.12)}
+.revbar .revcount{font-size:14px}.revbar .revcount b{font-size:22px;color:#e2c48d;margin-inline-end:4px}
+.revbar .revbtns{display:flex;flex-wrap:wrap;gap:6px}
+.revbar .btn.ghost{background:transparent;color:#f7f3e8;border-color:rgba(247,243,232,.4)}
+.revbar .btn.primary{background:#e2c48d;color:#1d1b18;border-color:#e2c48d}
+.revbar .btn[disabled]{opacity:.45}
+.revpick{position:absolute;top:10px;inset-inline-end:10px;z-index:4;display:flex;gap:6px;align-items:center;padding:7px 12px;border-radius:999px;font:600 14px var(--sans);background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.25);cursor:pointer}
+article.item{position:relative}
+.revpick input{width:20px;height:20px}
+article.item.picked{outline:3px solid #b08d57;outline-offset:-3px}
+.tabs button.hasnew #nPending{display:inline-block;min-width:20px;padding:1px 7px;border-radius:999px;background:#c0392b;color:#fff;font-size:12px;line-height:18px}

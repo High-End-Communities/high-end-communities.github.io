@@ -194,7 +194,7 @@ var D = {
 "Your listing appears in this country's marketplace, with its currency and phone code.":"يظهر منتجك في سوق هذه الدولة، بعملتها وكود هاتفها.",
 "SAR":"ر.س","AED":"د.إ","QAR":"ر.ق","BHD":"د.ب","TRY":"ل.ت","MAD":"د.م","TND":"د.ت","DZD":"د.ج","LYD":"د.ل",
 "Enter your WhatsApp number: Egypt 01xxxxxxxxx, or with the country code (+966, +971, +973, +90, +212, +213, +216, +218).":"أدخل رقم الواتساب: مصر 01xxxxxxxxx، أو بكود الدولة (+966، +971، +973، +90، +212، +213، +216، +218).",
-"Inspect before you buy":"افحصها قبل الشراء","Authenticate before you buy":"تأكد من الأصالة قبل الشراء",
+"Inspect before you buy":"افحصها قبل الشراء","📍 See it & check":"📍 المعاينة والفحص","Authenticate before you buy":"تأكد من الأصالة قبل الشراء",
 "Technical inspection":"فحص فني","Expert authentication":"تأكيد الأصالة من خبير",
 "Before you pay, have it checked by an independent workshop: engine, chassis and engine numbers, accident history and papers.":"قبل الدفع، افحصها في ورشة مستقلة: المحرك، رقم الشاسيه والموتور، تاريخ الحوادث والأوراق.",
 "Before you pay, have an independent expert confirm it is authentic and in the condition described.":"قبل الدفع، اطلب من خبير مستقل التأكد من أنها أصلية وبالحالة الموصوفة.",
