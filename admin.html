@@ -690,7 +690,7 @@ function instaCaption(it){
   const L=it.L, g=GROUP[L.type];
   const tags={moto:"#motorcycles #bikersofegypt #harleydavidson #bmwmotorrad #ducati",car:"#cars #carsforsale #luxurycars #4x4",watch:"#watches #rolex #omega #watchcollector",
     boat:"#yachts #boats #jetski #marine",equine:"#horses #equestrian #arabianhorse",desert:"#dunebuggy #atv #sandbike #desert #offroad #utv",bag:"#luxurybags #hermes #chanel #preloved",art:"#art #collectibles",estate:"#realestate #luxuryhomes"}[g]||"";
-  return `${ICONS[L.type]||""} ${titleOf(L)}\n💰 ${priceStr(L.f)}\n\n${rows(L).slice(0,6).map(([k,v])=>k+": "+v).join("\n")}\n\n📸 Photos, details & contact: link in bio — or search "${titleOf(L)}" on ${baseUrl().replace(/^https?:\/\//,"")}\n\n#HighEndCommunities #forsale ${tags}`;
+  return `${ICONS[L.type]||""} ${titleOf(L)}\n💰 ${priceStr(L.f)}\n\n${rows(L).slice(0,6).map(([k,v])=>k+": "+v).join("\n")}\n\n📸 Photos, details & contact the seller:\n🔗 ${linkFor(it.id)}\n\n#HighEndCommunities #forsale ${tags}`;
 }
 /* ---------- Social posts: an Instagram portrait (1080×1350) and a Facebook landscape (1200×630), each in its own look ---------- */
 const SO={ink:"#1d1b18", cream:"#f7f3e8", gold:"#b08d57", mute:"#8a8478", line:"#e4dccb"};
@@ -754,7 +754,7 @@ async function fbImage(it){
 }
 async function socialPost(it, btn, kind){
   btn.disabled=true; const old=btn.textContent; btn.textContent="Preparing…";
-  const cap=instaCaption(it); let copied=false; try{ await navigator.clipboard.writeText(kind==="fb"?cap.replace(/link in bio/,linkFor(it.id)):cap); copied=true; }catch(e){}
+  const cap=instaCaption(it); let copied=false; try{ await navigator.clipboard.writeText(cap); copied=true; }catch(e){}
   let f=null; try{ f=await (kind==="fb"?fbImage(it):instaImage(it)); }catch(e){ console.warn(e); }
   btn.disabled=false; btn.textContent=old;
   const app=kind==="fb"?"Facebook":"Instagram";
