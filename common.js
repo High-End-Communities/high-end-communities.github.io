@@ -465,9 +465,11 @@ let photos = []; // {url, bytes, w, h}
 const $ = s => document.querySelector(s);
 const fmt = n => Number(n).toLocaleString("en-US");
 
-const RENT_RANGE = [500, 50000000];   // rent per day, month or year
+const RENT_RANGE = [500, 50000000];   // rent per day, month or year; the lowest is set in Admin → Stats → Real estate rent
 function priceRange(){
-  if (type==="estate" && ($("#f_deal")||{}).value==="For rent") return RENT_RANGE;
+  if (type==="estate" && ($("#f_deal")||{}).value==="For rent"){
+    const lo = SITE_ST && SITE_ST.rent_min!=null ? Number(SITE_ST.rent_min) : RENT_RANGE[0];
+    return [isNaN(lo) ? RENT_RANGE[0] : lo, RENT_RANGE[1]]; }
   const r = RANGES[type];
   if (Array.isArray(r)) return r;
   const cat = ($("#f_category")||{}).value;

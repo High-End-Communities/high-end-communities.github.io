@@ -29,7 +29,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=673ec5bd">
+<link rel="stylesheet" href="common.css?v=61c0e6a8">
 </head>
 <body class="ladies">
 <script src="i18n.js?v=76c54e27"></script>
@@ -106,15 +106,17 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="config.js"></script>
-<script src="common.js?v=673ec5bd"></script>
+<script src="common.js?v=61c0e6a8"></script>
 
 <script>
 if (/^#l-[A-Za-z0-9-]{1,60}$/.test(location.hash)) location.replace("item.html?id="+location.hash.slice(3));   // old shared links
 const FIXED = window.FIXED_GROUP || null;     // bags.html shows one category only
 runIntro(FIXED ? "he_intro_"+FIXED : "he_intro");   // the bags page has its own intro too
 let all = [], filter = FIXED || "all", sub = "all", MARKET = getMarket();
-// Real estate is not in the main catalogue: it opens only from its own link, ?cat=estate (shared in the real estate group)
-if (!FIXED && /[?&]cat=estate\b/.test(location.search)) filter = "estate";
+// ?cat=moto / car / boat / equine … opens one section (links shared in each WhatsApp group).
+// Real estate is not in the main catalogue: it opens only from its own link, ?cat=estate.
+const CAT_LINK = (location.search.match(/[?&]cat=([a-z]+)/)||[])[1];
+if (!FIXED && CAT_LINK && GROUP_ORDER.includes(CAT_LINK) && CAT_LINK!=="bag") filter = CAT_LINK;
 function drawMarkets(){
   const box=$("#markets"); if (!box) return;
   const n = id => all.filter(x=>marketOf(x.L)===id && x.L.status==="live" && (!FIXED || GROUP[x.L.type]===FIXED)).length;
@@ -509,7 +511,7 @@ window.addEventListener("hashchange", goToHash);
 (async ()=>{
   if (!sb){ showMsg("The catalogue isn't connected to its database yet (config.js).","err",$("#listMsg")); return; }
   if (!(await siteCheck("catalogue"))) return;
-  if (FIXED) drawSubfilters();
+  if (FIXED || filter!=="all"){ document.querySelectorAll("#filters .chip").forEach(x=>x.classList.toggle("on",x.dataset.f===filter)); drawSubfilters(); }
   showMsg("Loading listings…","info",$("#listMsg"));
   const t = setTimeout(()=>showMsg("Still loading… if this takes long, check your connection.","info",$("#listMsg")), 8000);
   const {data, error} = await sb.from("listings").select(LIST_COLS).in("status",["live","sold"]).order("created_at",{ascending:false}).limit(500);
