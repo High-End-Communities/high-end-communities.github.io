@@ -1,3 +1,4 @@
+if (window.top !== window.self) { try { window.top.location = window.self.location; } catch (e) { document.documentElement.innerHTML = ""; } }
 /* High End Communities — shared code. Settings live in config.js */
 /* ===== Settings you can adjust ===== */
 const MARKET_NAME = "High End Communities";
@@ -404,7 +405,7 @@ function annFor(g, market){
   const box=document.createElement("div"); box.className="annbox";
   a.slice(0,3).forEach(r=>{ const d=document.createElement("div"); d.className="ann";
     d.innerHTML=`<b>📢 ${esc(r.title)}</b>`+(r.body?`<p>${esc(r.body).replace(/\n/g,"<br>")}</p>`:"");
-    if (r.link){ const l=document.createElement("a"); l.className="btn ghost small"; l.href=r.link; l.target="_blank"; l.rel="noopener"; l.textContent="Open"; d.appendChild(l); }
+    if (r.link && /^https:\/\//.test(r.link)){ const l=document.createElement("a"); l.className="btn ghost small"; l.href=r.link; l.target="_blank"; l.rel="noopener"; l.textContent="Open"; d.appendChild(l); }
     box.appendChild(d); });
   return box;
 }
