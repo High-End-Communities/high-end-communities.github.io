@@ -103,7 +103,7 @@
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js" integrity="sha384-8FWZA6BGMXhsfO+BLtrJK0We6gg5o1JyO8xQm6peWDEUs17ACA5ziE/NIAkl9z2k" crossorigin="anonymous"></script>
 <script src="config.js"></script>
-<script src="common.js?v=cc0e44b6"></script>
+<script src="common.js?v=3dfd5ca3"></script>
 
 <script>
 if (/^#l-[A-Za-z0-9-]{1,60}$/.test(location.hash)) location.replace("item.html?id="+location.hash.slice(3));   // old shared links
@@ -218,7 +218,7 @@ function openSvc(g,k){
     const row=document.createElement("div"); row.className="row";
     const a=document.createElement("a"); a.className="btn wa small"; a.href="#"; a.textContent="WhatsApp";
     a.onclick=async ev=>{ ev.preventDefault(); const w=window.open("about:blank","_blank");
-      const {data}=await sb.rpc("provider_phone",{p_id:p.id}); if(!data){ if(w) w.close(); toast("This contact is not available any more."); return; }
+      const {data,error}=await sb.rpc("provider_phone",{p_id:p.id}); if(!data){ if(w) w.close(); toast(error&&/too many/i.test(error.message||"")?LIMIT_MSG:"This contact is not available any more."); return; }
       const u="https://wa.me/"+waNum(String(data))+"?text="+encodeURIComponent(`Hello ${p.name}, I found you on ${MARKET_NAME} (${l}). `);
       if (w){ try{ w.opener=null; }catch(e){} w.location.href=u; } else location.href=u; };
     row.appendChild(a);

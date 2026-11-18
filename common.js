@@ -38,7 +38,7 @@ const BAG_RANGES = { "Handbag":[5000,5000000], "Shoulder bag":[5000,3000000], "T
   "Sunglasses":[1500,150000], "Jewelry":[2000,10000000], "Other":[1000,2000000] };
 const BOATPART_RANGES = { "Engine & outboard":[5000,5000000], "Electronics & navigation":[1000,1000000], "Safety equipment":[200,200000],
   "Deck hardware":[200,500000], "Water sports gear":[500,500000], "Covers & upholstery":[500,300000], "Trailer":[10000,1500000], "Other":[200,5000000] };
-const USD_TO_EGP = (typeof USD_RATE !== "undefined" && USD_RATE > 0) ? USD_RATE : 52;   // used only to check USD prices against the EGP ranges
+let USD_TO_EGP = (typeof USD_RATE !== "undefined" && USD_RATE > 0) ? USD_RATE : 52;   // used only to check USD prices against the EGP ranges
 /* ---- marketplaces (countries) ---- */
 const MARKETS = [
   {id:"EG", name:"Egypt", cur:["EGP","USD"], dial:["20"], local:"01xxxxxxxxx", tz:["Africa/Cairo"], cc:["EG"]},
@@ -56,6 +56,26 @@ const MARKET_BY_ID = Object.fromEntries(MARKETS.map(m=>[m.id,m]));
 // how many of each currency one US dollar buys (only used to check price ranges and show "≈" prices)
 const PER_USD = Object.assign({USD:1, EGP:USD_TO_EGP, SAR:3.75, AED:3.6725, QAR:3.64, BHD:0.376, EUR:0.87, TRY:50, MAD:9.3, TND:2.95, DZD:134, LYD:4.9},
   (typeof RATES_PER_USD!=="undefined" && RATES_PER_USD) || {});
+/* Daily exchange rates (free feed, refreshed once a day, cached on the device).
+   FX_DAY is set only when today's or yesterday's rates loaded; printed flyers/PDFs show "≈" prices only then. */
+let FX_DAY = null;
+function fxApply(o){ if (!o || !o.rates || !(o.rates.EGP>0)) return false;
+  Object.keys(PER_USD).forEach(k=>{ if (o.rates[k]>0) PER_USD[k]=o.rates[k]; }); USD_TO_EGP=o.rates.EGP; PER_USD.EGP=o.rates.EGP;
+  FX_DAY=o.day; return true; }
+const FX_READY = (async()=>{
+  const today=new Date().toISOString().slice(0,10), fresh=d=>d && (Date.parse(today)-Date.parse(d))<=2*864e5;
+  let c=null; try{ c=JSON.parse(localStorage.getItem("he_fx")||"null"); }catch(e){}
+  if (c && c.day===today) return fxApply(c);
+  try{
+    const r=await fetch("https://open.er-api.com/v6/latest/USD",{cache:"no-store"}); const j=await r.json();
+    if (j && j.result==="success" && j.rates){ const day=new Date((j.time_last_update_unix||Date.now()/1000)*1000).toISOString().slice(0,10);
+      const o={day, rates:j.rates}; try{ localStorage.setItem("he_fx", JSON.stringify({...o, day:today, src:day})); }catch(e){}
+      return fxApply({...o, day:today}); }
+  }catch(e){}
+  if (c && fresh(c.day)) return fxApply(c);
+  return false;
+})();
+function fxNote(){ if (!FX_DAY) return ""; const d=new Date(FX_DAY+"T12:00:00Z"); return " · rate "+d.toLocaleDateString("en-GB",{day:"numeric",month:"short"}); }
 function toEGP(n, cur){ return Number(n||0) / (PER_USD[cur]||1) * USD_TO_EGP; }
 function fromEGP(n, cur){ return Number(n||0) / USD_TO_EGP * (PER_USD[cur]||1); }
 function marketOf(L){ const c = L && L.f && (L.f.country==="NA" ? "MA" : L.f.country); return MARKET_BY_ID[c] ? c : "EG"; }   // old "NA" listings → Morocco
@@ -1008,15 +1028,18 @@ function phoneOf(L){ return String((L&&L.f&&L.f.phone)||"").trim(); }
 const CONTACT_CACHE={};
 async function contactPhone(kind,id){
   const k=kind+":"+id; if (CONTACT_CACHE[k]) return CONTACT_CACHE[k];
-  try{ const {data,error}=await sb.rpc("contact_phone",{p_kind:kind,p_id:id}); if(error||!data) return null; return (CONTACT_CACHE[k]=String(data)); }catch(e){ return null; }
+  CONTACT_LIMIT=false;
+  try{ const {data,error}=await sb.rpc("contact_phone",{p_kind:kind,p_id:id}); if(error){ CONTACT_LIMIT=/too many/i.test(error.message||""); return null; } if(!data) return null; return (CONTACT_CACHE[k]=String(data)); }catch(e){ return null; }
 }
+let CONTACT_LIMIT=false;
+const LIMIT_MSG="Too many contact requests from this connection. Please try again in a few minutes.";
 function hiddenContact(a, kind, id, mk){
   a.href=itemHref(kind==="listing"?id:"");
   a.onclick=async ev=>{
     ev.preventDefault();
     const w = a.target==="_blank" ? window.open("about:blank","_blank") : null;
     const p = await contactPhone(kind,id);
-    if (!p){ if (w) w.close(); toast("This contact is not available any more."); return; }
+    if (!p){ if (w) w.close(); toast(CONTACT_LIMIT?LIMIT_MSG:"This contact is not available any more."); return; }
     const u=mk(p);
     if (w){ try{ w.opener=null; }catch(e){} w.location.href=u; } else location.href=u;
   };
@@ -1755,8 +1778,9 @@ function buildCard(item, mode){
       if (ws.length){ const g=document.createElement("div"); g.className="wspec";
         ws.forEach(([k,v])=>{ const c=document.createElement("div"); const a=document.createElement("span"); a.textContent=k; const b=document.createElement("b"); b.textContent=v; c.append(a,b); g.appendChild(c); });
         body.appendChild(g); }
-      if (L.f.price_unit!=="USD" && priceEGP(L.f)) { const u=document.createElement("div"); u.className="usd"; u.textContent="≈ $"+fmt(Math.round(priceEGP(L.f)/USD_TO_EGP)); pr.after(u); }
-      else if (L.f.price_unit==="USD") { const u=document.createElement("div"); u.className="usd"; u.textContent="≈ "+fmt(Math.round(priceEGP(L.f)))+" EGP"; pr.after(u); }
+      if (!FX_DAY) {}
+      else if (L.f.price_unit!=="USD" && priceEGP(L.f)) { const u=document.createElement("div"); u.className="usd"; u.textContent="≈ $"+fmt(Math.round(priceEGP(L.f)/USD_TO_EGP))+fxNote(); pr.after(u); }
+      else if (L.f.price_unit==="USD") { const u=document.createElement("div"); u.className="usd"; u.textContent="≈ "+fmt(Math.round(priceEGP(L.f)))+" EGP"+fxNote(); pr.after(u); }
     } else if (spec.textContent) body.appendChild(spec);
     body.appendChild(det);
     body.appendChild(c);
@@ -1994,7 +2018,7 @@ async function drawFlyerHD(P, L, id, ph){
   tl.forEach((l,i)=>P.text(l,M,y+i*7,{size:17,bold:1,serif:1})); y += tl.length*7;
   P.text(priceStr(L.f),M,y+3,{size:22,bold:1,serif:1});
   const eg = priceEGP(L.f);
-  if (eg){ const alt = L.f.price_unit==="USD" ? "≈ "+fmt(Math.round(eg))+" EGP" : "≈ $"+fmt(Math.round(eg/USD_TO_EGP)); P.text(alt, M+P.width(priceStr(L.f),{size:22,bold:1,serif:1})+4, y+3, {size:9,color:"#77736b"}); }
+  if (eg && FX_DAY){ const alt = (L.f.price_unit==="USD" ? "≈ "+fmt(Math.round(eg))+" EGP" : "≈ $"+fmt(Math.round(eg/USD_TO_EGP))) + fxNote(); P.text(alt, M+P.width(priceStr(L.f),{size:22,bold:1,serif:1})+4, y+3, {size:9,color:"#77736b"}); }
   y += 10;
   // photos: main big, the rest two per row
   if (ph.length){ const h=W*0.72; await fitImg(P,ph[0],M,y,W,h); y+=h+3; }
