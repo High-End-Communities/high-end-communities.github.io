@@ -746,3 +746,16 @@ select.langbtn option{color:#1d1b18}
 .locked{opacity:.55;pointer-events:none}
 select.langbtn{width:auto;min-width:0}
 #photoRule{display:block;margin:6px 0 2px;padding:8px 10px;border-radius:4px;background:#fff7e0;border:1px solid #ecd9a6;color:#6b4a00;font-size:13.5px;line-height:1.45}
+
+/* Download-now (original HD ad) */
+.hd-cta{display:flex;align-items:center;gap:12px;width:100%;margin:14px 0 4px;padding:12px 14px;border:1.5px solid #1f1f1f;border-radius:14px;background:#fffdf7;color:#1f1f1f;cursor:pointer;text-align:start;font:inherit}
+.hd-cta:hover,.hd-cta:focus-visible{background:#1f1f1f;color:#fffdf7}
+.hd-cta svg{flex:none}
+.hd-cta span{display:flex;flex-direction:column;line-height:1.25}
+.hd-cta b{font:700 17px "Roboto Slab",Georgia,serif}
+.hd-cta small{font-size:12px;opacity:.75}
+.hd-modal .card{text-align:center}
+.hd-modal .hd-ic{color:#1f1f1f;display:flex;justify-content:center;margin:4px 0 6px}
+.hd-modal .hd-ic svg{width:56px;height:56px}
+.hd-modal p{color:var(--muted);margin:0 0 14px}
+.hd-modal .hd-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}

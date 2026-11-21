@@ -839,6 +839,7 @@ function listingText(L){
 function safeId(id){ return /^[A-Za-z0-9-]{1,60}$/.test(id) ? id : null; }
 let SHORT_URL = "", INCLUDE_LINK = true;
 function baseUrl(){ return (SHORT_URL || SITE_URL).replace(/\/$/,""); }
+function hdLink(id){ const s=safeId(id); return s ? baseUrl()+"/item.html?id="+s+"&hd=1" : baseUrl()+"/"; }
 function linkFor(id){ const s=safeId(id); return s ? baseUrl()+"/item.html?id="+s : baseUrl()+"/"; }
 function itemHref(id){ const s=safeId(id); return s ? "item.html?id="+s : "./"; }
 function waHref(text){ return "https://wa.me/?text="+encodeURIComponent(text); }
@@ -979,11 +980,16 @@ async function drawFlyer(P, L, id){
   const M = 8, W = FW-2*M;
   P.rect(0,0,FW,FH,PAPER);
   checker(P,0,0,FW,2);
-  const lr = Math.min(52/logo.naturalWidth, 38/logo.naturalHeight);
+  const lr = Math.min(34/logo.naturalWidth, 20/logo.naturalHeight);   // small branding: the product leads
   const lw = logo.naturalWidth*lr, lh = logo.naturalHeight*lr; P.img(logo,(FW-lw)/2,6,lw,lh);
-  if (drawQR(P, linkFor(id), FW-8-21, 6, 21)) P.text("Scan for photos", FW-8-10.5, 6+21+3, {size:5.2, color:"#77736b", align:"center"});
-  let y = 6+lh+3;
-  if (ph.length){ await fitImg(P,ph[0],M,y,W,76); y+=76; }
+  if (drawQR(P, hdLink(id), FW-8-21, 6, 21)) P.text("Scan for the original HD ad", FW-8-10.5, 6+21+3, {size:4.6, color:"#77736b", align:"center"});
+  let y = 6+Math.max(lh,24)+3;
+  // the photo takes whatever room the text leaves (title on 1 line / no add-ons → a taller photo)
+  const _pw = P.width(priceStr(L.f),{size:19,bold:1,serif:1});
+  const _tl = wrapText(P,titleOf(L),{size:15,bold:1,serif:1},W-_pw-6,2).length;
+  const _al = L.f.addons ? wrapText(P,L.f.addons,{size:8.5},W-16,2).length : 0;
+  const photoH = Math.min(106, 90 + (2-_tl)*6 + (L.f.addons ? (2-_al)*4.4 : 8));
+  if (ph.length){ await fitImg(P,ph[0],M,y,W,photoH); y+=photoH; }
   if (ph.length>1){ const tw=(W-2*3)/3, th=16; y+=2; let i=0; for (const im of ph.slice(1,4)){ await fitImg(P,im,M+i*(tw+3),y,tw,th); i++; } y+=th; }
   y += 6;
   const badge = (LABELS[L.type] + (L.f.category?" - "+L.f.category:"")).toUpperCase();
@@ -997,13 +1003,13 @@ async function drawFlyer(P, L, id){
   const SKIP = ["Add-ons","Options & extras","Item type","Accessory type","Type","Part type","Property type"];
   const det = rows(L).filter(([k])=>!SKIP.includes(k));
   const cw = W/2;
-  det.slice(0,8).forEach(([k,v],i)=>{
+  det.slice(0,4).forEach(([k,v],i)=>{
     const cx = M + (i%2)*cw, cy = y + Math.floor(i/2)*5.2;
     P.text(k+":",cx,cy,{size:8,color:"#77736b"});
     const kw = P.width(k+": ",{size:8});
     P.text(clip(P,v,{size:8.5,bold:1},cw-kw-3),cx+kw,cy,{size:8.5,bold:1});
   });
-  y += Math.ceil(Math.min(det.length,8)/2)*5.2;
+  y += Math.ceil(Math.min(det.length,4)/2)*5.2;
   if (L.f.addons){ y+=1; P.text(L.type==="car"?"Options:":"Add-ons:",M,y,{size:8,color:"#77736b"}); const al=wrapText(P,L.f.addons,{size:8.5},W-16,2); al.forEach((l,i)=>P.text(l,M+14,y+i*4.4,{size:8.5})); y+=al.length*4.4; }
   // contact bar + sponsor anchored to the bottom
   const by = FH-37;
@@ -2065,6 +2071,32 @@ async function drawFlyerHD(P, L, id, ph){
   return y;
 }
 // sources: optional list of images (the owner's HD originals on the post page); otherwise the listing's photos
+/* "Download now": the original, highest-definition copy of the ad (item page) */
+const DL_ICON='<svg viewBox="0 0 48 48" width="44" height="44" aria-hidden="true"><circle cx="24" cy="24" r="22" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M24 12v20M15 24l9 9 9-9" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+function hdTxt(){ const l=window.HE_LANG;
+  return l==="ar" ? {btn:"حمّل الآن", sub:"الإعلان الأصلي بأعلى جودة", h:"الإعلان الأصلي — أعلى جودة", p:"دي النسخة الأصلية من الإعلان بأعلى دقة، مباشرة من هاي إند كوميونيتيز.", img:"صورة HD", pdf:"ملف PDF HD", close:"إغلاق"}
+       : l==="fr" ? {btn:"Télécharger", sub:"Annonce originale en haute définition", h:"Annonce originale — haute définition", p:"Voici la copie originale de cette annonce, dans la plus haute définition, directement de High End Communities.", img:"Image HD", pdf:"PDF HD", close:"Fermer"}
+       : {btn:"Download now", sub:"Original ad · highest definition", h:"Original ad — highest definition", p:"This is the original, highest-definition copy of this ad, straight from High End Communities.", img:"HD image", pdf:"HD PDF", close:"Close"}; }
+function hdPopup(L, id){
+  const t=hdTxt(); document.getElementById("hdModal")?.remove();
+  const ov=document.createElement("div"); ov.className="modal hd-modal"; ov.id="hdModal"; ov.setAttribute("role","dialog"); ov.setAttribute("aria-label",t.h);
+  const c=document.createElement("div"); c.className="card";
+  const ic=document.createElement("div"); ic.className="hd-ic"; ic.innerHTML=DL_ICON;
+  const h=document.createElement("h3"); h.textContent=t.h; h.setAttribute("data-noi18n","");
+  const p=document.createElement("p"); p.textContent=t.p; p.setAttribute("data-noi18n","");
+  const row=document.createElement("div"); row.className="hd-row";
+  const bi=document.createElement("button"); bi.type="button"; bi.className="btn primary"; bi.textContent="⬇ "+t.img; bi.setAttribute("data-noi18n","");
+  const bp=document.createElement("button"); bp.type="button"; bp.className="btn ghost"; bp.textContent="⬇ "+t.pdf; bp.setAttribute("data-noi18n","");
+  const bx=document.createElement("button"); bx.type="button"; bx.className="btn ghost small"; bx.textContent=t.close; bx.setAttribute("data-noi18n","");
+  bi.onclick=()=>{ ov.remove(); exportHD(L,id,false); }; bp.onclick=()=>{ ov.remove(); exportHD(L,id,true); };
+  bx.onclick=()=>ov.remove(); ov.onclick=e=>{ if (e.target===ov) ov.remove(); };
+  row.append(bi,bp); c.append(ic,h,p,row,bx); ov.appendChild(c); document.body.appendChild(ov); bi.focus();
+}
+function hdCta(L, id){
+  const t=hdTxt(); const b=document.createElement("button"); b.type="button"; b.className="hd-cta"; b.setAttribute("data-noi18n","");
+  b.innerHTML=DL_ICON; const x=document.createElement("span"); const s1=document.createElement("b"); s1.textContent=t.btn; const s2=document.createElement("small"); s2.textContent=t.sub;
+  x.append(s1,s2); b.appendChild(x); b.onclick=()=>hdPopup(L,id); return b;
+}
 async function exportHD(L, id, asPdf, sources){
   if (asPdf && !window.jspdf){ toast("PDF tool didn't load - check your connection."); return; }
   toast("Making your HD flyer…");
