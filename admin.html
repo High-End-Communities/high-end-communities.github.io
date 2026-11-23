@@ -71,12 +71,26 @@
         <button type="button" data-tab="stats">📊 Stats</button>
       </div>
       <div class="tabgrp"><span class="tg">Site</span>
+        <button type="button" data-tab="admins">👥 Admins</button>
         <button type="button" data-tab="settings">⚙️ Settings <span id="maintFlag" class="flag" hidden>Maintenance on</span></button>
       </div>
     </nav>
     <div class="toolbar"><span class="muted" id="who"></span><button type="button" class="btn ghost small" id="logout">Log out</button></div>
     <div class="msg" id="listMsg"></div>
 
+    <div data-pane="admins" hidden>
+  <div class="card" id="admCard">
+      <h3 style="margin:0 0 6px">👥 Admins</h3>
+      <div class="hint" style="margin-bottom:8px">Add an admin by email below, then choose what they can manage with "Permissions".</div>
+      <table class="mini" id="admList"></table>
+      <div id="admAddBox" hidden>
+        <h4 style="margin:14px 0 4px">➕ Add an admin</h4>
+        <div class="unitrow" style="margin-top:8px"><input id="admEmail" type="email" placeholder="new admin's email"><button type="button" class="btn primary small" id="admAdd">Add admin</button></div>
+        <div class="hint">After adding, invite the same email in Supabase → Authentication → Users → "Invite user" so they can set a password. Only the root admin (👑) can add or remove admins, and the root can't be removed from here.</div>
+      </div>
+      <div class="msg" id="admMsg"></div>
+    </div>
+    </div>
     <div data-pane="settings" hidden>
       <h2 class="panetitle">Site settings</h2>
       <div class="setgrid">
@@ -98,15 +112,6 @@
     <div class="card" id="introCard">
       <label class="showsold" style="color:var(--text);font-weight:600"><input type="checkbox" id="introMuted"> 🔇 Intro starts with the sound off</label>
       <div class="hint">On: the welcome video plays silently and visitors tap 🔇 to hear the music. Off: it tries to start with sound and shows "Tap to enter" when the phone asks first.</div>
-    </div>
-    <div class="card" id="admCard">
-      <h3 style="margin:0 0 6px">👥 Admins</h3>
-      <table class="mini" id="admList"></table>
-      <div id="admAddBox" hidden>
-        <div class="unitrow" style="margin-top:8px"><input id="admEmail" type="email" placeholder="new admin's email"><button type="button" class="btn ghost small" id="admAdd">Add admin</button></div>
-        <div class="hint">After adding, invite the same email in Supabase → Authentication → Users → "Invite user" so they can set a password. Only the root admin (👑) can add or remove admins, and the root can't be removed from here.</div>
-      </div>
-      <div class="msg" id="admMsg"></div>
     </div>
     <div class="card" id="moveCard">
       <label for="moveUrl" style="font-weight:600">🔀 Move the site to a new address</label>
@@ -626,7 +631,7 @@ $("#logout").onclick = async ()=>{ await sb.auth.signOut(); location.reload(); }
 
 /* ---------- what this admin may manage (set by the root admin) ---------- */
 let ME = {root:false, full:true, perms:[]};
-const TAB_PERM = {pending:"listings", live:"listings", sold:"listings", add:"listings", codes:"codes", sponsors:"sponsors", limits:"settings", settings:"settings",
+const TAB_PERM = {pending:"listings", live:"listings", sold:"listings", add:"listings", codes:"codes", sponsors:"sponsors", limits:"settings", settings:"settings", admins:"settings",
   inspect:"inspect", ratings:"ratings", wanted:"wanted", announce:"announce", share:"share", money:"money", stats:"stats"};
 const PERM_SECTIONS = [["moto","🏍️ Motorcycles"],["watch","⌚ Watches"],["car","🚗 Cars"],["boat","🛥️ Marine"],["desert","🏜️ Dune Riders"],["equine","🐎 Equine"],["art","🎨 Art"],["estate","🏠 Real estate"],["bag","👜 The Boutique (ladies)"]];
 const PERM_FEATURES = [["listings","Listings: review, edit, add"],["share","Share to WhatsApp"],["announce","Announcements"],["wanted","Wanted requests"],["codes","Discount codes"],
