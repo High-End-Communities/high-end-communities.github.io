@@ -2349,7 +2349,8 @@ const HOWTO_VIDEOS = [
   {file:"videos/howto-moto.mp4",   ar:"الموتوسيكلات", en:"Motorcycles", fr:"Motos"},
   {file:"videos/howto-cars.mp4",   ar:"العربيات",     en:"Cars",        fr:"Voitures"},
   {file:"videos/howto-marine.mp4", ar:"المراكب واليخوت", en:"Boats & yachts", fr:"Bateaux & yachts"},
-  {file:"videos/howto-equine.mp4", ar:"الخيل",        en:"Equine",      fr:"Équitation"}
+  {file:"videos/howto-equine.mp4", ar:"الخيل",        en:"Equine",      fr:"Équitation"},
+  {file:"videos/howto-boutique.mp4", ar:"البوتيك: الشنط والإكسسوارات الفاخرة", en:"The Boutique", fr:"La Boutique", boutique:true}   // only while the Boutique is switched on
 ];
 function menuTxt(){
   const l = window.HE_LANG;
@@ -2424,9 +2425,10 @@ function openHeMenu(view){
   } else if (view==="howto"){
     h.textContent=t.howto;
     const p=document.createElement("p"); p.className="hm-lead"; p.textContent=t.howtoLead; body.appendChild(p);
-    const grid=document.createElement("div"); grid.className="hm-videos"; let ok=HOWTO_VIDEOS.length;
+    const vids=HOWTO_VIDEOS.filter(v=>!v.boutique || (SITE_ST && SITE_ST.boutique_on));
+    const grid=document.createElement("div"); grid.className="hm-videos"; let ok=vids.length;
     const soon=document.createElement("p"); soon.className="hm-lead"; soon.textContent=t.soon; soon.hidden=true;
-    HOWTO_VIDEOS.forEach(v=>{
+    vids.forEach(v=>{
       const f=document.createElement("figure"); const vid=document.createElement("video");
       vid.controls=true; vid.preload="metadata"; vid.playsInline=true; vid.src="/"+v.file+"#t=0.5";
       vid.onerror=()=>{ f.remove(); if (--ok<=0) soon.hidden=false; };
