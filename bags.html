@@ -159,10 +159,10 @@ function cardFor(item){
   if (viewObserver) viewObserver.observe(card);
   return card;
 }
-function section(key, title, icon, items, onAll){
+function section(key, title, icon, items, onAll, total){
   const sec=document.createElement("section"); sec.className="catsec";
   const h=document.createElement("div"); h.className="cathead";
-  h.innerHTML=`<h2>${title}</h2><span class="cnt">${items.length}</span>`;
+  h.innerHTML=`<h2>${title}</h2><span class="cnt">${countLabel(total||items.length)}</span>`;
   if (onAll){ const a=document.createElement("button"); a.type="button"; a.className="seeall"; a.textContent="See all"; a.onclick=onAll; h.appendChild(a); }
   const g=document.createElement("div"); g.className="list";
   items.forEach(it=>g.appendChild(cardFor(it)));
@@ -321,7 +321,7 @@ function render(){
     let general = false;
     GROUP_ORDER.forEach((g,i)=>{
       const its = live.filter(x=>GROUP[x.L.type]===g); if (!its.length) return;
-      box.appendChild(section(g, GROUP_NAMES[g], GROUP_ICON[g], its.slice(0,PER_SECTION), its.length>PER_SECTION||SUBTYPES[g] ? ()=>pick(g) : null));
+      box.appendChild(section(g, GROUP_NAMES[g], GROUP_ICON[g], its.slice(0,PER_SECTION), its.length>PER_SECTION||SUBTYPES[g] ? ()=>pick(g) : null, its.length));
       const an=annFor(g, MARKET); if (an) box.appendChild(an);
       const hw=hotFor(g); if (hw) box.appendChild(hw);
       const own = sponsorsFor("feed", {group:g, only:true});
@@ -332,7 +332,7 @@ function render(){
     // a category with sub-sections: one block per sub-section
     SUBTYPES[filter].concat(filter==="car" ? [["4x4","🚙"]] : []).forEach(([t,ic])=>{
       const its = live.filter(x=>t==="4x4" ? is4x4(x.L) : x.L.type===t); if (!its.length) return;
-      box.appendChild(section(t, SECTION_NAMES[t], ic, its.slice(0,PER_SECTION*2), its.length>PER_SECTION*2 ? ()=>pickSub(t) : null));
+      box.appendChild(section(t, SECTION_NAMES[t], ic, its.slice(0,PER_SECTION*2), its.length>PER_SECTION*2 ? ()=>pickSub(t) : null, its.length));
     });
     if (box.children.length>1) box.insertBefore(feedSponsorCard(0), box.children[1]);
   } else if (live.length){
