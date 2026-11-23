@@ -1080,7 +1080,12 @@ async function adminPhones(kind, list, idOf, put){
 // PDFs, the seller's own flyer and the public site never show it.
 let FLYER_IMAGE = false;
 const ADMIN_PAGE = /admin\.html$/.test(location.pathname);
-function flyerPhone(L){ const p=phoneOf(L); return (FLYER_IMAGE && ADMIN_PAGE && L.f && L.f.show_phone && p) ? p : ""; }
+let FLYER_HD = false;
+const POST_PAGE = /post\.html$/.test(location.pathname);
+// the seller's number goes on a flyer only when they ticked "show my number":
+// on admin's group-share image, and on the uploader's own HD image / HD PDF right after posting
+function flyerPhone(L){ const p=phoneOf(L); if (!(L && L.f && L.f.show_phone && p)) return "";
+  return ((FLYER_IMAGE && ADMIN_PAGE) || (FLYER_HD && POST_PAGE)) ? p : ""; }
 function contactBarText(L){ const p=flyerPhone(L); return p ? "Call / WhatsApp   "+p : "Contact the seller: "+baseUrl().replace(/^https?:\/\//,""); }
 function contactBarLink(L,id){ const p=flyerPhone(L); return p ? "https://wa.me/"+waNum(p) : linkFor(id); }
 function rowToItem(r){
@@ -2126,9 +2131,10 @@ async function exportHD(L, id, asPdf, sources){
   let ph = sources;
   if (!ph || !ph.length){ if (!L.photos || !L.photos.length) L.photos = await loadPhotos({id,L});
     ph = await loadPhotoImgs(L.photos); }
-  const H = Math.ceil(await drawFlyerHD(dryPainter(), L, id, ph));
+  FLYER_HD = true; let H; try{ H = Math.ceil(await drawFlyerHD(dryPainter(), L, id, ph)); } finally{ FLYER_HD = false; }
   const old = FILL_PXMM; FILL_PXMM = asPdf ? 9 : 14;
   try{
+    FLYER_HD = true;
     if (asPdf){
       const doc = new jspdf.jsPDF({unit:"mm",format:[FW,H],compress:true}); aliasMap.clear();
       await drawFlyerHD(pdfPainter(doc), L, id, ph);
@@ -2140,7 +2146,7 @@ async function exportHD(L, id, asPdf, sources){
       const blob = await new Promise(r=>c.toBlob(r,"image/jpeg",0.9));
       await saveFile(fileBase(L)+"-HD.jpg", blob);
     }
-  } finally { FILL_PXMM = old; }
+  } finally { FILL_PXMM = old; FLYER_HD = false; }
 }
 
 /* ===================== Full screen photo viewer ===================== */

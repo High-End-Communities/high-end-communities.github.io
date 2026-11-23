@@ -21,7 +21,7 @@
 <link rel="stylesheet" href="common.css?v=275928c7">
 </head>
 <body>
-<script src="i18n.js?v=de16ad00"></script>
+<script src="i18n.js?v=ef921f15"></script>
 <header class="mast">
   <div class="checker"></div>
   <button type="button" class="langbtn" id="langBtn" lang="ar">العربية</button>
@@ -74,7 +74,7 @@
 
       <div class="grid" id="fields"></div>
 
-      <label class="terms showphone" id="showPhoneWrap"><input type="checkbox" id="showPhone"> <span>📞 Show my number on the listing image that High End shares in the WhatsApp groups. <span class="muted">On the site your number stays hidden.</span></span></label>
+      <label class="terms showphone" id="showPhoneWrap"><input type="checkbox" id="showPhone"> <span>📞 Show my number on the listing image that High End shares in the WhatsApp groups, and on my own HD flyer. <span class="muted">On the site your number stays hidden.</span></span></label>
       <label class="terms" id="termsWrap"><input type="checkbox" id="terms"> <span>I accept the terms: High End Communities is <b>not responsible for any product</b> listed. Buyers and sellers do their own due diligence and check ownership papers with a lawyer. I confirm I own this item or am authorised to sell it.</span></label>
       <details class="tx"><summary>Read the full terms</summary>
         <ol>
@@ -102,7 +102,7 @@
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js" integrity="sha384-8FWZA6BGMXhsfO+BLtrJK0We6gg5o1JyO8xQm6peWDEUs17ACA5ziE/NIAkl9z2k" crossorigin="anonymous"></script>
 <script src="config.js"></script>
-<script src="common.js?v=9877c05d"></script>
+<script src="common.js?v=21d35d0f"></script>
 
 <script>
 initHeader();
@@ -268,7 +268,7 @@ function showDone(row, code, live, files, unpaid){
     const h=document.createElement("div"); h.className="hdtitle"; h.textContent=`⭐ HD flyer — all ${files.length} photo${files.length>1?"s":""}, every detail and the QR code`;
     const r3=document.createElement("div"); r3.className="hdrow";
     let hd=null; const getHD=()=> hd || (hd=Promise.all(files.map((f,i)=>hdPhoto(f,1800,i===0))));
-    const go=async(btn,pdf)=>{ const t=btn.textContent; btn.disabled=true; btn.textContent="Preparing…"; try{ await exportHD(L,row.id,pdf,await getHD()); }catch(e){ toast("Couldn't make the HD flyer: "+(e.message||e)); } btn.disabled=false; btn.textContent=t; };
+    const go=async(btn,pdf)=>{ const t=btn.textContent; btn.disabled=true; btn.textContent="Preparing…"; try{ await exportHD({...L, f:{...row.f, phone:row.phone}},row.id,pdf,await getHD()); }catch(e){ toast("Couldn't make the HD flyer: "+(e.message||e)); } btn.disabled=false; btn.textContent=t; };
     const hi=document.createElement("button"); hi.type="button"; hi.className="btn primary small"; hi.textContent="⭐ HD image"; hi.onclick=()=>go(hi,false);
     const hp=document.createElement("button"); hp.type="button"; hp.className="btn ghost small"; hp.textContent="⭐ HD PDF"; hp.onclick=()=>go(hp,true);
     r3.append(hi,hp); box.append(h,r3); d.append(box);
