@@ -2223,6 +2223,28 @@ async function watermarkUrl(url){
 }
 
 /* ===================== Intro video + countdown (catalogue, once per visit) ===================== */
+// The intro ends on "Why High End?": the site's features appear one by one while the countdown runs.
+const INTRO_COUNT = 6;
+const INTRO_FEATS = {
+  ar:{h:"ليه High End؟", f:[["swap","من المالك للمشتري","من غير وسيط ولا عمولة"],["tag","اعرض بسعرك","مفيش فصال في الأسعار"],["lock","رقمك محمي","مش ظاهر على الموقع، والتواصل بزرار واتساب"],
+    ["dl","حمّل الأصل بأعلى جودة","صورة فخمة تليق بقطع قيمتها عالية"],["doc","ملف PDF واحد بكل الصور","بلينكات شغالة، وبيوفر باقة الموبايل"],["gift","أول إعلان مجاناً","جرّب من غير أي مخاطرة"]]},
+  en:{h:"Why High End?", f:[["swap","Owner to buyer","No middleman, no commission"],["tag","Your price, no haggling","The price you list is the price"],["lock","Your number stays private","Not shown on the site; buyers reach you by WhatsApp"],
+    ["dl","Download the HD original","A premium image worthy of high-value pieces"],["doc","One PDF with every photo","With live links, light on mobile data"],["gift","First listing free","Try it with no risk"]]},
+  fr:{h:"Pourquoi High End ?", f:[["swap","Du propriétaire à l'acheteur","Sans intermédiaire ni commission"],["tag","Votre prix, sans marchandage","Le prix affiché est le prix"],["lock","Votre numéro protégé","Absent du site ; contact par WhatsApp"],
+    ["dl","L'original en haute définition","Une image digne d'objets de grande valeur"],["doc","Un seul PDF avec toutes les photos","Liens actifs, peu de données mobiles"],["gift","Première annonce gratuite","Essayez sans risque"]]}
+};
+const INTRO_ICON = {
+  swap:"<path d='M7 7h11l-3-3M17 17H6l3 3' fill='none' stroke-linecap='round' stroke-linejoin='round'/>",
+  tag:"<path d='M3 12V4h8l10 10-8 8z' fill='none' stroke-linejoin='round'/><circle cx='7.5' cy='8.5' r='1.4'/>",
+  lock:"<rect x='5' y='11' width='14' height='10' rx='2' fill='none'/><path d='M8 11V8a4 4 0 0 1 8 0v3' fill='none'/>",
+  dl:"<circle cx='12' cy='12' r='9' fill='none'/><path d='M12 7v9M8 12l4 4 4-4' fill='none' stroke-linecap='round' stroke-linejoin='round'/>",
+  doc:"<path d='M6 3h8l4 4v14H6z' fill='none' stroke-linejoin='round'/><path d='M9 12h6M9 16h6'/>",
+  gift:"<rect x='4' y='9' width='16' height='12' rx='1' fill='none'/><path d='M4 13h16M12 9v12M12 9c-3 0-5-1.5-4-3.5S12 6 12 9zm0 0c3 0 5-1.5 4-3.5S12 6 12 9z' fill='none'/>"
+};
+function introFeats(){
+  const L = INTRO_FEATS[window.HE_LANG] || INTRO_FEATS.en;
+  return `<div class="intro-feats" data-noi18n><h2>${esc(L.h)}</h2><ul>${L.f.map(([ic,a,b],i)=>`<li style="--i:${i}"><span class="ifi"><svg viewBox="0 0 24 24" aria-hidden="true">${INTRO_ICON[ic]}</svg></span><span><b>${esc(a)}</b><small>${esc(b)}</small></span></li>`).join("")}</ul></div>`;
+}
 function runIntro(key){ key = key || "he_intro";
   try{
     if (/[?&]nointro\b/.test(location.search) || /^#l-/.test(location.hash)) return;   // shared listing links go straight in
@@ -2238,8 +2260,9 @@ function runIntro(key){ key = key || "he_intro";
       <div class="intro-ring">
         <svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="54" class="r-bg"/><circle cx="60" cy="60" r="54" class="r-fg"/></svg>
         <img src="${BRAND_ART}" alt="High End Communities">
-        <span class="intro-num">3</span>
+        <span class="intro-num">6</span>
       </div>
+      ${introFeats()}
     </div>`;
   document.body.appendChild(ov); document.body.style.overflow="hidden";
   const v=ov.querySelector("video"), snd=ov.querySelector(".intro-sound"), gate=ov.querySelector(".intro-gate");
@@ -2252,7 +2275,7 @@ function runIntro(key){ key = key || "he_intro";
   const countdown=()=>{                         // the music keeps playing under the countdown
     if (counting) return; counting=true; gate.hidden=true;
     ov.querySelector(".intro-end").hidden=false; ov.classList.add("ending");
-    const num=ov.querySelector(".intro-num"); let n=3; num.textContent=n;
+    const num=ov.querySelector(".intro-num"); let n=INTRO_COUNT; num.textContent=n;
     const t=setInterval(()=>{ n--; if (n>0){ num.textContent=n; num.classList.remove("pop"); void num.offsetWidth; num.classList.add("pop"); } else { clearInterval(t); finish(); } },1000);
   };
   const start=()=>{                              // picture and music together, from the top

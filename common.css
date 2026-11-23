@@ -857,3 +857,24 @@ body:has(#adminView:not([hidden])) header.mast .mast-logo img{width:110px}
 body:has(#adminView:not([hidden])) header.mast .mast-in{padding-top:10px;padding-bottom:10px}
 body:has(#adminView:not([hidden])) main{max-width:1320px}
 @media (max-width:999px){ .admnav.tabs{position:sticky;top:0;z-index:20;box-shadow:0 4px 10px rgba(0,0,0,.05)} }
+
+/* intro ending: "Why High End?" features with the countdown */
+.intro-end{gap:18px;padding:24px 20px;overflow-y:auto}
+.intro-end .intro-ring{width:112px;height:112px;flex:none}
+.intro-end .intro-ring img{inset:9px;width:94px;height:94px}
+.intro-end .intro-ring .r-fg{animation-duration:6s}
+.intro-end .intro-num{width:34px;height:34px;font-size:15px}
+.intro-feats{width:min(760px,100%);color:#f3ead7;text-align:center}
+.intro-feats h2{font:600 clamp(24px,6vw,34px)/1.2 var(--serif,Georgia,serif);color:#fff;margin:0 0 16px;letter-spacing:.3px;opacity:0;animation:introIn .5s .15s ease forwards}
+.intro-feats ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr;gap:10px;text-align:start}
+.intro-feats li{display:flex;align-items:center;gap:14px;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,.045);border:1px solid rgba(214,180,106,.22);
+  opacity:0;transform:translateY(12px);animation:ifIn .45s ease forwards;animation-delay:calc(.45s + var(--i) * .45s)}
+.intro-feats .ifi{flex:none;width:40px;height:40px;border-radius:50%;border:1.5px solid #d6b46a;display:flex;align-items:center;justify-content:center}
+.intro-feats svg{width:21px;height:21px;stroke:#d6b46a;stroke-width:2;fill:#d6b46a}
+.intro-feats svg [fill='none']{fill:none}
+.intro-feats b{display:block;font:600 16px/1.3 var(--sans,Inter,sans-serif);color:#fff}
+.intro-feats small{display:block;font-size:13px;line-height:1.45;color:#cfc4ae;margin-top:2px}
+@keyframes ifIn{to{opacity:1;transform:none}}
+@media (min-width:700px){.intro-feats ul{grid-template-columns:1fr 1fr;gap:12px 14px}}
+@media (max-height:640px){.intro-end .intro-ring{width:84px;height:84px}.intro-end .intro-ring img{inset:7px;width:70px;height:70px}.intro-feats li{padding:7px 12px}.intro-feats h2{margin-bottom:10px}}
+@media (prefers-reduced-motion:reduce){.intro-feats li,.intro-feats h2{animation:none;opacity:1;transform:none}}
