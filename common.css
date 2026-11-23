@@ -894,3 +894,15 @@ body:has(#adminView:not([hidden])) main{max-width:1320px}
 .terms-ok .linkbtn{color:var(--text)}
 footer .termslink{margin-top:10px}
 footer .termslink .linkbtn{color:#cfc9bd;font-size:12.5px}
+/* admin: monthly limit per category */
+.limgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px 18px}
+.limrow{display:grid;grid-template-columns:1fr 90px auto;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line,#e2ddd2);font-size:14px;color:var(--text)}
+.limrow input{margin:0;padding:6px 8px;text-align:center}
+/* admin: most viewed listings, per section */
+.topviews-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin:18px 0 8px}
+.topviews-head h3{margin-inline-end:auto!important}
+.tvsel{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+.tvsel select{margin:0;padding:6px 8px;min-width:0}
+.topviews .tvlink{display:flex;align-items:center;gap:10px;color:var(--text);text-decoration:none}
+.topviews .tvlink:hover span{text-decoration:underline}
+.topviews .tvlink img{width:44px;height:44px;border-radius:6px;object-fit:cover;flex:none;background:#eee}

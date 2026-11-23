@@ -18,7 +18,7 @@
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=481e7ad9">
+<link rel="stylesheet" href="common.css?v=33499afb">
 </head>
 <body>
 <script src="i18n.js?v=51bd8c2b"></script>
@@ -334,9 +334,11 @@
     </div>
     <div data-pane="limits" hidden>
       <div class="card" style="margin-bottom:12px">
-        <h3 style="margin:0 0 6px">Motorcycle listings per month</h3>
-        <div class="unitrow"><input id="bikeLim" type="number" min="1" max="100" inputmode="numeric"><button type="button" class="btn ghost small" id="bikeLimSave">Save</button></div>
-        <div class="hint">How many motorcycles one phone number can post in 30 days. Trusted numbers below have their own limit.</div>
+        <h3 style="margin:0 0 6px">Listings per month, by category</h3>
+        <div class="hint" style="margin-bottom:10px">How many main items one phone number can post in 30 days, for each category. Empty = no monthly limit. Accessories and parts keep their own limit. Trusted numbers below have their own number. Applies while payments are off.</div>
+        <div class="limgrid" id="limGrid"></div>
+        <div class="actions"><button type="button" class="btn primary small" id="limSave">Save limits</button></div>
+        <div class="msg" id="limMsg"></div>
       </div>
       <div class="card">
         <h3 style="margin:0 0 6px">Trusted numbers (dealers, showrooms…)</h3>
@@ -554,8 +556,10 @@
       <div class="muted" style="margin-bottom:6px">Site views per day, last 30 days</div>
       <div class="bars" id="stBars"></div>
       <table class="mini" id="stPages"></table>
-      <h3 class="slab" style="margin:16px 0 8px">Most viewed listings</h3>
-      <table class="mini" id="stTop"></table>
+      <div class="topviews-head"><h3 class="slab" style="margin:0">Most viewed listings</h3>
+        <label class="tvsel">Show <select id="stTopCat" aria-label="Category for most viewed listings"></select></label>
+        <label class="tvsel"><select id="stTopN" aria-label="How many"><option value="10">Top 10</option><option value="25">Top 25</option><option value="50">Top 50</option></select></label></div>
+      <table class="mini topviews" id="stTop"></table>
       <div class="hint">A visitor counts once per page per day, and once per listing per visit, when the listing is on screen for a second or its photos are opened.</div>
     </div>
   </section>
@@ -949,7 +953,7 @@ async function loadSettings(){
   drawHouseGroups(data && Array.isArray(data.house_sponsor_groups) ? data.house_sponsor_groups : null, data && ("house_sponsor_groups" in data));
   if (data){ $("#maintOn").checked = !!data.maintenance; $("#maintMsg").value = data.maintenance_msg || ""; maintUi(); }
   if (data && data.report_wa) $("#repWa").value = data.report_wa;
-  $("#bikeLim").value = (data && data.bike_monthly_limit) || 2;
+  drawLimits(data);
   if (data) $("#payOn").checked=!!data.pay_enabled;
   if (data){ $("#payLink").value=data.pay_link||""; $("#payInsta").value=data.pay_instapay||""; $("#payWallet").value=data.pay_wallet||""; $("#adminWa").value=data.admin_wa||ADMIN_WA; $("#cashWa").value=data.cash_wa||""; $("#promoPrice").value=data.promo_price||""; $("#valueMax").value=data.value_max_egp||"";
     $("#freeVeh").value=data.free_vehicles??1; $("#vehFee").value=data.extra_vehicle_fee??1000; $("#memPrice").value=data.member_price||""; $("#memDays").value=data.member_days||365;
@@ -1489,11 +1493,31 @@ function renderWanted(){
     row.append(x,tools); box.appendChild(row);
   });
 }
-/* ---------- motorcycle monthly limit + trusted numbers ---------- */
-$("#bikeLimSave").onclick = async ()=>{
-  const n=parseInt($("#bikeLim").value,10); if (!(n>=1&&n<=100)){ showMsg("Enter 1–100.","err",$("#trMsg")); return; }
-  const {error}=await sb.from("settings").update({bike_monthly_limit:n}).eq("id",1);
-  showMsg(error?niceError(error):`Saved — ${n} motorcycle listings per number per month.`, error?"err":"ok", $("#trMsg"));
+/* ---------- monthly limit for each main category + trusted numbers ---------- */
+const LIMIT_CATS = [["moto","🏍️ Motorcycles"],["car","🚗 Cars"],["boat","🛥️ Marine"],["desert","🏜️ Dune Riders"],["equine","🐎 Horses"],["watch","⌚ Watches"],["art","🎨 Art"],["estate","🏠 Real estate"],["bag","👜 The Boutique"]];
+let LIM_HAS_COL = false;
+function drawLimits(data){
+  const box=$("#limGrid"); if (!box) return;
+  LIM_HAS_COL = !!(data && "monthly_limits" in data);
+  const cur = (data && data.monthly_limits) || (data ? {moto:data.bike_monthly_limit} : {});
+  box.innerHTML="";
+  LIMIT_CATS.forEach(([k,l])=>{ const lab=document.createElement("label"); lab.className="limrow";
+    const t=document.createElement("span"); t.textContent=l;
+    const i=document.createElement("input"); i.type="number"; i.min="1"; i.max="500"; i.inputMode="numeric"; i.placeholder="No limit"; i.dataset.k=k;
+    if (cur[k]) i.value=cur[k];
+    const u=document.createElement("small"); u.className="muted"; u.textContent="/ month";
+    lab.append(t,i,u); box.appendChild(lab); });
+}
+$("#limSave").onclick = async ()=>{
+  const v={}; let bad=false;
+  document.querySelectorAll("#limGrid input").forEach(i=>{ const s=i.value.trim(); if (!s) return; const n=parseInt(s,10); if (!(n>=1&&n<=500)) bad=true; else v[i.dataset.k]=n; });
+  if (bad) return showMsg("Each limit must be 1–500, or empty for no limit.","err",$("#limMsg"));
+  if (!LIM_HAS_COL) return showMsg("One-time setup needed: run the limits SQL in Supabase first.","err",$("#limMsg"));
+  const rec={monthly_limits:v}; if (v.moto && v.moto<=100) rec.bike_monthly_limit=v.moto;
+  const {error}=await sb.from("settings").update(rec).eq("id",1);
+  if (error) return showMsg(niceError(error),"err",$("#limMsg"));
+  const set=LIMIT_CATS.filter(([k])=>v[k]).map(([k,l])=>l.replace(/^\S+\s/,"")+" "+v[k]);
+  showMsg(set.length ? "Saved: "+set.join(" · ") : "Saved: no monthly limits.","ok",$("#limMsg"));
 };
 async function loadTrusted(){
   const {data,error}=await sb.from("trusted_sellers").select("*").order("created_at",{ascending:false});
@@ -2097,10 +2121,38 @@ async function loadStats(){
   const names={catalogue:"Catalogue",post:"Post a listing",admin:"Admin"};
   $("#stPages").innerHTML = "<tr><th>Page</th><th class='n'>Today</th><th class='n'>7 days</th><th class='n'>30 days</th></tr>" +
     Object.keys(names).map(p=>{ const v=byPage[p]||{t:0,w:0,m:0}; return `<tr><td>${names[p]}</td><td class="n">${fmt(v.t)}</td><td class="n">${fmt(v.w)}</td><td class="n">${fmt(v.m)}</td></tr>`; }).join("");
-  const top = items.filter(x=>x.L.status!=="pending").sort((a,b)=>(b.L.views||0)-(a.L.views||0)).slice(0,10);
-  const tb=$("#stTop"); tb.innerHTML="<tr><th>Listing</th><th>Status</th><th class='n'>Views</th></tr>";
-  top.forEach(x=>{ const tr=document.createElement("tr"); const a=document.createElement("td"); a.textContent=titleOf(x.L); const s=document.createElement("td"); s.textContent=x.L.status; const v=document.createElement("td"); v.className="n"; v.textContent=fmt(x.L.views||0); tr.append(a,s,v); tb.appendChild(tr); });
-  if (!top.length) tb.insertAdjacentHTML("beforeend","<tr><td colspan='3' class='muted'>No views yet.</td></tr>");
+  drawTopViews();
+}
+// Most viewed, for one category or one kind of listing (e.g. only motorcycles, only car parts)
+function drawTopViews(){
+  const sel=$("#stTopCat"); if (!sel) return;
+  if (!sel.options.length){
+    const add=(parent,v,l)=>{ const o=document.createElement("option"); o.value=v; o.textContent=l; parent.appendChild(o); };
+    add(sel,"all","All listings");
+    GROUP_ORDER.forEach(g=>{
+      const types=Object.keys(GROUP).filter(t=>GROUP[t]===g);
+      if (types.length<2){ add(sel,"g:"+g,(GROUP_NAMES[g]||g)); return; }
+      const og=document.createElement("optgroup"); og.label=GROUP_NAMES[g]||g;
+      add(og,"g:"+g,"All in "+(GROUP_NAMES[g]||g));
+      (SUBTYPES[g]||types.map(t=>[t])).forEach(([t])=>add(og,"t:"+t,SECTION_NAMES[t]||t));
+      sel.appendChild(og);
+    });
+    sel.onchange=drawTopViews; $("#stTopN").onchange=drawTopViews;
+  }
+  const v=sel.value, n=+$("#stTopN").value||10;
+  const pick = x => v==="all" || (v.startsWith("g:") ? GROUP[x.L.type]===v.slice(2) : x.L.type===v.slice(2));
+  const top = items.filter(x=>x.L.status!=="pending" && pick(x)).sort((a,b)=>(b.L.views||0)-(a.L.views||0)).slice(0,n);
+  const tb=$("#stTop"); tb.innerHTML="<tr><th>#</th><th>Listing</th><th>Section</th><th>Status</th><th class='n'>Views</th></tr>";
+  top.forEach((x,i)=>{ const tr=document.createElement("tr");
+    const r=document.createElement("td"); r.className="muted"; r.textContent=i+1;
+    const a=document.createElement("td"); const ln=document.createElement("a"); ln.href=itemHref(x.id); ln.target="_blank"; ln.rel="noopener"; ln.className="tvlink";
+    if (x.L.thumb && /^(data:image\/|https:\/\/)/.test(x.L.thumb)){ const im=document.createElement("img"); im.src=x.L.thumb; im.alt=""; im.loading="lazy"; ln.appendChild(im); }
+    const t=document.createElement("span"); t.textContent=titleOf(x.L); ln.appendChild(t); a.appendChild(ln);
+    const c=document.createElement("td"); c.className="muted"; c.textContent=SECTION_NAMES[x.L.type]||x.L.type;
+    const s=document.createElement("td"); s.textContent=x.L.status;
+    const w=document.createElement("td"); w.className="n"; w.textContent=fmt(x.L.views||0);
+    tr.append(r,a,c,s,w); tb.appendChild(tr); });
+  if (!top.length) tb.insertAdjacentHTML("beforeend","<tr><td colspan='5' class='muted'>No views yet in this section.</td></tr>");
 }
 
 /* forgotten password: Supabase e-mails a link back to this page, then a new password is chosen here */
