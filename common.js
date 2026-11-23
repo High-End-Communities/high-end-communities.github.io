@@ -2313,3 +2313,116 @@ function openRate(opts){
   };
   ov.hidden=false; setTimeout(()=>btns[0].focus(),50);
 }
+
+/* ===================== ☰ Menu: About High End + how-to videos ===================== */
+const HOWTO_VIDEOS = [
+  {file:"videos/howto-moto.mp4",   ar:"الموتوسيكلات", en:"Motorcycles", fr:"Motos"},
+  {file:"videos/howto-cars.mp4",   ar:"العربيات",     en:"Cars",        fr:"Voitures"},
+  {file:"videos/howto-marine.mp4", ar:"المراكب واليخوت", en:"Boats & yachts", fr:"Bateaux & yachts"},
+  {file:"videos/howto-equine.mp4", ar:"الخيل",        en:"Equine",      fr:"Équitation"}
+];
+function menuTxt(){
+  const l = window.HE_LANG;
+  if (l==="ar") return {
+    menu:"القائمة", about:"عن High End", howto:"طريقة الاستخدام", post:"اعرض منتجك", wanted:"اطلب حاجة مش لاقيها", admin:"كلّم الأدمن", close:"إغلاق", back:"رجوع",
+    aboutTitle:"عن High End Communities",
+    aboutLead:"سوق للقطع اللي قيمتها عالية: موتوسيكلات وساعات وعربيات ومراكب وخيل وعربيات الصحرا. البيع من المالك للمشتري مباشرة.",
+    points:[
+      ["من غير وسيط ولا عمولة","البائع بياخد سعره كامل، والمشتري بيدفع أقل."],
+      ["اعرض بسعرك، ومفيش فصال","السعر المكتوب هو السعر. مريح للبائع والمشتري اللي مش بيحبوا الفصال."],
+      ["أول إعلان مجاني","جرّب من غير أي مخاطرة."],
+      ["رقمك محمي","رقمك مش ظاهر على الموقع. المشتري بيكلمك بزرار واتساب أو اتصال، ومحدش يقدر يسحب الأرقام بالجملة."],
+      ["ملف واحد بكل الصور","كل الصور في ملف PDF واحد فيه لينكات شغالة، فبتبعت ملف واحد بدل صور كتير وبتوفر باقة الموبايل. ولو اخترت، رقمك بيظهر على ملف الـHD بتاعك إنت بس."],
+      ["«حمّل الآن» بأعلى جودة","النسخة الأصلية من الإعلان. صورة فخمة تليق بقطع قيمتها عالية."],
+      ["Wanted والطلب من بره","اطلب اللي مش لاقيه، واللي عنده هو اللي يكلمك. وممكن نطلبلك قطع من بره."],
+      ["تقييمات حقيقية","التقييمات بتتراجع قبل ما تظهر، والمزيفة بتتشال."],
+      ["أكتر من دولة و3 لغات","مصر والسعودية والإمارات وغيرهم، بالعربي والإنجليزي والفرنساوي."]
+    ],
+    howtoLead:"فيديو قصير لكل قسم: إزاي تتفرج وتشتري وتعرض في دقيقة.", soon:"الفيديوهات هتنزل قريب."
+  };
+  if (l==="fr") return {
+    menu:"Menu", about:"À propos", howto:"Mode d'emploi", post:"Publier une annonce", wanted:"Demander un article", admin:"Contacter l'admin", close:"Fermer", back:"Retour",
+    aboutTitle:"À propos de High End Communities",
+    aboutLead:"Un marché pour les objets de grande valeur : motos, montres, voitures, bateaux, chevaux et véhicules du désert. Directement du propriétaire à l'acheteur.",
+    points:[
+      ["Sans intermédiaire, sans commission","Le vendeur garde tout son prix ; l'acheteur paie moins."],
+      ["Votre prix, sans marchandage","Le prix affiché est le prix. Idéal pour ceux qui n'aiment pas négocier."],
+      ["Première annonce gratuite","Essayez sans risque."],
+      ["Votre numéro protégé","Il n'apparaît pas sur le site : l'acheteur vous contacte par un bouton WhatsApp ou appel, et personne ne peut copier les numéros en masse."],
+      ["Un seul fichier pour toutes les photos","Toutes les photos dans un PDF avec des liens actifs : un fichier au lieu de nombreuses photos, moins de données mobiles. Si vous le choisissez, votre numéro figure sur votre propre flyer HD uniquement."],
+      ["« Télécharger » en haute définition","La copie originale de l'annonce, digne d'objets de grande valeur."],
+      ["Wanted et commandes de l'étranger","Demandez ce que vous cherchez ; ceux qui l'ont vous contactent."],
+      ["Avis vérifiés","Les avis sont contrôlés avant d'apparaître ; les faux sont supprimés."],
+      ["Plusieurs pays, 3 langues","Égypte, Arabie saoudite, Émirats et plus, en arabe, anglais et français."]
+    ],
+    howtoLead:"Une courte vidéo par rubrique : regarder, acheter et publier en une minute.", soon:"Les vidéos arrivent bientôt."
+  };
+  return {
+    menu:"Menu", about:"About High End", howto:"How to use", post:"List an item", wanted:"Ask for an item", admin:"Contact the admin", close:"Close", back:"Back",
+    aboutTitle:"About High End Communities",
+    aboutLead:"A market for high-value pieces: motorcycles, watches, cars, boats, horses and desert rides. Sold owner to owner.",
+    points:[
+      ["No middleman, no commission","The seller keeps the full price; the buyer pays less."],
+      ["Your price, no haggling","The price you list is the price, easy for people who don't like to bargain."],
+      ["First listing free","Try it with no risk."],
+      ["Your number stays protected","It isn't shown on the site: buyers reach you with a WhatsApp or call button, and nobody can harvest the numbers in bulk."],
+      ["One file with every photo","All photos in one PDF with live links: one file instead of many photos, so it saves mobile data. If you choose, your number shows on your own HD flyer only."],
+      ["Download the HD original","The original copy of the ad, a premium image worthy of high-value pieces."],
+      ["Wanted and orders from abroad","Ask for what you can't find and whoever has it contacts you."],
+      ["Real ratings","Ratings are checked before they show; fake ones are removed."],
+      ["Several countries, 3 languages","Egypt, Saudi Arabia, the UAE and more, in Arabic, English and French."]
+    ],
+    howtoLead:"One short video per section: browse, buy and list in a minute.", soon:"The videos are coming soon."
+  };
+}
+function closeHeMenu(){ document.getElementById("heMenu")?.remove(); }
+function openHeMenu(view){
+  const t = menuTxt(); closeHeMenu();
+  const ov=document.createElement("div"); ov.className="modal hemenu"; ov.id="heMenu"; ov.setAttribute("role","dialog"); ov.setAttribute("aria-label",t.menu); ov.setAttribute("data-noi18n","");
+  const c=document.createElement("div"); c.className="card"; ov.appendChild(c);
+  const top=document.createElement("div"); top.className="hm-top";
+  const h=document.createElement("h3"); const x=document.createElement("button"); x.type="button"; x.className="hm-x"; x.setAttribute("aria-label",t.close); x.textContent="×"; x.onclick=closeHeMenu;
+  top.append(h,x); c.appendChild(top);
+  const body=document.createElement("div"); body.className="hm-body"; c.appendChild(body);
+  const backBtn=()=>{ const b=document.createElement("button"); b.type="button"; b.className="btn ghost small hm-back"; b.textContent="‹ "+t.back; b.onclick=()=>openHeMenu(); return b; };
+  if (view==="about"){
+    h.textContent=t.aboutTitle;
+    const p=document.createElement("p"); p.className="hm-lead"; p.textContent=t.aboutLead; body.appendChild(p);
+    const ul=document.createElement("ul"); ul.className="hm-points";
+    t.points.forEach(([a,b])=>{ const li=document.createElement("li"); const s=document.createElement("b"); s.textContent=a; const d=document.createElement("span"); d.textContent=b; li.append(s,d); ul.appendChild(li); });
+    body.append(ul, backBtn());
+  } else if (view==="howto"){
+    h.textContent=t.howto;
+    const p=document.createElement("p"); p.className="hm-lead"; p.textContent=t.howtoLead; body.appendChild(p);
+    const grid=document.createElement("div"); grid.className="hm-videos"; let ok=HOWTO_VIDEOS.length;
+    const soon=document.createElement("p"); soon.className="hm-lead"; soon.textContent=t.soon; soon.hidden=true;
+    HOWTO_VIDEOS.forEach(v=>{
+      const f=document.createElement("figure"); const vid=document.createElement("video");
+      vid.controls=true; vid.preload="metadata"; vid.playsInline=true; vid.src="/"+v.file+"#t=0.5";
+      vid.onerror=()=>{ f.remove(); if (--ok<=0) soon.hidden=false; };
+      const cap=document.createElement("figcaption"); cap.textContent=v[window.HE_LANG]||v.en; f.append(vid,cap); grid.appendChild(f);
+    });
+    body.append(grid, soon, backBtn());
+  } else {
+    h.textContent=t.menu;
+    const nav=document.createElement("nav"); nav.className="hm-nav";
+    const item=(label,fn,href)=>{ const a=document.createElement(href?"a":"button"); if (href){ a.href=href; if (/^https:/.test(href)){ a.target="_blank"; a.rel="noopener"; } } else { a.type="button"; a.onclick=fn; } a.textContent=label; nav.appendChild(a); };
+    item("ⓘ  "+t.about, ()=>openHeMenu("about"));
+    item("▶  "+t.howto, ()=>openHeMenu("howto"));
+    item("＋  "+t.post, null, "/post.html");
+    try{ item("✆  "+t.admin, null, adminHref("")); }catch(e){}
+    body.appendChild(nav);
+  }
+  ov.onclick=e=>{ if (e.target===ov) closeHeMenu(); };
+  document.addEventListener("keydown", function esc(e){ if (e.key==="Escape"){ closeHeMenu(); document.removeEventListener("keydown",esc); } });
+  document.body.appendChild(ov); x.focus();
+}
+function addHeMenuButton(){
+  if (ADMIN_PAGE) return;
+  const mast=document.querySelector("header.mast"); if (!mast || document.getElementById("heMenuBtn")) return;
+  const b=document.createElement("button"); b.type="button"; b.id="heMenuBtn"; b.className="menubtn"; b.setAttribute("data-noi18n","");
+  b.setAttribute("aria-label", menuTxt().menu); b.innerHTML='<span></span><span></span><span></span>';
+  b.onclick=()=>openHeMenu(); mast.appendChild(b);
+  if (/[?&]menu=(about|howto)/.test(location.search)) openHeMenu(location.search.match(/menu=(about|howto)/)[1]);
+}
+if (document.readyState==="loading") document.addEventListener("DOMContentLoaded", addHeMenuButton); else addHeMenuButton();

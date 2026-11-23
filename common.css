@@ -770,3 +770,26 @@ header.mast .brands{display:none!important}
   .list{grid-template-columns:repeat(auto-fill,minmax(290px,1fr))}
   header.mast .mast-in{max-width:1320px}
 }
+
+/* ☰ menu */
+.menubtn{position:absolute;top:16px;inset-inline-start:14px;width:40px;height:36px;display:flex;flex-direction:column;justify-content:center;gap:5px;padding:0 9px;background:transparent;border:1px solid #c9c2b2;border-radius:3px;cursor:pointer;z-index:2}
+.menubtn span{display:block;height:2px;background:#2b2b2b;border-radius:1px}
+.menubtn:focus-visible{outline:2px solid #b08d57;outline-offset:2px}
+.hemenu .card{max-width:520px;text-align:start}
+.hm-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.hm-top h3{margin:0;font:600 20px "Roboto Slab",Georgia,serif}
+.hm-x{background:none;border:0;font-size:28px;line-height:1;cursor:pointer;color:#555;padding:0 4px}
+.hm-nav{display:flex;flex-direction:column}
+.hm-nav a,.hm-nav button{display:block;width:100%;text-align:start;padding:14px 4px;border:0;border-bottom:1px solid #e4dfd3;background:none;font:500 16px inherit;color:#1f1f1f;text-decoration:none;cursor:pointer}
+.hm-nav a:hover,.hm-nav button:hover{background:#f6f2e8}
+.hm-lead{color:var(--muted);margin:0 0 12px;line-height:1.55}
+.hm-points{list-style:none;margin:0 0 14px;padding:0;display:flex;flex-direction:column;gap:10px}
+.hm-points li{display:flex;flex-direction:column;gap:2px;padding-inline-start:12px;border-inline-start:3px solid #b08d57}
+.hm-points b{font-size:15px}
+.hm-points span{color:#4a463f;font-size:14px;line-height:1.5}
+.hm-videos{display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:14px}
+.hm-videos figure{margin:0}
+.hm-videos video{width:100%;border-radius:6px;background:#111;aspect-ratio:16/9}
+.hm-videos figcaption{font-size:13px;color:var(--muted);margin-top:4px}
+@media (min-width:900px){.hemenu .card{max-width:760px}.hm-videos{grid-template-columns:1fr 1fr}}
+@media (max-width:560px){.menubtn{top:12px;inset-inline-start:10px;width:36px;height:32px}}
