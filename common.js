@@ -1062,6 +1062,8 @@ function hiddenContact(a, kind, id, mk){
   a.href=itemHref(kind==="listing"?id:"");
   a.onclick=async ev=>{
     ev.preventDefault();
+    // first contact on this device: show the terms once, then go on
+    if (!ADMIN_PAGE && !termsSeen("buyer")){ termsSheet({title:"Before you contact a seller", lead:"High End only lists items. Please read this once.", back:a, onOk:()=>{ termsAccepted("buyer"); a.click(); }}); return; }
     const w = a.target==="_blank" ? window.open("about:blank","_blank") : null;
     const p = await contactPhone(kind,id);
     if (!p){ if (w) w.close(); toast(CONTACT_LIMIT?LIMIT_MSG:"This contact is not available any more."); return; }
@@ -2224,7 +2226,7 @@ async function watermarkUrl(url){
 
 /* ===================== Intro video + countdown (catalogue, once per visit) ===================== */
 // The intro ends on "Why High End?": the site's features appear one by one while the countdown runs.
-const INTRO_COUNT = 6;
+const INTRO_COUNT = 8;
 const INTRO_FEATS = {
   ar:{h:"ليه High End؟", f:[["swap","من المالك للمشتري","من غير وسيط ولا عمولة"],["tag","اعرض بسعرك","مفيش فصال في الأسعار"],["lock","رقمك محمي","مش ظاهر على الموقع، والتواصل بزرار واتساب"],
     ["dl","حمّل الأصل بأعلى جودة","صورة فخمة تليق بقطع قيمتها عالية"],["doc","ملف PDF واحد بكل الصور","بلينكات شغالة، وبيوفر باقة الموبايل"],["gift","أول إعلان مجاناً","جرّب من غير أي مخاطرة"]]},
@@ -2251,7 +2253,7 @@ function runIntro(key){ key = key || "he_intro";
     if (sessionStorage.getItem(key)) return;
     sessionStorage.setItem(key,"1");
   }catch(e){}
-  const END_AT = 11;   // the video's last seconds show the old address — hand over to the logo countdown before them
+  const END_AT = 6;    // short opening ("A moment for you · Pause · Breathe"), then the features with the countdown
   const ov=document.createElement("div"); ov.className="intro"; ov.setAttribute("role","dialog"); ov.setAttribute("aria-label","Welcome");
   ov.innerHTML=`<video class="intro-vid" playsinline muted preload="auto" poster="intro-poster.jpg"><source src="intro.mp4" type="video/mp4"></video>
     <div class="intro-btns"><button type="button" class="intro-sound" aria-label="Sound off">🔊</button><button type="button" class="intro-skip">Skip ›</button></div>
@@ -2260,7 +2262,7 @@ function runIntro(key){ key = key || "he_intro";
       <div class="intro-ring">
         <svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="54" class="r-bg"/><circle cx="60" cy="60" r="54" class="r-fg"/></svg>
         <img src="${BRAND_ART}" alt="High End Communities">
-        <span class="intro-num">6</span>
+        <span class="intro-num">8</span>
       </div>
       ${introFeats()}
     </div>`;
@@ -2481,3 +2483,52 @@ function addHeMenuButton(){
   if (/[?&]menu=(about|howto)/.test(location.search)) openHeMenu(location.search.match(/menu=(about|howto)/)[1]);
 }
 if (document.readyState==="loading") document.addEventListener("DOMContentLoaded", addHeMenuButton); else addHeMenuButton();
+
+
+/* ===================== Terms of use: one copy, shown when needed ===================== */
+// Sellers accept once (the post form remembers it); buyers see the terms once, the first time they contact a seller.
+const TERMS_V = "1";
+const TERMS_OL = "<ol><li><b>Listing platform only.</b> High End Communities is a place where members advertise items. We do not own, inspect, verify, value or guarantee any item, and we are not a party to any sale.</li><li><b>No responsibility.</b> High End Communities, its admins and sponsors are not responsible for any product promoted here, its condition, legality, ownership, description or price, or for any loss or dispute arising from a sale.</li><li><b>Due diligence is yours.</b> Buyers must inspect the item, verify the seller's identity, and confirm the seller owns it and can legally sell it.</li><li><b>Check the papers with a lawyer.</b> Before paying, consult a lawyer or the relevant authority for the ownership and transfer papers the item needs, for example: vehicle or motorcycle licence and traffic records; boat registration and marina papers; property title deed, registration and contract; horse passport, pedigree and vet certificate; watch box &amp; papers, or a certificate of authenticity for art.</li><li><b>Seller's responsibility.</b> Sellers confirm they own the item or are authorised to sell it, that the description and photos are true, and that the item is legal to sell.</li><li><b>Payments and meetings</b> are arranged directly between buyer and seller at their own risk. Meet in safe places and never pay before checking the item and its papers.</li><li>Admins may remove any listing at any time.</li></ol>";
+function termsSeen(who){ try{ return localStorage.getItem("he_terms_"+who)===TERMS_V; }catch(e){ return false; } }
+function termsAccepted(who){ try{ localStorage.setItem("he_terms_"+who, TERMS_V); }catch(e){} }
+function termsSheet(opt){
+  opt = opt || {};
+  document.getElementById("termsSheet")?.remove();
+  const ov=document.createElement("div"); ov.className="modal terms-sheet"; ov.id="termsSheet"; ov.setAttribute("role","dialog"); ov.setAttribute("aria-modal","true");
+  const c=document.createElement("div"); c.className="card"; ov.appendChild(c);
+  const h=document.createElement("h3"); h.textContent = opt.title || "Terms of use"; c.appendChild(h);
+  if (opt.lead){ const p=document.createElement("p"); p.className="ts-lead"; p.textContent=opt.lead; c.appendChild(p); }
+  const body=document.createElement("div"); body.className="ts-body"; body.innerHTML=TERMS_OL; c.appendChild(body);
+  const act=document.createElement("div"); act.className="actions";
+  const close=()=>{ ov.remove(); document.removeEventListener("keydown",esc); if (opt.back) opt.back.focus?.(); };
+  const esc=e=>{ if (e.key==="Escape") close(); };
+  if (opt.onOk){
+    const ok=document.createElement("button"); ok.type="button"; ok.className="btn primary"; ok.textContent=opt.okText||"I understand, continue";
+    ok.onclick=()=>{ close(); opt.onOk(); };
+    const no=document.createElement("button"); no.type="button"; no.className="btn ghost"; no.textContent="Cancel"; no.onclick=close;
+    act.append(ok,no);
+  } else { const x=document.createElement("button"); x.type="button"; x.className="btn primary"; x.textContent="Close"; x.onclick=close; act.appendChild(x); }
+  c.appendChild(act);
+  ov.onclick=e=>{ if (e.target===ov) close(); };
+  document.addEventListener("keydown",esc);
+  document.body.appendChild(ov); act.querySelector("button").focus();
+}
+// any [data-terms] button opens the terms to read
+document.addEventListener("click", e=>{ const b=e.target.closest && e.target.closest("[data-terms]"); if (!b) return; e.preventDefault(); termsSheet({back:b}); });
+// one "Terms of use" link in every footer
+function addTermsLink(){
+  document.querySelectorAll("footer").forEach(f=>{ if (f.querySelector(".termslink")) return;
+    const p=document.createElement("p"); p.className="termslink"; const b=document.createElement("button"); b.type="button"; b.className="linkbtn"; b.setAttribute("data-terms",""); b.textContent="Terms of use"; p.appendChild(b);
+    const cp=f.querySelector(".copyr"); if (cp) cp.after(p); else f.appendChild(p); });
+}
+if (document.readyState==="loading") document.addEventListener("DOMContentLoaded", addTermsLink); else addTermsLink();
+// post form: ticked and folded away once the seller has accepted before
+function sellerTermsUi(){
+  const t=document.getElementById("terms"), w=document.getElementById("termsWrap"); if (!t || !w) return;
+  const seen = ADMIN_PAGE || termsSeen("seller");
+  if (ADMIN_PAGE) return;
+  t.checked = seen || t.checked; w.hidden = seen;
+  const more=document.getElementById("termsMore"), ok=document.getElementById("termsOk");
+  if (more) more.hidden = seen; if (ok) ok.hidden = !seen;
+}
+if (document.readyState==="loading") document.addEventListener("DOMContentLoaded", sellerTermsUi); else sellerTermsUi();

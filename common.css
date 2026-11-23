@@ -862,7 +862,7 @@ body:has(#adminView:not([hidden])) main{max-width:1320px}
 .intro-end{gap:18px;padding:24px 20px;overflow-y:auto}
 .intro-end .intro-ring{width:112px;height:112px;flex:none}
 .intro-end .intro-ring img{inset:9px;width:94px;height:94px}
-.intro-end .intro-ring .r-fg{animation-duration:6s}
+.intro-end .intro-ring .r-fg{animation-duration:8s}
 .intro-end .intro-num{width:34px;height:34px;font-size:15px}
 .intro-feats{width:min(760px,100%);color:#f3ead7;text-align:center}
 .intro-feats h2{font:600 clamp(24px,6vw,34px)/1.2 var(--serif,Georgia,serif);color:#fff;margin:0 0 16px;letter-spacing:.3px;opacity:0;animation:introIn .5s .15s ease forwards}
@@ -878,3 +878,19 @@ body:has(#adminView:not([hidden])) main{max-width:1320px}
 @media (min-width:700px){.intro-feats ul{grid-template-columns:1fr 1fr;gap:12px 14px}}
 @media (max-height:640px){.intro-end .intro-ring{width:84px;height:84px}.intro-end .intro-ring img{inset:7px;width:70px;height:70px}.intro-feats li{padding:7px 12px}.intro-feats h2{margin-bottom:10px}}
 @media (prefers-reduced-motion:reduce){.intro-feats li,.intro-feats h2{animation:none;opacity:1;transform:none}}
+
+/* terms of use: one sheet, opened when needed */
+.terms-sheet .card{max-width:560px;text-align:start}
+.terms-sheet h3{margin:0 0 6px;font:500 22px var(--serif)}
+.terms-sheet .ts-lead{margin:0 0 10px;color:var(--muted);font-size:14px}
+.terms-sheet .ts-body{max-height:52vh;overflow-y:auto;padding-inline-end:4px;border-top:1px solid var(--line,#e2ddd2);border-bottom:1px solid var(--line,#e2ddd2)}
+.terms-sheet ol{margin:12px 0;padding-inline-start:20px;font-size:13.5px;line-height:1.6;color:#3d3a34}
+.terms-sheet li{margin-bottom:8px}
+.terms-sheet li b{color:#1f1d1a}
+.terms-sheet .actions{margin-top:14px}
+.terms-more .linkbtn,.terms-ok .linkbtn,footer .termslink .linkbtn{padding:0;font:inherit;text-underline-offset:3px}
+.terms-more{margin:-2px 0 12px;font-size:13px}
+.terms-ok{margin:4px 0 12px;font-size:13px;color:var(--muted)}
+.terms-ok .linkbtn{color:var(--text)}
+footer .termslink{margin-top:10px}
+footer .termslink .linkbtn{color:#cfc9bd;font-size:12.5px}
