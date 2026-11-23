@@ -29,7 +29,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=92a9a801">
+<link rel="stylesheet" href="common.css?v=275928c7">
 </head>
 <body>
 <script src="i18n.js?v=de16ad00"></script>
@@ -103,7 +103,7 @@
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js" integrity="sha384-8FWZA6BGMXhsfO+BLtrJK0We6gg5o1JyO8xQm6peWDEUs17ACA5ziE/NIAkl9z2k" crossorigin="anonymous"></script>
 <script src="config.js"></script>
-<script src="common.js?v=f1670b84"></script>
+<script src="common.js?v=7db6177a"></script>
 
 <script>
 if (/^#l-[A-Za-z0-9-]{1,60}$/.test(location.hash)) location.replace("item.html?id="+location.hash.slice(3));   // old shared links
@@ -159,7 +159,7 @@ function cardFor(item){
 function section(key, title, icon, items, onAll){
   const sec=document.createElement("section"); sec.className="catsec";
   const h=document.createElement("div"); h.className="cathead";
-  h.innerHTML=`<h2>${title}</h2><span class="cnt">${items.length}</span>`;
+  h.innerHTML=`<h2>${title}</h2><span class="cnt">${countLabel(items.length)}</span>`;
   if (onAll){ const a=document.createElement("button"); a.type="button"; a.className="seeall"; a.textContent="See all"; a.onclick=onAll; h.appendChild(a); }
   const g=document.createElement("div"); g.className="list";
   items.forEach(it=>g.appendChild(cardFor(it)));
@@ -269,14 +269,16 @@ function openSvcJoin(g,k){
   };
   m.hidden=false;
 }
+function topAd(){ return window.__topAd || (window.__topAd = document.querySelector("main > aside.sponsor-banner")); }
 function render(){
+  const TOP_AD = topAd();
   loadHot(); loadSvc();
   if (!ANN) loadAnnouncements().then(a=>{ if (a.length) render(); });
   const adKey = MARKET+"|"+(filter==="all" ? "" : filter);
   if (adKey !== AD_CTX.key){ AD_CTX.key = adKey; AD_CTX.market = MARKET; AD_CTX.group = filter==="all" ? "" : filter; if (SPONSORS.length) startBannerRotation(); }
   const box = $("#list"); box.innerHTML = ""; box.className="sections";
   const showSold = $("#showSold").checked;
-  if (filter==="wanted"){ renderWanted(box); return; }
+  if (filter==="wanted"){ renderWanted(box); if (TOP_AD) box.appendChild(TOP_AD); return; }
   $("#searchbar").hidden = false; $("#pcur").textContent = mainCur();
   const Q = searchState();
   document.body.classList.toggle("value", Q.value);
@@ -315,7 +317,7 @@ function render(){
   } else if (filter==="all"){
     // home: one tidy row per category, newest/featured first, "See all" opens it.
     // Under each category row: that category's own ads for this country, one under the other.
-    let general = false;
+    let general = !!TOP_AD;   // the banner under the first row is the general ad on the home page
     GROUP_ORDER.forEach((g,i)=>{
       const its = live.filter(x=>GROUP[x.L.type]===g); if (!its.length) return;
       box.appendChild(section(g, GROUP_NAMES[g], GROUP_ICON[g], its.slice(0,PER_SECTION), its.length>PER_SECTION||SUBTYPES[g] ? ()=>pick(g) : null));
@@ -338,6 +340,8 @@ function render(){
     box.appendChild(g);
   }
   if (showSold && sold.length){ const s=section("sold","Sold","✅",sold,null); s.classList.add("soldsec"); box.appendChild(s); }
+  // the sponsor banner sits under the first row of listings, not above the filters
+  if (TOP_AD){ const first=box.querySelector(":scope > .catsec, :scope > .list"); if (first && first.nextSibling) box.insertBefore(TOP_AD, first.nextSibling); else if (first) box.appendChild(TOP_AD); else box.appendChild(TOP_AD); }
   if (!Q.active && live.length) box.appendChild(wantedCta(false));
 }
 

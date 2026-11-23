@@ -1687,11 +1687,14 @@ async function siteCheck(page, quiet){
 }
 
 /* ===================== Saving / sharing files on a phone ===================== */
+function isTouchDevice(){ const ua=navigator.userAgent||"";
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints>1); }
 async function saveFile(filename, blob, fallbackImgUrl){
   const type = /\.pdf$/i.test(filename) ? "application/pdf" : "image/jpeg";
   try{
     const file = new File([blob], filename, {type});
-    if (navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file], title:filename}); return; }
+    // phones/tablets: the share sheet (save to Photos, send on WhatsApp); computers: a normal download
+    if (isTouchDevice() && navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file], title:filename}); return; }
   }catch(e){ if (e && e.name==="AbortError") return; }
   const url = URL.createObjectURL(blob);
   const a=document.createElement("a"); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove();
