@@ -125,7 +125,7 @@ function drawMarkets(){
     sel.onchange=()=>{ MARKET=sel.value; setMarket(MARKET,true); if (window.refreshLangPicker) window.refreshLangPicker(); drawMarkets(); render(); };
   }
   sel.innerHTML="";
-  MARKETS.forEach(m=>{ const o=document.createElement("option"); o.value=m.id; const c=n(m.id); o.textContent = c ? `${m.name} · ${countLabel(c)}` : m.name; sel.appendChild(o); });
+  MARKETS.forEach(m=>{ const o=document.createElement("option"); o.value=m.id; const c=n(m.id); const nm = window.T_LANG ? window.T_LANG(m.name) : m.name; o.textContent = c ? `${nm} · ${countLabel(c)}` : nm; sel.appendChild(o); });
   sel.value=MARKET;
 }
 function drawSubfilters(){
