@@ -18,10 +18,10 @@
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=9719d670">
+<link rel="stylesheet" href="common.css?v=473c9474">
 </head>
 <body>
-<script src="i18n.js?v=ef921f15"></script>
+<script src="i18n.js?v=489f4902"></script>
 <header class="mast">
   <div class="checker"></div>
   <button type="button" class="langbtn" id="langBtn" lang="ar">العربية</button>
@@ -49,45 +49,57 @@
   </section>
 
   <section id="adminView" hidden>
-    <div class="tabs" role="tablist" style="flex-wrap:wrap;width:auto;border-radius:16px">
-      <button type="button" data-tab="pending" class="on">Review <span id="nPending"></span></button>
-      <button type="button" data-tab="live">Live <span id="nLive"></span></button>
-      <button type="button" data-tab="sold">Sold <span id="nSold"></span></button>
-      <button type="button" data-tab="add">➕ Add / edit</button>
-      <button type="button" data-tab="codes">🏷️ Codes <span id="nCodes"></span></button>
-      <button type="button" data-tab="sponsors">Sponsors</button>
-      <button type="button" data-tab="limits">🏍️ Limits</button>
-      <button type="button" data-tab="inspect">🔧 Partners <span id="nSvc"></span></button>
-      <button type="button" data-tab="ratings">⭐ Ratings <span id="nRatings"></span></button>
-      <button type="button" data-tab="wanted">🔎 Wanted <span id="nWanted"></span></button>
-      <button type="button" data-tab="announce">📢 Announce <span id="nAnn"></span></button>
-      <button type="button" data-tab="share">📤 Share <span id="nShare"></span></button>
-      <button type="button" data-tab="money">💳 Money <span id="nMoney"></span></button>
-      <button type="button" data-tab="stats">Stats</button>
-    </div>
+    <nav class="tabs admnav" role="tablist" aria-label="Admin sections">
+      <div class="tabgrp"><span class="tg">Listings</span>
+        <button type="button" data-tab="pending" class="on">📝 Review <span id="nPending"></span></button>
+        <button type="button" data-tab="live">🟢 Live <span id="nLive"></span></button>
+        <button type="button" data-tab="sold">🏁 Sold <span id="nSold"></span></button>
+        <button type="button" data-tab="add">➕ Add / edit</button>
+      </div>
+      <div class="tabgrp"><span class="tg">Community</span>
+        <button type="button" data-tab="wanted">🔎 Wanted <span id="nWanted"></span></button>
+        <button type="button" data-tab="ratings">⭐ Ratings <span id="nRatings"></span></button>
+        <button type="button" data-tab="inspect">🔧 Partners <span id="nSvc"></span></button>
+        <button type="button" data-tab="announce">📢 Announce <span id="nAnn"></span></button>
+        <button type="button" data-tab="share">📤 Share <span id="nShare"></span></button>
+      </div>
+      <div class="tabgrp"><span class="tg">Business</span>
+        <button type="button" data-tab="sponsors">💼 Sponsors</button>
+        <button type="button" data-tab="codes">🏷️ Codes <span id="nCodes"></span></button>
+        <button type="button" data-tab="money">💳 Money <span id="nMoney"></span></button>
+        <button type="button" data-tab="limits">🎚️ Limits</button>
+        <button type="button" data-tab="stats">📊 Stats</button>
+      </div>
+      <div class="tabgrp"><span class="tg">Site</span>
+        <button type="button" data-tab="settings">⚙️ Settings <span id="maintFlag" class="flag" hidden>Maintenance on</span></button>
+      </div>
+    </nav>
     <div class="toolbar"><span class="muted" id="who"></span><button type="button" class="btn ghost small" id="logout">Log out</button></div>
     <div class="msg" id="listMsg"></div>
 
-    <div class="card" id="maintCard" style="margin-bottom:12px">
+    <div data-pane="settings" hidden>
+      <h2 class="panetitle">Site settings</h2>
+      <div class="setgrid">
+    <div class="card" id="maintCard">
       <label class="showsold" style="color:var(--text);font-weight:600"><input type="checkbox" id="maintOn"> 🛠 Maintenance mode — visitors see "Website under maintenance"</label>
       <div class="unitrow" style="margin-top:8px"><input id="maintMsg" maxlength="200" placeholder="Message (optional), e.g. Back at 10 pm"><button type="button" class="btn ghost small" id="maintSave">Save</button></div>
       <div class="hint" id="maintHint">You can still use admin while it's on. The page also shows by itself if the database is down or overloaded.</div>
     </div>
-    <div class="card" id="boutCard" style="margin-bottom:12px">
+    <div class="card" id="boutCard">
       <label class="showsold" style="color:var(--text);font-weight:600"><input type="checkbox" id="boutOn"> ✨ Show The Boutique (ladies section)</label>
       <div class="hint">Off: the Boutique tab, its page and the "Boutique" choice on the post form are hidden. Preview it any time: <a href="bags.html?preview=1" target="_blank" rel="noopener">bags.html?preview=1</a></div>
     </div>
-    <div class="card" id="rentCard" style="margin-bottom:12px">
+    <div class="card" id="rentCard">
       <label for="rentMin" style="color:var(--text);font-weight:600">🏠 Lowest rent price (real estate)</label>
       <div class="row" style="gap:8px;align-items:center;margin-top:6px"><input id="rentMin" type="number" min="0" max="10000000" step="50" style="max-width:160px"> <span class="muted">EGP</span>
         <button type="button" class="btn primary small" id="rentSave">Save</button></div>
       <div class="hint">A rent listing below this price is refused as unrealistic. Applies per day, month or year.</div>
     </div>
-    <div class="card" id="introCard" style="margin-bottom:12px">
+    <div class="card" id="introCard">
       <label class="showsold" style="color:var(--text);font-weight:600"><input type="checkbox" id="introMuted"> 🔇 Intro starts with the sound off</label>
       <div class="hint">On: the welcome video plays silently and visitors tap 🔇 to hear the music. Off: it tries to start with sound and shows "Tap to enter" when the phone asks first.</div>
     </div>
-    <div class="card" id="admCard" style="margin-bottom:12px">
+    <div class="card" id="admCard">
       <h3 style="margin:0 0 6px">👥 Admins</h3>
       <table class="mini" id="admList"></table>
       <div id="admAddBox" hidden>
@@ -96,10 +108,12 @@
       </div>
       <div class="msg" id="admMsg"></div>
     </div>
-    <div class="card" id="moveCard" style="margin-bottom:12px">
+    <div class="card" id="moveCard">
       <label for="moveUrl" style="font-weight:600">🔀 Move the site to a new address</label>
       <div class="unitrow" style="margin-top:8px"><input id="moveUrl" type="url" placeholder="https://www.your-new-domain.com"><button type="button" class="btn ghost small" id="moveSave">Save</button><button type="button" class="btn ghost small" id="moveClear">Stop forwarding</button></div>
       <div class="hint" id="moveHint">Empty = no forwarding. When set, every page here forwards visitors to the same page on the new address (this admin page stays here so you can undo it). Put the new site live first.</div>
+    </div>
+      </div>
     </div>
     <div data-pane="money" hidden>
       <div class="card fullonly" id="mnAlertCard" style="margin-bottom:12px" hidden>
@@ -447,6 +461,13 @@
     </div>
 
     <div data-pane="sponsors" hidden>
+      <div class="card" id="houseCard" style="margin-bottom:12px">
+        <h3 class="slab" style="margin:0 0 4px">🏠 House sponsor (MASAR)</h3>
+        <div class="hint" style="margin-bottom:8px">Fills a sponsor place only where no paid sponsor is booked. Tick where it may show; untick all to switch it off. To show another product instead, add it above as a sponsor.</div>
+        <div class="days" id="houseGroups"></div>
+        <div class="actions"><button type="button" class="btn primary small" id="houseSave">Save</button></div>
+        <div class="msg" id="houseMsg"></div>
+      </div>
       <div class="card" style="margin-bottom:12px">
         <h3 class="slab" style="margin:0 0 8px" id="spTitle">Add a sponsor</h3>
         <div class="grid">
@@ -469,7 +490,7 @@
           </div></div>
           <div><label for="spWeight">Share of rotation</label><select id="spWeight"></select><div class="hint">2 = shows twice as often as a sponsor at 1.</div></div>
           <div><label>Where it shows</label><div class="days" id="spSlots">
-            <label><input type="checkbox" value="banner" checked> Top banner</label>
+            <label><input type="checkbox" value="banner" checked> Sponsor row (3 places)</label>
             <label><input type="checkbox" value="feed" checked> Between listings</label>
             <label><input type="checkbox" value="flyer" checked> Flyers &amp; PDFs</label></div></div>
           <div class="full"><label>Countries <span class="hint">(none ticked = every country)</span></label><div class="days" id="spMarkets"></div></div>
@@ -484,7 +505,7 @@
         <div class="msg" id="spMsg"></div>
       </div>
       <div id="spList"></div>
-      <div class="hint">When no sponsor is scheduled, MASAR shows by default. Rotation changes every 8 seconds.</div>
+      <div class="hint">The site shows up to 3 sponsors side by side in a slim row. With more than 3 booked, the row rotates every 8 seconds.</div>
     </div>
 
     <div data-pane="stats" hidden>
@@ -545,7 +566,7 @@
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js" integrity="sha384-8FWZA6BGMXhsfO+BLtrJK0We6gg5o1JyO8xQm6peWDEUs17ACA5ziE/NIAkl9z2k" crossorigin="anonymous"></script>
 <script src="config.js"></script>
-<script src="common.js?v=e387a8f6"></script>
+<script src="common.js?v=7e995726"></script>
 
 <script>
 initHeader();
@@ -601,7 +622,7 @@ $("#logout").onclick = async ()=>{ await sb.auth.signOut(); location.reload(); }
 
 /* ---------- what this admin may manage (set by the root admin) ---------- */
 let ME = {root:false, full:true, perms:[]};
-const TAB_PERM = {pending:"listings", live:"listings", sold:"listings", add:"listings", codes:"codes", sponsors:"sponsors", limits:"settings",
+const TAB_PERM = {pending:"listings", live:"listings", sold:"listings", add:"listings", codes:"codes", sponsors:"sponsors", limits:"settings", settings:"settings",
   inspect:"inspect", ratings:"ratings", wanted:"wanted", announce:"announce", share:"share", money:"money", stats:"stats"};
 const PERM_SECTIONS = [["moto","🏍️ Motorcycles"],["watch","⌚ Watches"],["car","🚗 Cars"],["boat","🛥️ Marine"],["desert","🏜️ Dune Riders"],["equine","🐎 Equine"],["art","🎨 Art"],["estate","🏠 Real estate"],["bag","👜 The Boutique (ladies)"]];
 const PERM_FEATURES = [["listings","Listings: review, edit, add"],["share","Share to WhatsApp"],["announce","Announcements"],["wanted","Wanted requests"],["codes","Discount codes"],
@@ -611,6 +632,7 @@ function applyPerms(){
   let first=null;
   document.querySelectorAll("#adminView .tabs button").forEach(b=>{ const ok=b.dataset.tab==="money" ? (can("money")||can("confirm")) : can(TAB_PERM[b.dataset.tab]||"settings"); b.hidden=!ok; if (ok && !first) first=b.dataset.tab; });
   ["#maintCard","#boutCard","#introCard","#rentCard","#moveCard","#payCard"].forEach(id=>{ const el=$(id); if (el) el.hidden=!can("settings"); });
+  document.querySelectorAll("#adminView .tabgrp").forEach(g=>g.hidden=![...g.querySelectorAll("button")].some(b=>!b.hidden));
   const aa=$("#autoApprove"); if (aa) aa.closest(".disc").hidden=!can("settings");
   const so=$("#soSave"); if (so) so.closest(".card").hidden=!can("settings");
   document.querySelectorAll("[data-pane=money] .fullonly").forEach(el=>{ if(!can("money")) el.hidden=true; });
@@ -625,9 +647,32 @@ function applyPerms(){
   if (want==="share" && location.hash==="#digest") setTimeout(()=>{ const d=$("#digestAfter"); if (d) d.closest(".card").scrollIntoView({block:"start",behavior:"smooth"}); },400);
 }
 
+/* ---------- house sponsor (MASAR): where it may fill an empty sponsor place ---------- */
+const HOUSE_PLACES = [["home","🏠 Home page"]].concat(PERM_SECTIONS);
+function drawHouseGroups(on, hasCol){
+  const box=$("#houseGroups"); if (!box) return;
+  const cur = on || ["home","moto","watch","car","boat","desert","equine","art","estate"];
+  box.innerHTML=""; HOUSE_PLACES.forEach(([k,l])=>{ const lab=document.createElement("label"); const c=document.createElement("input"); c.type="checkbox"; c.value=k; c.checked=cur.includes(k);
+    lab.append(c," "+l); box.appendChild(lab); });
+  box.dataset.ready = hasCol ? "1" : "";
+}
+document.addEventListener("click", async e=>{
+  if (e.target.id!=="houseSave") return;
+  const v=[...document.querySelectorAll("#houseGroups input:checked")].map(c=>c.value);
+  const {error}=await sb.from("settings").update({house_sponsor_groups:v}).eq("id",1);
+  if (error) return showMsg(/house_sponsor_groups/.test(error.message||"") ? "One-time setup needed: run the house-sponsor SQL in Supabase first." : niceError(error),"err",$("#houseMsg"));
+  showMsg(v.length ? "Saved. MASAR can show in: "+v.length+" place"+(v.length>1?"s":"")+"." : "Saved. MASAR is switched off.","ok",$("#houseMsg"));
+});
+
+/* ---------- layout: section menu on the side (desktop), content on the right ---------- */
+(function(){ const v=$("#adminView"); if (!v || v.querySelector(".admbody")) return;
+  const body=document.createElement("div"); body.className="admbody";
+  [...v.children].filter(e=>!e.classList.contains("tabs")).forEach(e=>body.appendChild(e)); v.appendChild(body); v.classList.add("admlayout"); })();
+
 /* ---------- tabs ---------- */
 function tab(t){
-  document.querySelectorAll("#adminView .tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));
+  document.querySelectorAll("#adminView .tabs button").forEach(b=>{ b.classList.toggle("on",b.dataset.tab===t); b.setAttribute("aria-current", b.dataset.tab===t ? "page" : "false"); });
+  if (innerWidth<1000){ const nav=document.querySelector("#adminView .tabs"), on=nav && nav.querySelector("button.on"); if (on) nav.scrollLeft = on.offsetLeft - (nav.clientWidth-on.offsetWidth)/2; }
   document.querySelectorAll("[data-pane]").forEach(p=>p.hidden = p.dataset.pane!==t);
   if (t==="stats") loadStats();
   if (t==="codes") loadCodes();
@@ -901,6 +946,7 @@ function focusFromLink(){
 }
 async function loadSettings(){
   const {data} = await sb.from("settings").select("*").eq("id",1).maybeSingle();
+  drawHouseGroups(data && Array.isArray(data.house_sponsor_groups) ? data.house_sponsor_groups : null, data && ("house_sponsor_groups" in data));
   if (data){ $("#maintOn").checked = !!data.maintenance; $("#maintMsg").value = data.maintenance_msg || ""; maintUi(); }
   if (data && data.report_wa) $("#repWa").value = data.report_wa;
   $("#bikeLim").value = (data && data.bike_monthly_limit) || 2;
@@ -911,7 +957,7 @@ async function loadSettings(){
   const on = !data || data.auto_approve!==false;
   $("#autoApprove").checked = on; autoHint(on);
 }
-function maintUi(){ const on=$("#maintOn").checked; $("#maintCard").style.background = on ? "#fff3cd" : ""; $("#maintHint").textContent = on ? "Maintenance is ON — visitors see the maintenance page. Untick and Save to open the site again." : "You can still use admin while it's on. The page also shows by itself if the database is down or overloaded."; }
+function maintUi(){ const on=$("#maintOn").checked; const fl=$("#maintFlag"); if (fl) fl.hidden=!on; $("#maintCard").style.background = on ? "#fff3cd" : ""; $("#maintHint").textContent = on ? "Maintenance is ON — visitors see the maintenance page. Untick and Save to open the site again." : "You can still use admin while it's on. The page also shows by itself if the database is down or overloaded."; }
 async function saveMaint(){
   const {error} = await sb.from("settings").update({maintenance:$("#maintOn").checked, maintenance_msg:$("#maintMsg").value.trim()||null}).eq("id",1);
   if (error){ showMsg(niceError(error),"err",$("#listMsg")); $("#maintOn").checked=!$("#maintOn").checked; }

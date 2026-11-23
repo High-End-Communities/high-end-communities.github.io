@@ -970,7 +970,7 @@ async function fitImg(P,im,x,y,w,h){
   P.img(f, x, y, w, h);
 }
 function masarStrip(P,img,x,y,w,h,sp){
-  sp = sp || DEFAULT_SPONSOR;
+  if (!sp || !img) return;   // no sponsor for this category: leave the strip out
   P.rect(x,y,w,h,"#1d2733",2);
   const s=h-4; P.rect(x+2,y+2,s,s,"#ffffff",1.5);
   const r=Math.min((s-0.6)/img.naturalWidth,(s-0.6)/img.naturalHeight), iw=img.naturalWidth*r, ih=img.naturalHeight*r;
@@ -994,7 +994,7 @@ function drawQR(P, text, x, y, size){
 }
 const FW = 150, FH = 228; // flyer size in mm (portrait, phone friendly)
 async function drawFlyer(P, L, id){
-  const SP = flyerSponsor({market:marketOf(L), group:GROUP[L.type]||""}); const logo = await loadSrc(logoFor(L.type)), masar = await loadSrc(SP.image);
+  const SP = flyerSponsor({market:marketOf(L), group:GROUP[L.type]||""}); const logo = await loadSrc(logoFor(L.type)), masar = SP ? await loadSrc(SP.image) : null;
   const ph = await loadPhotoImgs(L.photos, MAX_PHOTOS);
   const M = 8, W = FW-2*M;
   P.rect(0,0,FW,FH,PAPER);
@@ -1361,11 +1361,19 @@ function sponsorFits(s, market, group){
 }
 function sponsorsFor(slot, opt){
   opt = opt || {};
-  const now = cairoNow(), market = opt.market ?? AD_CTX.market, group = opt.group ?? AD_CTX.group;
+  const now = cairoNow(), market = opt.market ?? AD_CTX.market, group = (opt.group ?? AD_CTX.group) || (window.FIXED_GROUP || "");
   let list = SPONSORS.filter(s=>(!s.slots || s.slots.includes(slot)) && sponsorOnNow(s,now) && sponsorFits(s, market, group));
   if (opt.only) list = list.filter(s=>(s.groups||[]).includes(group));       // just the ads made for this category
   if (opt.general) list = list.filter(s=>!(s.groups||[]).length);           // ads not tied to one category
-  return list.length || opt.only ? list : [DEFAULT_SPONSOR];
+  return list.length || opt.only ? list : (houseSponsorOn(group) ? [DEFAULT_SPONSOR] : []);
+}
+// The house sponsor (MASAR) fills a slot only where no paid sponsor is booked, and only in the places the admin ticked.
+// Until the admin saves a choice it shows everywhere except The Boutique.
+const HOUSE_DEFAULT = ["home","moto","watch","car","boat","desert","equine","art","estate"];
+function houseSponsorOn(group){
+  const g = group || (window.FIXED_GROUP || "home");
+  const on = (SITE_ST && Array.isArray(SITE_ST.house_sponsor_groups)) ? SITE_ST.house_sponsor_groups : HOUSE_DEFAULT;
+  return on.includes(g);
 }
 function pickWeighted(list, seed){
   const total = list.reduce((a,s)=>a+(s.weight||1),0);
@@ -1390,14 +1398,32 @@ function fillSponsorBox(box, s){
   box.append(img,d);
 }
 let bannerTimer=null, bannerIdx=0;
+const SPONSOR_SLOTS = 3;   // the banner is a row of up to 3 small sponsor tiles side by side
+function sponsorTile(s){
+  const el=document.createElement(s.link && /^https:\/\//.test(s.link) ? "a" : "div"); el.className="sp-tile";
+  if (el.tagName==="A"){ el.href=s.link; el.target="_blank"; el.rel="noopener sponsored"; }
+  const img=document.createElement("img"); img.alt=""; img.src=s.image; img.loading="lazy";
+  const d=document.createElement("div"); d.className="sp-txt";
+  const tag=document.createElement("small"); tag.textContent="Sponsored";
+  const t=document.createElement("b"); t.textContent=s.name;
+  const p=document.createElement("span"); p.textContent=s.tagline||"";
+  d.append(tag,t,p); el.append(img,d); return el;
+}
 function startBannerRotation(){
   const boxes=[...document.querySelectorAll(".sponsor-banner")]; if (!boxes.length) return;
   const tick=()=>{
     const list = sponsorsFor("banner");
-    // weighted round-robin: repeat each sponsor "weight" times
+    boxes.forEach(b=>{ b.classList.remove("masar"); b.classList.add("sp-row"); });
+    if (!list.length){ boxes.forEach(b=>{ b.innerHTML=""; b.hidden=true; }); return; }
+    // weighted round-robin over distinct sponsors; with 3 or fewer they all stay put
     const seq = list.flatMap(s=>Array(s.weight||1).fill(s));
-    const s = seq[bannerIdx % seq.length]; bannerIdx++;
-    boxes.forEach(b=>{ b.classList.add("fade"); setTimeout(()=>{ fillSponsorBox(b,s); b.classList.remove("fade"); },180); });
+    const pickN = [];
+    for (let k=0; pickN.length<Math.min(SPONSOR_SLOTS, list.length) && k<seq.length*2; k++){ const s=seq[(bannerIdx+k)%seq.length]; if (!pickN.includes(s)) pickN.push(s); }
+    if (list.length>SPONSOR_SLOTS) bannerIdx++;
+    boxes.forEach(b=>{ const same = b.dataset.ids===pickN.map(s=>s.id).join(",");
+      if (same) return;
+      b.classList.add("fade"); setTimeout(()=>{ b.innerHTML=""; b.hidden=false; b.dataset.ids=pickN.map(s=>s.id).join(",");
+        b.style.setProperty("--n", pickN.length); b.dataset.n=pickN.length; pickN.forEach(s=>b.appendChild(sponsorTile(s))); b.classList.remove("fade"); },180); });
   };
   clearInterval(bannerTimer); tick(); bannerTimer=setInterval(tick, 8000);
 }
@@ -1407,8 +1433,11 @@ function feedSponsorCard(i, opt){
   const seq = list.flatMap(s=>Array(s.weight||1).fill(s));
   return sponsorCard(seq[i % seq.length]);
 }
-function sponsorCard(s){ const box=document.createElement("aside"); box.className="masar feedad"; fillSponsorBox(box,s); return box; }
-function flyerSponsor(opt){ return pickWeighted(sponsorsFor("flyer", opt)); }
+// a slim row of up to 3 sponsor tiles (between listings and under a category row)
+function sponsorRow(list){ const box=document.createElement("aside"); box.className="sp-row feedad"; const l=list.slice(0,SPONSOR_SLOTS);
+  box.dataset.n=l.length; box.style.setProperty("--n", l.length); l.forEach(s=>box.appendChild(sponsorTile(s))); return box; }
+function sponsorCard(s){ return sponsorRow([s]); }
+function flyerSponsor(opt){ const l=sponsorsFor("flyer", opt); return l.length ? pickWeighted(l) : null; }
 
 
 /* ===================== Seller tools & discount codes (catalogue and listing pages) ===================== */
@@ -1674,6 +1703,7 @@ async function siteCheck(page, quiet){
   if (down){ if (!quiet) showMaintenance("down"); return false; }
   const st = res.data || {};
   SITE_ST = st;
+  if (page!=="admin" && document.querySelector(".sponsor-banner")) setTimeout(startBannerRotation,0);   // house-sponsor choice arrives with the settings
   try{ localStorage.setItem("he_intro_muted", st.intro_muted?"1":"0"); }catch(e){}
   if (window.__introMuted) window.__introMuted(!!st.intro_muted);
   document.querySelectorAll(".supportwrap").forEach(e=>e.hidden=!st.pay_enabled);   // payments stay hidden until the admin switches them on
@@ -1858,7 +1888,7 @@ async function exportCatalogue(){
   if (!items.length) return;
   const doc = new jspdf.jsPDF({unit:"mm",format:"a4",compress:true}); aliasMap.clear();
   const P = pdfPainter(doc), PW=210, PH=297, M=10, G=6, CW=(PW-2*M-G)/2, CH=70;
-  const logo = await loadSrc(LOGO_SRC()), CSP = flyerSponsor(), masar = await loadSrc(CSP.image);
+  const logo = await loadSrc(LOGO_SRC()), CSP = flyerSponsor(), masar = CSP ? await loadSrc(CSP.image) : null;
   let y, col=0, page=0;
   const footer = ()=>{ P.text(DISCLAIMER,PW/2,PH-19,{size:6,color:"#77736b",align:"center"}); masarStrip(P,masar,M,PH-17,PW-2*M,11,CSP); P.text("Page "+(page),PW-M,PH-3,{size:6,color:"#77736b",align:"right"}); P.text(baseUrl().replace(/^https?:\/\//,""),M,PH-3,{size:6,color:"#77736b"}); P.link(M,PH-6,80,4,baseUrl()); checker(P,0,PH-1.5,PW,0.75); };
   const newPage = ()=>{
@@ -2035,7 +2065,7 @@ function dryPainter(){
 }
 async function drawFlyerHD(P, L, id, ph){
   const SP = flyerSponsor({market:marketOf(L), group:GROUP[L.type]||""});
-  const logo = P.dry ? null : await loadSrc(logoFor(L.type)), masar = P.dry ? null : await loadSrc(SP.image);
+  const logo = P.dry ? null : await loadSrc(logoFor(L.type)), masar = (P.dry || !SP) ? null : await loadSrc(SP.image);
   const M = 8, W = FW-2*M;
   if (!P.dry){ P.rect(0,0,FW,9999,PAPER); checker(P,0,0,FW,2); }
   // header: logo, QR to the listing, reference

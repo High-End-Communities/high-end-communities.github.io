@@ -793,3 +793,67 @@ header.mast .brands{display:none!important}
 .hm-videos figcaption{font-size:13px;color:var(--muted);margin-top:4px}
 @media (min-width:900px){.hemenu .card{max-width:760px}.hm-videos{grid-template-columns:1fr 1fr}}
 @media (max-width:560px){.menubtn{top:12px;inset-inline-start:10px;width:36px;height:32px}}
+
+/* sponsors: a slim row of up to 3 tiles side by side */
+.sp-row{display:grid;grid-template-columns:repeat(var(--n,3),minmax(0,400px));gap:10px;margin:14px 0;padding:0;background:none;border:0;transition:opacity .18s}
+.sp-row[hidden]{display:none}
+.sp-row.fade{opacity:0}
+.sp-row.feedad{grid-column:1/-1}
+.sp-tile{display:flex;align-items:center;gap:10px;min-width:0;min-height:62px;padding:8px 12px 8px 8px;border-radius:6px;background:var(--carbon2,#222326);color:#fff;text-decoration:none;border:1px solid rgba(255,255,255,.06)}
+a.sp-tile:hover{border-color:var(--brass2,#c5a676)}
+a.sp-tile:focus-visible{outline:2px solid var(--brass2,#c5a676);outline-offset:2px}
+.sp-tile img{width:46px;height:46px;flex:none;border-radius:5px;background:#fff;object-fit:contain}
+.sp-txt{display:flex;flex-direction:column;min-width:0;line-height:1.25}
+.sp-txt small{font:500 10px var(--sans);letter-spacing:.4px;color:var(--brass2,#c5a676)}
+.sp-txt b{font:600 14px var(--sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sp-txt span{font-size:12px;color:#c9ccd1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sections > .sp-row{margin:4px 0 18px}
+@media (max-width:640px){
+  .sp-row{grid-template-columns:repeat(var(--n,3),minmax(0,1fr));gap:8px}
+  .sp-row:not([data-n="1"]) .sp-tile{flex-direction:column;align-items:center;text-align:center;padding:8px 6px;gap:5px;min-height:0}
+  .sp-row:not([data-n="1"]) .sp-txt{align-items:center;width:100%}
+  .sp-row:not([data-n="1"]) .sp-txt span{display:none}
+  .sp-row:not([data-n="1"]) .sp-tile img{width:40px;height:40px}
+  .sp-txt b{font-size:13px;max-width:100%}
+}
+/* accessories get their own row under each category */
+.catsec.accsec .cathead h2{font-size:.92em}
+.catsec.accsec{margin-top:-4px}
+
+/* ===== admin: grouped section menu (side menu on desktop, scrolling strip on phones) ===== */
+.admnav.tabs{display:flex;flex-direction:row;gap:4px;margin:12px 0 14px;padding:6px;background:#fff;border:1px solid var(--line,#e2ddd2);border-radius:10px;width:auto;max-width:100%;overflow-x:auto;scrollbar-width:none;align-items:center}
+.admnav.tabs::-webkit-scrollbar{display:none}
+.admnav .tabgrp{display:flex;align-items:center;gap:2px;flex:none}
+.admnav .tabgrp + .tabgrp{border-inline-start:1px solid var(--line,#e2ddd2);padding-inline-start:6px;margin-inline-start:4px}
+.admnav .tg{font:500 10.5px var(--sans);letter-spacing:.5px;color:var(--muted);padding:0 6px 0 4px;white-space:nowrap}
+.admnav button{display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:7px;font:500 14px var(--sans);color:#2b2a27;background:none;border:0;cursor:pointer;white-space:nowrap}
+.admnav button:hover{background:#f4f0e6}
+.admnav button.on{background:var(--carbon,#17181a);color:#fff}
+.admnav button:focus-visible{outline:2px solid var(--brass,#a8875a);outline-offset:1px}
+.admnav button span:empty{display:none}
+.admnav button span:not(:empty):not(.flag){font-size:12px;min-width:20px;padding:0 6px;border-radius:999px;background:#ece6d8;color:#5d5444;line-height:18px;text-align:center}
+.admnav button.on span:not(:empty):not(.flag){background:rgba(255,255,255,.18);color:#fff}
+.admnav .flag{font-size:11px;padding:1px 7px;border-radius:999px;background:#f4c542;color:#3b2f00;line-height:18px}
+.admbody > .toolbar{display:flex;justify-content:space-between;align-items:center;margin:0 0 12px}
+.admbody .panetitle{font:500 22px var(--serif);margin:2px 0 14px}
+.admbody .setgrid{display:grid;grid-template-columns:1fr;gap:12px}
+.admbody .setgrid > .card{margin:0}
+@media (min-width:1000px){
+  .admlayout{display:grid;grid-template-columns:212px minmax(0,1fr);gap:28px;align-items:start}
+  .admnav.tabs{flex-direction:column;align-items:stretch;position:sticky;top:12px;margin:12px 0;padding:10px 8px;overflow:visible;max-height:calc(100vh - 24px);overflow-y:auto}
+  .admnav .tabgrp{flex-direction:column;align-items:stretch;gap:1px}
+  .admnav .tabgrp + .tabgrp{border-inline-start:0;padding-inline-start:0;margin-inline-start:0;border-top:1px solid var(--line,#e2ddd2);padding-top:8px;margin-top:8px}
+  .admnav .tg{padding:2px 10px 6px}
+  .admnav button{justify-content:flex-start;width:100%;padding:9px 10px}
+  .admnav button span:not(:empty){margin-inline-start:auto}
+  .admbody{padding-top:12px;min-width:0}
+  .admbody .setgrid{grid-template-columns:1fr 1fr}
+  .admbody .setgrid > #admCard{grid-column:1/-1}
+}
+/* admin page: compact header and a wider working area */
+body:has(#adminView:not([hidden])) header.mast .mast-line,
+body:has(#adminView:not([hidden])) header.mast .mast-sub{display:none}
+body:has(#adminView:not([hidden])) header.mast .mast-logo img{width:110px}
+body:has(#adminView:not([hidden])) header.mast .mast-in{padding-top:10px;padding-bottom:10px}
+body:has(#adminView:not([hidden])) main{max-width:1320px}
+@media (max-width:999px){ .admnav.tabs{position:sticky;top:0;z-index:20;box-shadow:0 4px 10px rgba(0,0,0,.05)} }
