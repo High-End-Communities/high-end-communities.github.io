@@ -15,11 +15,11 @@ jobs:
           node-version: 20
       - name: JavaScript syntax
         run: |
-          for f in common.js i18n.js config.js; do node --check "$f"; done
+          for f in js/*.js admin.js i18n.js config.js; do node --check "$f"; done
       - name: Cache versions match the files (?v= = first 8 characters of the MD5)
         run: |
           fail=0
-          for f in common.js common.css i18n.js; do
+          for f in js/core.js js/export.js js/data.js js/business.js js/ui.js admin.js common.css i18n.js; do
             want=$(md5sum "$f" | cut -c1-8)
             for p in index.html bags.html item.html post.html admin.html 404.html; do
               if grep -q "$f?v=" "$p" && ! grep -q "$f?v=$want" "$p"; then echo "::error file=$p::$f should be ?v=$want"; fail=1; fi
