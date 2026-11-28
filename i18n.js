@@ -45,6 +45,7 @@ document.documentElement.lang = LANG;
 if (LANG === "ar") document.documentElement.dir = "rtl";
 
 var D = {
+"Buy & sell motorcycles, watches, cars and more":"بيع وشراء الموتوسيكلات والساعات والعربيات وأكتر","Designer bags & accessories":"شنط وإكسسوارات الماركات",
 "Order from abroad":"اطلب من بره","Tyres, parts, gear or anything special from the USA, Europe and more. Tell us what you need and we reply on WhatsApp with a price delivered to you.":"كاوتش، قطع غيار، معدات أو أي حاجة مخصوص من أمريكا وأوروبا وغيرهم. قولنا محتاج إيه وهنرد عليك على واتساب بالسعر لحد عندك.",
 "What do you need?":"محتاج إيه؟","Product link (optional)":"لينك المنتج (اختياري)","From":"من","Size, quantity, colour… (optional)":"المقاس، الكمية، اللون… (اختياري)",
 "Only the High End team sees this request.":"فريق High End بس هو اللي بيشوف الطلب ده.","Ask for a price":"اطلب السعر","Write what you need.":"اكتب إنت محتاج إيه.",
@@ -292,6 +293,7 @@ var P = [
 /* ---------- Français ---------- */
 if (LANG === "fr"){
 D = {
+"Buy & sell motorcycles, watches, cars and more":"Achat et vente de motos, montres, voitures et plus","Designer bags & accessories":"Sacs et accessoires de créateurs",
 "Order from abroad": "Commander de l'étranger",
 "Tyres, parts, gear or anything special from the USA, Europe and more. Tell us what you need and we reply on WhatsApp with a price delivered to you.": "Pneus, pièces, équipement ou toute demande spéciale depuis les États-Unis, l'Europe et ailleurs. Dites-nous ce qu'il vous faut et nous répondons sur WhatsApp avec un prix livré chez vous.",
 "What do you need?": "De quoi avez-vous besoin ?",
@@ -1021,7 +1023,7 @@ var mo = new MutationObserver(function(list){
   });
 });
 mo.observe(document.documentElement, {childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ATTR});
-document.addEventListener("DOMContentLoaded", function(){ walk(document.body); wireButton(); if (document.title) document.title = T(document.title.split(" — ")[0]) + (document.title.indexOf(" — ") > -1 ? " — High End Communities" : ""); });
+document.addEventListener("DOMContentLoaded", function(){ walk(document.body); wireButton(); if (document.title) document.title = document.title.split(/(\s[\u2014|]\s)/).map(function(p){ return /^\s[\u2014|]\s$/.test(p) ? p : T(p); }).join(""); });
 var _a = window.alert, _c = window.confirm;
 window.alert = function(s){ return _a.call(window, T(String(s))); };
 window.confirm = function(s){ return _c.call(window, T(String(s))); };
