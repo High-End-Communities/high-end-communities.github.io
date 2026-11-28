@@ -1,0 +1,51 @@
+name: Site checks
+# Runs on every push and pull request: catches broken JavaScript, stale cache versions and missing security tags before visitors see them.
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: JavaScript syntax
+        run: |
+          for f in common.js i18n.js config.js; do node --check "$f"; done
+      - name: Cache versions match the files (?v= = first 8 characters of the MD5)
+        run: |
+          fail=0
+          for f in common.js common.css i18n.js; do
+            want=$(md5sum "$f" | cut -c1-8)
+            for p in index.html bags.html item.html post.html admin.html 404.html; do
+              if grep -q "$f?v=" "$p" && ! grep -q "$f?v=$want" "$p"; then echo "::error file=$p::$f should be ?v=$want"; fail=1; fi
+            done
+          done
+          exit $fail
+      - name: Security tags on every page
+        run: |
+          fail=0
+          for p in index.html bags.html item.html post.html admin.html 404.html; do
+            grep -q 'http-equiv="Content-Security-Policy"' "$p" || { echo "::error file=$p::missing Content-Security-Policy"; fail=1; }
+            for s in $(grep -o 'src="https://cdn.jsdelivr.net[^"]*"' "$p" | sort -u); do
+              line=$(grep -F "$s" "$p" | head -1)
+              echo "$line" | grep -q 'integrity="sha384-' || { echo "::error file=$p::$s has no SRI hash"; fail=1; }
+            done
+          done
+          exit $fail
+      - name: No emoji on public pages
+        run: |
+          python3 - <<'PY'
+          import re, sys
+          emo = re.compile('[\U0001F300-\U0001FAFF⭐]')
+          bad = 0
+          for p in ["index.html", "bags.html", "item.html", "post.html", "404.html"]:
+              for i, l in enumerate(open(p, encoding="utf-8"), 1):
+                  if emo.search(l):
+                      print(f"::warning file={p},line={i}::emoji on a public page"); bad += 1
+          print(f"{bad} emoji found")
+          PY
