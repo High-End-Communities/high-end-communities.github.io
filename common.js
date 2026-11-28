@@ -2442,7 +2442,7 @@ const MENU_ICON = {
   wa:"<path d='M5 19l1.2-3.6A7.5 7.5 0 1 1 9 18.6z' fill='none' stroke-linejoin='round'/>"
 };
 // Contact us: the site's email (forwarded to the owner) and WhatsApp to the admin. The address is put together on click so bots scraping the page don't find it.
-const CONTACT_EMAIL = ["", ""];   // [name, domain], e.g. ["info","highendcommunities.com"]; empty = email hidden until set
+const CONTACT_EMAIL = ["info","highendcommunities.com"];   // [name, domain], e.g. ["info","highendcommunities.com"]; empty = email hidden until set
 function contactTxt(){ const l=window.HE_LANG;
   if (l==="ar") return {t:"تواصل معنا", lead:"عندك سؤال أو اقتراح أو عايز تعلن معانا؟ ابعتلنا وهنرد عليك في أقرب وقت.", mail:"ابعت إيميل", wa:"واتساب", subj:"High End Communities: استفسار", close:"إغلاق"};
   if (l==="fr") return {t:"Nous contacter", lead:"Une question, une idée ou une publicité à proposer ? Écrivez-nous, nous répondons au plus vite.", mail:"Envoyer un e-mail", wa:"WhatsApp", subj:"High End Communities : demande", close:"Fermer"};
