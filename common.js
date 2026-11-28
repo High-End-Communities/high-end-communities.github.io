@@ -828,12 +828,13 @@ function collect(){
 
 function titleOf(L){
   const f = L.f||{};
-  if (f.model) return `${f.brand||""} ${f.model}${f.year?" "+f.year:""}`.trim();
+  const withBrand = (b, rest) => { b=(b||"").trim(); rest=(rest||"").trim(); return (b && rest.toLowerCase().startsWith(b.toLowerCase())) ? rest : `${b} ${rest}`.trim(); };
+  if (f.model) return withBrand(f.brand, `${f.model}${f.year?" "+f.year:""}`);
   if (L.type==="estate") return `${f.deal==="For rent"?"For rent: ":""}${f.category||""} — ${f.name||""}${f.location?", "+f.location:""}`;
   if (L.type==="art") return `${f.name||""}${f.artist?" — "+f.artist:""}`;
   if (L.type==="equine") return `${f.name||""}${f.breed?" — "+f.breed:""}`;
-  if (L.type==="acc" && f.category==="Tyres") return `${f.brand||""} ${f.name||""} ${f.tyre_size||""}`.trim();
-  return `${f.brand||""} ${f.name||""}`.trim();
+  if (L.type==="acc" && f.category==="Tyres") return withBrand(f.brand, `${f.name||""} ${f.tyre_size||""}`);
+  return withBrand(f.brand, f.name);
 }
 function rows(L){
   const out = [];
@@ -2133,7 +2134,7 @@ async function drawFlyerHD(P, L, id, ph){
 /* "Download now": the original, highest-definition copy of the ad (item page) */
 const DL_ICON='<svg viewBox="0 0 48 48" width="44" height="44" aria-hidden="true"><circle cx="24" cy="24" r="22" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M24 12v20M15 24l9 9 9-9" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 function hdTxt(){ const l=window.HE_LANG;
-  return l==="ar" ? {btn:"حمّل الآن", sub:"الإعلان الأصلي بأعلى جودة", h:"الإعلان الأصلي — أعلى جودة", p:"دي النسخة الأصلية من الإعلان بأعلى دقة، مباشرة من هاي إند كوميونيتيز.", img:"صورة HD", pdf:"ملف PDF HD", close:"إغلاق"}
+  return l==="ar" ? {btn:"حمّل الآن", sub:"الإعلان الأصلي بأعلى جودة", h:"الإعلان الأصلي — أعلى جودة", p:"دي النسخة الأصلية من الإعلان بأعلى دقة، مباشرة من High End Communities.", img:"صورة HD", pdf:"ملف PDF HD", close:"إغلاق"}
        : l==="fr" ? {btn:"Télécharger", sub:"Annonce originale en haute définition", h:"Annonce originale — haute définition", p:"Voici la copie originale de cette annonce, dans la plus haute définition, directement de High End Communities.", img:"Image HD", pdf:"PDF HD", close:"Fermer"}
        : {btn:"Download now", sub:"Original ad · highest definition", h:"Original ad — highest definition", p:"This is the original, highest-definition copy of this ad, straight from High End Communities.", img:"HD image", pdf:"HD PDF", close:"Close"}; }
 function hdPopup(L, id){
@@ -2380,56 +2381,88 @@ const HOWTO_VIDEOS = [
 function menuTxt(){
   const l = window.HE_LANG;
   if (l==="ar") return {
-    menu:"القائمة", about:"عن High End", howto:"طريقة الاستخدام", post:"اعرض منتجك", wanted:"اطلب حاجة مش لاقيها", admin:"كلّم الأدمن", close:"إغلاق", back:"رجوع",
+    menu:"القائمة", about:"عن High End", howto:"طريقة الاستخدام", post:"اعرض منتجك", wanted:"اطلب حاجة مش لاقيها", admin:"كلّم الأدمن", contact:"تواصل معنا", close:"إغلاق", back:"رجوع",
     aboutTitle:"عن High End Communities",
     aboutLead:"سوق للقطع اللي قيمتها عالية: موتوسيكلات وساعات وعربيات ومراكب وخيل وعربيات الصحرا. البيع من المالك للمشتري مباشرة.",
     points:[
-      ["من غير وسيط ولا عمولة","البائع بياخد سعره كامل، والمشتري بيدفع أقل."],
-      ["اعرض بسعرك، ومفيش فصال","السعر المكتوب هو السعر. مريح للبائع والمشتري اللي مش بيحبوا الفصال."],
-      ["أول إعلان مجاني","جرّب من غير أي مخاطرة."],
+      ["من المالك للمشتري","من غير وسيط ولا عمولة: البايع بياخد سعره كامل، والمشتري بيدفع أقل."],
+      ["اعرض بسعرك","السعر المكتوب هو السعر. مريح للبائع والمشتري اللي مش بيحبوا الفصال."],
+      ["أول إعلان مجاناً","جرّب من غير أي مخاطرة."],
       ["رقمك محمي","رقمك مش ظاهر على الموقع. المشتري بيكلمك بزرار واتساب أو اتصال، ومحدش يقدر يسحب الأرقام بالجملة."],
-      ["ملف واحد بكل الصور","كل الصور في ملف PDF واحد فيه لينكات شغالة، فبتبعت ملف واحد بدل صور كتير وبتوفر باقة الموبايل. ولو اخترت، رقمك بيظهر على ملف الـHD بتاعك إنت بس."],
-      ["«حمّل الآن» بأعلى جودة","النسخة الأصلية من الإعلان. صورة فخمة تليق بقطع قيمتها عالية."],
-      ["Wanted والطلب من بره","اطلب اللي مش لاقيه، واللي عنده هو اللي يكلمك. وممكن نطلبلك قطع من بره."],
+      ["ملف PDF واحد بكل الصور","كل الصور في ملف PDF واحد فيه لينكات شغالة، فبتبعت ملف واحد بدل صور كتير وبتوفر باقة الموبايل. ولو اخترت، رقمك بيظهر على ملف الـHD بتاعك إنت بس."],
+      ["حمّل الأصل بأعلى جودة","النسخة الأصلية من الإعلان: صورة فخمة تليق بقطع قيمتها عالية."],
+      ["اطلب اللي مش لاقيه","واللي عنده هو اللي يكلمك. وممكن نطلبلك قطع من بره."],
       ["تقييمات حقيقية","التقييمات بتتراجع قبل ما تظهر، والمزيفة بتتشال."],
       ["أكتر من دولة و3 لغات","مصر والسعودية والإمارات وغيرهم، بالعربي والإنجليزي والفرنساوي."]
     ],
     howtoLead:"فيديو قصير لكل قسم: إزاي تتفرج وتشتري وتعرض في دقيقة.", soon:"الفيديوهات هتنزل قريب."
   };
   if (l==="fr") return {
-    menu:"Menu", about:"À propos", howto:"Mode d'emploi", post:"Publier une annonce", wanted:"Demander un article", admin:"Contacter l'admin", close:"Fermer", back:"Retour",
+    menu:"Menu", about:"À propos", howto:"Mode d'emploi", post:"Publier une annonce", wanted:"Demander un article", admin:"Contacter l'admin", contact:"Nous contacter", close:"Fermer", back:"Retour",
     aboutTitle:"À propos de High End Communities",
     aboutLead:"Un marché pour les objets de grande valeur : motos, montres, voitures, bateaux, chevaux et véhicules du désert. Directement du propriétaire à l'acheteur.",
     points:[
-      ["Sans intermédiaire, sans commission","Le vendeur garde tout son prix ; l'acheteur paie moins."],
+      ["Du propriétaire à l'acheteur","Sans intermédiaire ni commission : le vendeur garde tout son prix ; l'acheteur paie moins."],
       ["Votre prix, sans marchandage","Le prix affiché est le prix. Idéal pour ceux qui n'aiment pas négocier."],
       ["Première annonce gratuite","Essayez sans risque."],
       ["Votre numéro protégé","Il n'apparaît pas sur le site : l'acheteur vous contacte par un bouton WhatsApp ou appel, et personne ne peut copier les numéros en masse."],
-      ["Un seul fichier pour toutes les photos","Toutes les photos dans un PDF avec des liens actifs : un fichier au lieu de nombreuses photos, moins de données mobiles. Si vous le choisissez, votre numéro figure sur votre propre flyer HD uniquement."],
-      ["« Télécharger » en haute définition","La copie originale de l'annonce, digne d'objets de grande valeur."],
-      ["Wanted et commandes de l'étranger","Demandez ce que vous cherchez ; ceux qui l'ont vous contactent."],
+      ["Un seul PDF avec toutes les photos","Toutes les photos dans un PDF avec des liens actifs : un fichier au lieu de nombreuses photos, moins de données mobiles. Si vous le choisissez, votre numéro figure sur votre propre flyer HD uniquement."],
+      ["L'original en haute définition","La copie originale de l'annonce, digne d'objets de grande valeur."],
+      ["Demandez ce que vous cherchez","Demandez ce que vous cherchez ; ceux qui l'ont vous contactent."],
       ["Avis vérifiés","Les avis sont contrôlés avant d'apparaître ; les faux sont supprimés."],
       ["Plusieurs pays, 3 langues","Égypte, Arabie saoudite, Émirats et plus, en arabe, anglais et français."]
     ],
     howtoLead:"Une courte vidéo par rubrique : regarder, acheter et publier en une minute.", soon:"Les vidéos arrivent bientôt."
   };
   return {
-    menu:"Menu", about:"About High End", howto:"How to use", post:"List an item", wanted:"Ask for an item", admin:"Contact the admin", close:"Close", back:"Back",
+    menu:"Menu", about:"About High End", howto:"How to use", post:"List an item", wanted:"Ask for an item", admin:"Contact the admin", contact:"Contact us", close:"Close", back:"Back",
     aboutTitle:"About High End Communities",
     aboutLead:"A market for high-value pieces: motorcycles, watches, cars, boats, horses and desert rides. Sold owner to owner.",
     points:[
-      ["No middleman, no commission","The seller keeps the full price; the buyer pays less."],
+      ["Owner to buyer","No middleman, no commission: the seller keeps the full price; the buyer pays less."],
       ["Your price, no haggling","The price you list is the price, easy for people who don't like to bargain."],
       ["First listing free","Try it with no risk."],
       ["Your number stays protected","It isn't shown on the site: buyers reach you with a WhatsApp or call button, and nobody can harvest the numbers in bulk."],
-      ["One file with every photo","All photos in one PDF with live links: one file instead of many photos, so it saves mobile data. If you choose, your number shows on your own HD flyer only."],
+      ["One PDF with every photo","All photos in one PDF with live links: one file instead of many photos, so it saves mobile data. If you choose, your number shows on your own HD flyer only."],
       ["Download the HD original","The original copy of the ad, a premium image worthy of high-value pieces."],
-      ["Wanted and orders from abroad","Ask for what you can't find and whoever has it contacts you."],
+      ["Ask for what you can't find","Ask for what you can't find and whoever has it contacts you."],
       ["Real ratings","Ratings are checked before they show; fake ones are removed."],
       ["Several countries, 3 languages","Egypt, Saudi Arabia, the UAE and more, in Arabic, English and French."]
     ],
     howtoLead:"One short video per section: browse, buy and list in a minute.", soon:"The videos are coming soon."
   };
+}
+const MENU_ICON = {
+  info:"<circle cx='12' cy='12' r='9' fill='none'/><path d='M12 11v6M12 7.5v.5' fill='none' stroke-linecap='round'/>",
+  play:"<circle cx='12' cy='12' r='9' fill='none'/><path d='M10 8.5l6 3.5-6 3.5z' stroke-linejoin='round'/>",
+  plus:"<path d='M12 5v14M5 12h14' fill='none' stroke-linecap='round'/>",
+  mail:"<rect x='3.5' y='6' width='17' height='12' rx='1.5' fill='none'/><path d='M4 7l8 6 8-6' fill='none' stroke-linejoin='round'/>",
+  wa:"<path d='M5 19l1.2-3.6A7.5 7.5 0 1 1 9 18.6z' fill='none' stroke-linejoin='round'/>"
+};
+// Contact us: the site's email (forwarded to the owner) and WhatsApp to the admin. The address is put together on click so bots scraping the page don't find it.
+const CONTACT_EMAIL = ["", ""];   // [name, domain], e.g. ["info","highendcommunities.com"]; empty = email hidden until set
+function contactTxt(){ const l=window.HE_LANG;
+  if (l==="ar") return {t:"تواصل معنا", lead:"عندك سؤال أو اقتراح أو عايز تعلن معانا؟ ابعتلنا وهنرد عليك في أقرب وقت.", mail:"ابعت إيميل", wa:"واتساب", subj:"High End Communities: استفسار", close:"إغلاق"};
+  if (l==="fr") return {t:"Nous contacter", lead:"Une question, une idée ou une publicité à proposer ? Écrivez-nous, nous répondons au plus vite.", mail:"Envoyer un e-mail", wa:"WhatsApp", subj:"High End Communities : demande", close:"Fermer"};
+  return {t:"Contact us", lead:"A question, an idea or an ad to place? Write to us and we'll reply as soon as we can.", mail:"Email us", wa:"WhatsApp", subj:"High End Communities: enquiry", close:"Close"};
+}
+function contactSheet(){
+  const t=contactTxt(); document.getElementById("contactSheet")?.remove();
+  const ov=document.createElement("div"); ov.className="modal hemenu"; ov.id="contactSheet"; ov.setAttribute("role","dialog"); ov.setAttribute("aria-label",t.t); ov.setAttribute("data-noi18n","");
+  const c=document.createElement("div"); c.className="card"; ov.appendChild(c);
+  const top=document.createElement("div"); top.className="hm-top"; const h=document.createElement("h3"); h.textContent=t.t;
+  const x=document.createElement("button"); x.type="button"; x.className="hm-x"; x.setAttribute("aria-label",t.close); x.textContent="×"; top.append(h,x); c.appendChild(top);
+  const p=document.createElement("p"); p.className="hm-lead"; p.textContent=t.lead; c.appendChild(p);
+  const nav=document.createElement("nav"); nav.className="hm-nav";
+  const row=(label,ic,href,extra)=>{ const a=document.createElement("a"); a.href=href; if (/^https:/.test(href)){ a.target="_blank"; a.rel="noopener"; }
+    a.innerHTML=`<span class="hm-ic"><svg viewBox="0 0 24 24" aria-hidden="true">${MENU_ICON[ic]}</svg></span>`; const s1=document.createElement("span"); s1.textContent=label; a.appendChild(s1);
+    if (extra){ const s2=document.createElement("small"); s2.className="hm-sub"; s2.textContent=extra; s2.dir="ltr"; a.appendChild(s2); } nav.appendChild(a); };
+  if (CONTACT_EMAIL[0] && CONTACT_EMAIL[1]){ const addr=CONTACT_EMAIL[0]+"@"+CONTACT_EMAIL[1]; row(t.mail,"mail","mailto:"+addr+"?subject="+encodeURIComponent(t.subj), addr); }
+  try{ row(t.wa,"wa",adminHref("")); }catch(e){}
+  c.appendChild(nav);
+  const close=()=>{ ov.remove(); document.removeEventListener("keydown",esc); }; const esc=e=>{ if (e.key==="Escape") close(); };
+  x.onclick=close; ov.onclick=e=>{ if (e.target===ov) close(); }; document.addEventListener("keydown",esc);
+  document.body.appendChild(ov); x.focus();
 }
 function closeHeMenu(){ document.getElementById("heMenu")?.remove(); }
 function openHeMenu(view){
@@ -2463,11 +2496,12 @@ function openHeMenu(view){
   } else {
     h.textContent=t.menu;
     const nav=document.createElement("nav"); nav.className="hm-nav";
-    const item=(label,fn,href)=>{ const a=document.createElement(href?"a":"button"); if (href){ a.href=href; if (/^https:/.test(href)){ a.target="_blank"; a.rel="noopener"; } } else { a.type="button"; a.onclick=fn; } a.textContent=label; nav.appendChild(a); };
-    item("ⓘ  "+t.about, ()=>openHeMenu("about"));
-    item("▶  "+t.howto, ()=>openHeMenu("howto"));
-    item("＋  "+t.post, null, "/post.html");
-    try{ item("✆  "+t.admin, null, adminHref("")); }catch(e){}
+    const item=(label,fn,href,ic)=>{ const a=document.createElement(href?"a":"button"); if (href){ a.href=href; if (/^https:/.test(href)){ a.target="_blank"; a.rel="noopener"; } } else { a.type="button"; a.onclick=fn; }
+      a.innerHTML=`<span class="hm-ic"><svg viewBox="0 0 24 24" aria-hidden="true">${MENU_ICON[ic]||""}</svg></span>`; const sp=document.createElement("span"); sp.textContent=label; a.appendChild(sp); nav.appendChild(a); };
+    item(t.about, ()=>openHeMenu("about"), null, "info");
+    item(t.howto, ()=>openHeMenu("howto"), null, "play");
+    item(t.post, null, "/post.html", "plus");
+    item(t.contact, ()=>{ closeHeMenu(); contactSheet(); }, null, "mail");
     body.appendChild(nav);
   }
   ov.onclick=e=>{ if (e.target===ov) closeHeMenu(); };
@@ -2519,6 +2553,7 @@ document.addEventListener("click", e=>{ const b=e.target.closest && e.target.clo
 function addTermsLink(){
   document.querySelectorAll("footer").forEach(f=>{ if (f.querySelector(".termslink")) return;
     const p=document.createElement("p"); p.className="termslink"; const b=document.createElement("button"); b.type="button"; b.className="linkbtn"; b.setAttribute("data-terms",""); b.textContent="Terms of use"; p.appendChild(b);
+    const ct=document.createElement("button"); ct.type="button"; ct.className="linkbtn"; ct.setAttribute("data-noi18n",""); ct.textContent=contactTxt().t; ct.onclick=()=>contactSheet(); p.appendChild(ct);
     const cp=f.querySelector(".copyr"); if (cp) cp.after(p); else f.appendChild(p); });
 }
 if (document.readyState==="loading") document.addEventListener("DOMContentLoaded", addTermsLink); else addTermsLink();
