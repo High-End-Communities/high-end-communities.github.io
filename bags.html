@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <script>try{var l=new URLSearchParams(location.search).get("lang")||localStorage.getItem("he_lang");if(l==="ar"){document.documentElement.lang="ar";document.documentElement.dir="rtl"}}catch(e){}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' blob: data:; connect-src 'self' https://uaaprhjjnjsimeebnslr.supabase.co wss://uaaprhjjnjsimeebnslr.supabase.co https://open.er-api.com https://get.geojs.io https://cdn.jsdelivr.net; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
 <title>The Boutique — Designer bags & accessories | High End Communities</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#f8f3e8">
@@ -29,10 +30,10 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=a5f21c5a">
+<link rel="stylesheet" href="common.css?v=348be04a">
 </head>
 <body class="ladies">
-<script src="i18n.js?v=d8ede9d8"></script>
+<script src="i18n.js?v=df3b3db5"></script>
 <header class="mast">
   <div class="checker"></div>
   <button type="button" class="langbtn" id="langBtn" lang="ar">العربية</button>
@@ -80,7 +81,7 @@
   <div class="toolbar">
     <label class="showsold"><input type="checkbox" id="showSold"> Show sold</label>
     <span>
-      <button type="button" class="btn ghost small" id="catPdf" hidden>📄 Catalogue PDF</button>
+      <button type="button" class="btn ghost small" id="catPdf" hidden>Catalogue PDF</button>
       <a class="btn wa small" id="catShare" href="#" target="_blank" rel="noopener" hidden>Share catalogue on WhatsApp</a>
     </span>
   </div>
@@ -88,14 +89,14 @@
   <div class="list" id="list"></div>
 </main>
 
-<footer><div class="checker"></div><p>High End Communities, est. 2024</p><p class="copyr">© 2024–2026 High End Communities. All rights reserved.<br>The site design, code, logos, photos and content may not be copied, reproduced or reused without written permission.</p><p class="socials" hidden></p><p class="supportwrap" hidden><button type="button" class="supportbtn" data-member>⭐ Membership — unlimited bikes &amp; cars</button></p></footer>
+<footer><div class="checker"></div><p>High End Communities, est. 2024</p><p class="copyr">© 2024–2026 High End Communities. All rights reserved.<br>The site design, code, logos, photos and content may not be copied, reproduced or reused without written permission.</p><p class="socials" hidden></p><p class="supportwrap" hidden><button type="button" class="supportbtn" data-member>Membership — unlimited bikes &amp; cars</button></p></footer>
 
 <script>window.FIXED_GROUP="bag";</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js" integrity="sha384-uteMfOloLDGt042uDz+xHGF3ym63/WQ6rFq7murQRG8Ih7QrXGEGNtWd8688sb4O" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js" integrity="sha384-8FWZA6BGMXhsfO+BLtrJK0We6gg5o1JyO8xQm6peWDEUs17ACA5ziE/NIAkl9z2k" crossorigin="anonymous"></script>
 <script src="config.js"></script>
-<script src="common.js?v=dcc06335"></script>
+<script src="common.js?v=72bff3f0"></script>
 
 <script>
 if (/^#l-[A-Za-z0-9-]{1,60}$/.test(location.hash)) location.replace("item.html?id="+location.hash.slice(3));   // old shared links
@@ -123,7 +124,7 @@ function drawMarkets(){
 function drawSubfilters(){
   const box=$("#subfilters"); const subs = SUBTYPES[filter];
   box.hidden = !subs; if (!subs) return; box.innerHTML="";
-  [["all","","All"]].concat(subs, filter==="car" ? [["4x4","🚙","4x4 & off-road"]] : []).forEach(([t,ic,label])=>{
+  [["all","","All"]].concat(subs, filter==="car" ? [["4x4","","4x4 & off-road"]] : []).forEach(([t,ic,label])=>{
     const b=document.createElement("button"); b.className="chip"+(sub===t?" on":""); b.dataset.s=t;
     b.textContent = (ic?ic+" ":"")+(t==="all" ? "All" : (SECTION_NAMES[t]||label));
     b.onclick=()=>{ sub=t; drawSubfilters(); render(); };
@@ -141,7 +142,7 @@ function cardFor(item){
   const live = item.L.status!=="sold";
   if (live && item.L.discount && (item.L.stock===null || item.L.stock>0)){
     const d=document.createElement("button"); d.type="button"; d.className="btn primary small discbtn";
-    d.textContent=`🏷️ Get ${item.L.discount}% discount code`; d.onclick=()=>openDiscount(item);
+    d.textContent=`Get ${item.L.discount}% discount code`; d.onclick=()=>openDiscount(item);
     body.insertBefore(d, body.querySelector(".contact"));
   }
   body.appendChild(meta);
@@ -157,11 +158,11 @@ function section(key, title, icon, items, onAll, total){
   items.forEach(it=>g.appendChild(cardFor(it)));
   sec.append(h,g); return sec;
 }
-const GROUP_ICON={moto:"🏍️",car:"🚗",watch:"⌚",bag:"👜",boat:"🛥️",desert:"🏜️",equine:"🐎",art:"🎨",estate:"🏠"};
+const GROUP_ICON={moto:"",car:"",watch:"",bag:"",boat:"",desert:"",equine:"",art:"",estate:""};
 const PER_SECTION=6;
 function pick(f){ filter=f; sub="all"; document.querySelectorAll("#filters .chip").forEach(x=>x.classList.toggle("on",x.dataset.f===f)); drawSubfilters(); render(); window.scrollTo({top:$("#filters").getBoundingClientRect().top+scrollY-10,behavior:"smooth"}); }
 function pickSub(t){ sub=t; drawSubfilters(); render(); }
-/* ---------- "📣 Wanted" announcements posted by High End, shown in their category ---------- */
+/* ---------- "Wanted" announcements posted by High End, shown in their category ---------- */
 let HOT={market:null, list:[]};
 async function loadHot(){
   if (HOT.market===MARKET || !sb) return; HOT.market=MARKET;
@@ -171,13 +172,13 @@ async function loadHot(){
 function hotFor(g){
   const h=HOT.market===MARKET ? HOT.list.filter(r=>r.grp===g) : []; if (!h.length) return null;
   const r=h[0], d=document.createElement("div"); d.className="hotwanted";
-  const t=document.createElement("div"); t.innerHTML=`<b>📣 Wanted: ${esc(r.title)}</b><small>${r.budget?"Budget up to "+fmt(r.budget)+" "+esc(r.budget_unit||mainCur()):"High End is looking for one"}${h.length>1?" · +"+(h.length-1)+" more":""}</small>`;
+  const t=document.createElement("div"); t.innerHTML=`<b>Wanted: ${esc(r.title)}</b><small>${r.budget?"Budget up to "+fmt(r.budget)+" "+esc(r.budget_unit||mainCur()):"High End is looking for one"}${h.length>1?" · +"+(h.length-1)+" more":""}</small>`;
   const a=document.createElement("a"); a.className="btn wa small"; a.target="_blank"; a.rel="noopener"; a.textContent="I have one";
   hiddenContact(a,"request",r.id,p=>"https://wa.me/"+waNum(p)+"?text="+encodeURIComponent(`Hello High End, I saw you're looking for "${r.title}". I have one — `));
   d.append(t,a); return d;
 }
 /* ---------- Riding schools, rentals, guided tours & safaris: businesses apply, the admin approves ---------- */
-const SVC_KINDS = {school:["🎓","Riding schools"], rental:["🔑","Rentals"], tour:["🧭","Guided tours"], safari:["🏜️","Desert safari"], sea:["🌊","Sea trips & safari"]};
+const SVC_KINDS = {school:["","Riding schools"], rental:["","Rentals"], tour:["","Guided tours"], safari:["","Desert safari"], sea:["","Sea trips & safari"]};
 const SVC_FOR = {moto:["school","rental","tour"], desert:["school","rental","safari"], boat:["sea","rental"]};
 let SVC={market:null, list:[], rates:{}};
 async function loadSvc(){
@@ -192,14 +193,14 @@ function svcBar(g){
   const d=document.createElement("div"); d.className="svcbar";
   kinds.forEach(k=>{ const n=svcOf(g,k).length, [ic,l]=SVC_KINDS[k];
     const b=document.createElement("button"); b.type="button"; b.className="svcbtn"; b.innerHTML=`<span>${ic}</span>${esc(l)}${n?` <small>${n}</small>`:""}`; b.onclick=()=>openSvc(g,k); d.appendChild(b); });
-  const j=document.createElement("button"); j.type="button"; j.className="svcbtn join"; j.textContent="➕ List your business"; j.onclick=()=>openSvcJoin(g); d.appendChild(j);
+  const j=document.createElement("button"); j.type="button"; j.className="svcbtn join"; j.textContent="List your business"; j.onclick=()=>openSvcJoin(g); d.appendChild(j);
   return d;
 }
 function svcModal(){ let m=$("#svcModal"); if(!m){ m=document.createElement("div"); m.className="modal"; m.id="svcModal"; document.body.appendChild(m); m.addEventListener("click",e=>{ if(e.target===m||e.target.hasAttribute("data-close")) m.hidden=true; }); } return m; }
 function openSvc(g,k){
   const m=svcModal(), [ic,l]=SVC_KINDS[k], list=svcOf(g,k);
   m.innerHTML=`<div class="card svclist"><h3>${ic} ${esc(l)} <small class="muted">${esc(GROUP_NAMES[g]||"")} · ${esc(marketName(MARKET))}</small></h3><div class="svcitems"></div>
-    <div class="actions"><button type="button" class="btn ghost" data-join>➕ List your business</button><button type="button" class="btn ghost" data-close>Close</button></div></div>`;
+    <div class="actions"><button type="button" class="btn ghost" data-join>List your business</button><button type="button" class="btn ghost" data-close>Close</button></div></div>`;
   const box=m.querySelector(".svcitems");
   if (!list.length) box.innerHTML=`<p class="muted">Nothing listed here yet. Run one? List it for free — the High End team checks it first.</p>`;
   list.forEach(p=>{ const c=document.createElement("article"); c.className="svc";
@@ -214,7 +215,7 @@ function openSvc(g,k){
       const u="https://wa.me/"+waNum(String(data))+"?text="+encodeURIComponent(`Hello ${p.name}, I found you on ${MARKET_NAME} (${l}). `);
       if (w){ try{ w.opener=null; }catch(e){} w.location.href=u; } else location.href=u; };
     row.appendChild(a);
-    const rb=document.createElement("button"); rb.type="button"; rb.className="btn ghost small"; rb.textContent="⭐ Rate";
+    const rb=document.createElement("button"); rb.type="button"; rb.className="btn ghost small"; rb.textContent="Rate";
     rb.onclick=()=>openRate({target:"provider", providerId:p.id, title:p.name, market:p.market}); row.appendChild(rb);
     if (rt && rt.n){ const rv=document.createElement("button"); rv.type="button"; rv.className="btn ghost small"; rv.textContent="Reviews";
       rv.onclick=async()=>{ rv.disabled=true; const {data}=await sb.rpc("provider_reviews",{p_id:p.id}); rv.remove();
@@ -227,7 +228,7 @@ function openSvc(g,k){
 }
 function openSvcJoin(g,k){
   const m=svcModal(), kinds=SVC_FOR[g]||["school"];
-  m.innerHTML=`<div class="card"><h3>➕ List your business</h3>
+  m.innerHTML=`<div class="card"><h3>List your business</h3>
     <p class="muted" style="font-size:14px">Riding schools, rentals, guided tours and safaris. Free to list: the High End team checks it, then it shows in ${esc(GROUP_NAMES[g]||"")}.</p>
     <label for="sv_kind">What do you offer?</label><select id="sv_kind">${kinds.map(x=>`<option value="${x}">${SVC_KINDS[x][0]} ${esc(SVC_KINDS[x][1])}</option>`).join("")}</select>
     <label for="sv_name">Business name</label><input id="sv_name" maxlength="80">
@@ -319,7 +320,7 @@ function render(){
     });
   } else if (sub==="all" && SUBTYPES[filter]){
     // a category with sub-sections: one block per sub-section
-    SUBTYPES[filter].concat(filter==="car" ? [["4x4","🚙"]] : []).forEach(([t,ic])=>{
+    SUBTYPES[filter].concat(filter==="car" ? [["4x4",""]] : []).forEach(([t,ic])=>{
       const its = live.filter(x=>t==="4x4" ? is4x4(x.L) : x.L.type===t); if (!its.length) return;
       box.appendChild(section(t, SECTION_NAMES[t], ic, its.slice(0,PER_SECTION*2), its.length>PER_SECTION*2 ? ()=>pickSub(t) : null, its.length));
     });
@@ -329,7 +330,7 @@ function render(){
     live.forEach((it,i)=>{ g.appendChild(cardFor(it)); if ((i+1)%8===0 && i<live.length-1) g.appendChild(feedSponsorCard(n++)); });
     box.appendChild(g);
   }
-  if (showSold && sold.length){ const s=section("sold","Sold","✅",sold,null); s.classList.add("soldsec"); box.appendChild(s); }
+  if (showSold && sold.length){ const s=section("sold","Sold","",sold,null); s.classList.add("soldsec"); box.appendChild(s); }
   if (!Q.active && live.length) box.appendChild(wantedCta(false));
 }
 
@@ -369,7 +370,7 @@ function wantedCta(empty){
   const p=document.createElement("p"); p.textContent = empty ? "Nothing matches yet. Tell sellers what you're looking for." : "Can't find what you're looking for?";
   const b=document.createElement("button"); b.type="button"; b.className="btn ghost"; b.textContent="Post a request"; b.onclick=()=>openRequestForm();
   d.append(p,b);
-  if (filter!=="estate"){ const i=document.createElement("button"); i.type="button"; i.className="btn ghost"; i.textContent="🌍 Order from abroad"; i.onclick=()=>openImportForm(); d.appendChild(i); }
+  if (filter!=="estate"){ const i=document.createElement("button"); i.type="button"; i.className="btn ghost"; i.textContent="Order from abroad"; i.onclick=()=>openImportForm(); d.appendChild(i); }
   return d;
 }
 async function renderWanted(box){
@@ -379,7 +380,7 @@ async function renderWanted(box){
   head.innerHTML = `<div><h2>Wanted in ${esc(marketName(MARKET))}</h2><p class="muted">Buyers looking for something. Have it? Send them an offer on WhatsApp.</p></div>`;
   const hb=document.createElement("div"); hb.className="row";
   const b=document.createElement("button"); b.type="button"; b.className="btn primary"; b.textContent="Post a request"; b.onclick=()=>openRequestForm();
-  const ib=document.createElement("button"); ib.type="button"; ib.className="btn ghost"; ib.textContent="🌍 Order from abroad"; ib.onclick=()=>openImportForm();
+  const ib=document.createElement("button"); ib.type="button"; ib.className="btn ghost"; ib.textContent="Order from abroad"; ib.onclick=()=>openImportForm();
   hb.append(b,ib); head.appendChild(hb);
   box.appendChild(head);
   const g=document.createElement("div"); g.className="wantedlist"; box.appendChild(g);
@@ -394,7 +395,7 @@ async function renderWanted(box){
   if (!WANTED.length){ g.innerHTML='<div class="empty">No requests yet. Be the first to ask.</div>'; return; }
   WANTED.forEach(r=>{
     const c=document.createElement("article"); c.className="wanted"+(r.featured?" hw":"");
-    const t=document.createElement("div"); t.className="badge"; t.textContent=(r.featured?"📣 High End is looking for · ":"")+(GROUP_NAMES[r.grp]||r.grp)+" · "+fmtDate(Date.parse(r.created_at));
+    const t=document.createElement("div"); t.className="badge"; t.textContent=(r.featured?"High End is looking for · ":"")+(GROUP_NAMES[r.grp]||r.grp)+" · "+fmtDate(Date.parse(r.created_at));
     const h=document.createElement("h3"); h.textContent=r.title; h.dir="auto";
     const bud=document.createElement("div"); bud.className="budget"; bud.textContent = r.budget ? `Budget up to ${fmt(r.budget)} ${r.budget_unit||mainCur()}` : "Budget: open";
     c.append(t,h,bud);
@@ -411,7 +412,7 @@ function openImportForm(){
   let m=$("#impModal");
   if (!m){
     m=document.createElement("div"); m.className="modal"; m.id="impModal";
-    m.innerHTML=`<div class="card"><h3>🌍 Order from abroad</h3>
+    m.innerHTML=`<div class="card"><h3>Order from abroad</h3>
       <p class="muted" style="font-size:14px">Tyres, parts, gear or anything special from anywhere in the world. Tell us what you need and we reply on WhatsApp with a price delivered to you.</p>
       <label for="im_title">What do you need?</label><input id="im_title" maxlength="80" placeholder="e.g. Michelin Road 6 tyres 120/70 + 190/55">
       <label for="im_link">Product link (optional)</label><input id="im_link" type="url" maxlength="500" placeholder="https://…">

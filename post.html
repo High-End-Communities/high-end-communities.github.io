@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <script>try{var l=new URLSearchParams(location.search).get("lang")||localStorage.getItem("he_lang");if(l==="ar"){document.documentElement.lang="ar";document.documentElement.dir="rtl"}}catch(e){}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' blob: data:; connect-src 'self' https://uaaprhjjnjsimeebnslr.supabase.co wss://uaaprhjjnjsimeebnslr.supabase.co https://open.er-api.com https://get.geojs.io https://cdn.jsdelivr.net; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
 <title>Post a listing — High End Communities</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#f8f3e8">
@@ -18,10 +19,10 @@
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=a5f21c5a">
+<link rel="stylesheet" href="common.css?v=348be04a">
 </head>
 <body>
-<script src="i18n.js?v=d8ede9d8"></script>
+<script src="i18n.js?v=df3b3db5"></script>
 <header class="mast">
   <div class="checker"></div>
   <button type="button" class="langbtn" id="langBtn" lang="ar">العربية</button>
@@ -36,7 +37,7 @@
   <div class="topnav"><a class="btn ghost small" href="./">← Browse the catalogue</a></div>
   <aside class="sponsor-banner sp-row" hidden></aside>
   <div class="card dump" style="margin-bottom:12px">
-      <label for="dumpIn"><b>⚡ Quick fill</b> — paste your WhatsApp message</label>
+      <label for="dumpIn"><b>Quick fill</b> — paste your WhatsApp message</label>
       <textarea id="dumpIn" placeholder="Paste or type it any way you like, e.g.&#10;Harley Fat Bob 2018, 9,000 km, 1745cc, stage 1, original paint, 1.2M, 01012345678"></textarea>
       <div class="actions" style="margin-top:8px"><button type="button" class="btn primary small" id="dumpBtn">Fill the form for me</button></div>
       <div class="hint" id="dumpHint">The form below fills itself. Check it, add your photos, tick the terms and send.</div>
@@ -47,24 +48,24 @@
         <button type="button" data-m="moto" class="on"><img class="lg" alt="" data-brand="moto">Motorcycles</button>
         <button type="button" data-m="watch"><img class="lg" alt="" data-brand="watch">Watches</button>
         <button type="button" data-m="car"><img class="lg" alt="" data-brand="car">Cars</button>
-        <button type="button" data-m="desert"><span class="ic">🏜️</span>Dune Riders</button>
+        <button type="button" data-m="desert"><img class="lg" alt="" data-brand="desert">Dune Riders</button>
         <button type="button" data-m="equine"><img class="lg" alt="" data-brand="equine">Equine</button>
         <button type="button" data-m="boat"><img class="lg" alt="" data-brand="boat">Marine</button>
-        <button type="button" data-m="art"><span class="ic">🎨</span>Modern & art</button>
-        <button type="button" data-m="estate"><span class="ic">🏠</span>Real estate</button>
-        <button type="button" data-m="bag" data-boutique hidden><span class="ic">👜</span>The Boutique</button>
+        <button type="button" data-m="art"><img class="lg" alt="" data-brand="art">Modern & art</button>
+        <button type="button" data-m="estate"><img class="lg" alt="" data-brand="estate">Real estate</button>
+        <button type="button" data-m="bag" data-boutique hidden><img class="lg" alt="" data-brand="bag">The Boutique</button>
       </div>
       <div class="types sub" id="types">
-        <button type="button" data-t="bike" class="on"><span class="ic">🏍️</span>Motorcycle</button>
-        <button type="button" data-t="gear"><span class="ic">🪖</span>Safety gear</button>
-        <button type="button" data-t="acc"><span class="ic">🔧</span>Accessory</button>
+        <button type="button" data-t="bike" class="on">Motorcycle</button>
+        <button type="button" data-t="gear">Safety gear</button>
+        <button type="button" data-t="acc">Accessory</button>
       </div>
 
       <div class="photos">
         <label>Photos <span class="req">*</span> <span class="muted" id="photoRule">(1–4 photos, auto-reduced to low resolution)</span></label>
         <div class="photo-btns">
-          <button type="button" class="btn primary" id="camBtn">📷 Take photo</button>
-          <button type="button" class="btn ghost" id="galBtn">🖼️ Choose from gallery</button>
+          <button type="button" class="btn primary" id="camBtn">Take photo</button>
+          <button type="button" class="btn ghost" id="galBtn">Choose from gallery</button>
         </div>
         <input type="file" id="camInput" accept="image/*" capture="environment" hidden>
         <input type="file" id="galInput" accept="image/*" multiple hidden>
@@ -74,7 +75,7 @@
 
       <div class="grid" id="fields"></div>
 
-      <label class="terms showphone" id="showPhoneWrap"><input type="checkbox" id="showPhone"> <span>📞 Show my number on the listing image that High End shares in the WhatsApp groups, and on my own HD flyer. <span class="muted">On the site your number stays hidden.</span></span></label>
+      <label class="terms showphone" id="showPhoneWrap"><input type="checkbox" id="showPhone"> <span>Show my number on the listing image that High End shares in the WhatsApp groups, and on my own HD flyer. <span class="muted">On the site your number stays hidden.</span></span></label>
       <label class="terms" id="termsWrap"><input type="checkbox" id="terms"> <span>I accept the terms: High End Communities is <b>not responsible for any product</b> listed. Buyers and sellers do their own due diligence and check ownership papers with a lawyer. I confirm I own this item or am authorised to sell it.</span></label>
       <div class="terms-more" id="termsMore"><button type="button" class="linkbtn" data-terms>Read the full terms</button></div>
       <div class="terms-ok" id="termsOk" hidden>✓ <span>You accepted the terms</span> · <button type="button" class="linkbtn" data-terms>View</button></div>
@@ -87,13 +88,13 @@
       <div class="done" id="done"></div>
     </form>
 </main>
-<footer><div class="checker"></div><p>High End Communities, est. 2024</p><p class="copyr">© 2024–2026 High End Communities. All rights reserved.<br>The site design, code, logos, photos and content may not be copied, reproduced or reused without written permission.</p><p class="socials" hidden></p><p class="supportwrap" hidden><button type="button" class="supportbtn" data-member>⭐ Membership — unlimited bikes &amp; cars</button></p></footer>
+<footer><div class="checker"></div><p>High End Communities, est. 2024</p><p class="copyr">© 2024–2026 High End Communities. All rights reserved.<br>The site design, code, logos, photos and content may not be copied, reproduced or reused without written permission.</p><p class="socials" hidden></p><p class="supportwrap" hidden><button type="button" class="supportbtn" data-member>Membership — unlimited bikes &amp; cars</button></p></footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js" integrity="sha384-uteMfOloLDGt042uDz+xHGF3ym63/WQ6rFq7murQRG8Ih7QrXGEGNtWd8688sb4O" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js" integrity="sha384-8FWZA6BGMXhsfO+BLtrJK0We6gg5o1JyO8xQm6peWDEUs17ACA5ziE/NIAkl9z2k" crossorigin="anonymous"></script>
 <script src="config.js"></script>
-<script src="common.js?v=dcc06335"></script>
+<script src="common.js?v=72bff3f0"></script>
 
 <script>
 initHeader();
@@ -193,7 +194,7 @@ async function saveEdit(f){
     showMsg("");
     const L = {type, f:{...EDIT.f, phone:EDIT.phone}, photos:pics, status: data==="review"?"pending":EDIT.status};
     const d=$("#done"); d.innerHTML="";
-    const p=document.createElement("p"); p.textContent = data==="review" ? "✅ Changes saved — the admin checks them and puts the listing back live." : "✅ Changes saved — your listing is updated.";
+    const p=document.createElement("p"); p.textContent = data==="review" ? "Changes saved — the admin checks them and puts the listing back live." : "Changes saved — your listing is updated.";
     const r=document.createElement("div"); r.className="dlrow";
     if (data==="ok" && EDIT.status==="live"){ const v=document.createElement("a"); v.className="btn ghost small"; v.href=itemHref(id); v.textContent="View my listing"; r.appendChild(v); }
     const al=document.createElement("a"); al.className="btn wa"; al.target="_blank"; al.rel="noopener"; al.textContent="Tell the admin on WhatsApp";
@@ -220,7 +221,7 @@ $("#dumpBtn").onclick = ()=>{
 function showDone(row, code, live, files, unpaid){
   const L = {type:row.type, f:row.f, photos:row.photos, thumb:row.thumb, at:Date.now(), status: live?"live":"pending"};
   const d = $("#done"); d.innerHTML = "";
-  const p = document.createElement("p"); p.textContent = live ? "✅ Your listing is live!" : unpaid ? "✅ Saved — it goes live after the fee" : "✅ Sent for review!";
+  const p = document.createElement("p"); p.textContent = live ? "Your listing is live!" : unpaid ? "Saved — it goes live after the fee" : "Sent for review!";
   const t = document.createElement("div"); t.style.cssText="font-size:14px;color:#1d6b3e;margin-bottom:6px";
   t.textContent = (live ? "It's in the catalogue now. The admin may still edit or remove it if something is missing. " : unpaid ? "Pay the extra listing fee and send the receipt; the admin puts it live. " : "The admin checks it and puts it live. ")
     + "Keep this seller code — you need it to edit your listing or mark it as sold:";
@@ -236,8 +237,8 @@ function showDone(row, code, live, files, unpaid){
     const sh = document.createElement("a"); sh.className="btn wa"; sh.target="_blank"; sh.rel="noopener"; sh.style.marginTop="10px";
     sh.textContent = "Share to WhatsApp group"; sh.href = waHref(shareText(L,row.id));
     const r2 = document.createElement("div"); r2.className="dlrow";
-    const bi = document.createElement("button"); bi.type="button"; bi.className="btn ghost small"; bi.textContent="🖼️ Flyer image"; bi.onclick=()=>exportImage(L,row.id);
-    const bp = document.createElement("button"); bp.type="button"; bp.className="btn ghost small"; bp.textContent="📄 Flyer PDF"; bp.onclick=()=>exportPdf(L,row.id);
+    const bi = document.createElement("button"); bi.type="button"; bi.className="btn ghost small"; bi.textContent="Flyer image"; bi.onclick=()=>exportImage(L,row.id);
+    const bp = document.createElement("button"); bp.type="button"; bp.className="btn ghost small"; bp.textContent="Flyer PDF"; bp.onclick=()=>exportPdf(L,row.id);
     const ta = document.createElement("a"); ta.className="btn ghost small"; ta.target="_blank"; ta.rel="noopener"; ta.textContent="Tell the admin on WhatsApp";
     ta.href = adminHref(adminListingMsg({...L, f:{...row.f, phone:row.phone}}, row.id, "live"));
     r2.append(bi,bp,ta); d.append(sh, r2);
@@ -246,7 +247,7 @@ function showDone(row, code, live, files, unpaid){
     pb.textContent = "Pay the fee"; pb.onclick=()=>openListingFee({...L, phone:row.phone, id:row.id, type:row.type});
     d.append(pb);
     if (row.type==="bike"||row.type==="car"){ const mb = document.createElement("button"); mb.type="button"; mb.className="btn ghost small"; mb.style.marginTop="8px";
-      mb.textContent = "⭐ Or become a member: unlimited bikes & cars"; mb.onclick=()=>openMembership(row.phone); d.append(mb); }
+      mb.textContent = "Or become a member: unlimited bikes & cars"; mb.onclick=()=>openMembership(row.phone); d.append(mb); }
   } else {
     const al = document.createElement("a"); al.className="btn wa"; al.target="_blank"; al.rel="noopener"; al.style.marginTop="10px";
     al.textContent = "Tell the admin on WhatsApp (faster review)";
@@ -256,12 +257,12 @@ function showDone(row, code, live, files, unpaid){
   if (files && files.length){
     // HD flyer from the owner's original photos (all of them, not only the ones online)
     const box=document.createElement("div"); box.className="hdbox";
-    const h=document.createElement("div"); h.className="hdtitle"; h.textContent=`⭐ HD flyer — all ${files.length} photo${files.length>1?"s":""}, every detail and the QR code`;
+    const h=document.createElement("div"); h.className="hdtitle"; h.textContent=`HD flyer — all ${files.length} photo${files.length>1?"s":""}, every detail and the QR code`;
     const r3=document.createElement("div"); r3.className="hdrow";
     let hd=null; const getHD=()=> hd || (hd=Promise.all(files.map((f,i)=>hdPhoto(f,1800,i===0))));
     const go=async(btn,pdf)=>{ const t=btn.textContent; btn.disabled=true; btn.textContent="Preparing…"; try{ await exportHD({...L, f:{...row.f, phone:row.phone}},row.id,pdf,await getHD()); }catch(e){ toast("Couldn't make the HD flyer: "+(e.message||e)); } btn.disabled=false; btn.textContent=t; };
-    const hi=document.createElement("button"); hi.type="button"; hi.className="btn primary small"; hi.textContent="⭐ HD image"; hi.onclick=()=>go(hi,false);
-    const hp=document.createElement("button"); hp.type="button"; hp.className="btn ghost small"; hp.textContent="⭐ HD PDF"; hp.onclick=()=>go(hp,true);
+    const hi=document.createElement("button"); hi.type="button"; hi.className="btn primary small"; hi.textContent="HD image"; hi.onclick=()=>go(hi,false);
+    const hp=document.createElement("button"); hp.type="button"; hp.className="btn ghost small"; hp.textContent="HD PDF"; hp.onclick=()=>go(hp,true);
     r3.append(hi,hp); box.append(h,r3); d.append(box);
   }
   d.classList.add("show");
@@ -272,13 +273,13 @@ function askFee(q){
   return new Promise(res=>{
     const veh=q.grp==="vehicle", sec=FEE_GROUPS[q.grp]||"this section", fee=feeAfter(q.fee,q.sale_pct), free=Number(q.free||0);
     const m=document.createElement("div"); m.className="modal";
-    m.innerHTML=`<div class="card"><h3>${FEE_ICON[q.grp]||"➕"} Extra listing</h3>
+    m.innerHTML=`<div class="card"><h3>${FEE_ICON[q.grp]||""} Extra listing</h3>
       <p class="muted" style="font-size:14px">${esc(sec)}: this number already has ${q.used} listing${q.used===1?"":"s"}. The first ${free} ${free===1?"is":"are"} free; each extra one is <b>${fee<Number(q.fee)?`<s>${fmtMoney(q.fee)}</s> `:""}${fmtMoney(fee)}</b>. Your listing is saved now and goes live when the fee is confirmed.</p>
       ${q.sale_pct>0?`<p class="muted" style="font-size:13px">${esc(saleLine(q))}</p>`:""}
       ${(q.packs||[]).length?`<p class="muted" style="font-size:14px">Or take a monthly pack: ${(q.packs||[]).map(p=>`${Number(p.n)} listings ${packPer(p)} for ${fmtMoney(p.price)}`).join(" · ")}. You choose on the next step.</p>`:""}
       ${veh&&Number(q.member_price)>0?`<p class="muted" style="font-size:14px">Or become a member for ${fmtMoney(q.member_price)}: unlimited motorcycles and cars.</p>`:""}
       <div class="actions" style="flex-wrap:wrap"><button type="button" class="btn primary" data-a="post">Post and pay</button>
-      ${veh?'<button type="button" class="btn ghost" data-a="member">⭐ Membership</button>':""}<button type="button" class="btn ghost" data-a="">Cancel</button></div></div>`;
+      ${veh?'<button type="button" class="btn ghost" data-a="member">Membership</button>':""}<button type="button" class="btn ghost" data-a="">Cancel</button></div></div>`;
     m.addEventListener("click",e=>{ const b=e.target.closest("[data-a]"); if (b||e.target===m){ m.remove(); res(b?b.dataset.a:""); } });
     document.body.appendChild(m);
   });

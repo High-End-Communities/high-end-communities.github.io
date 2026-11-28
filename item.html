@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <script>try{var l=new URLSearchParams(location.search).get("lang")||localStorage.getItem("he_lang");if(l==="ar"){document.documentElement.lang="ar";document.documentElement.dir="rtl"}}catch(e){}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' blob: data:; connect-src 'self' https://uaaprhjjnjsimeebnslr.supabase.co wss://uaaprhjjnjsimeebnslr.supabase.co https://open.er-api.com https://get.geojs.io https://cdn.jsdelivr.net; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
 <title>Listing — High End Communities</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#f8f3e8">
@@ -29,10 +30,10 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=a5f21c5a">
+<link rel="stylesheet" href="common.css?v=348be04a">
 </head>
 <body>
-<script src="i18n.js?v=d8ede9d8"></script>
+<script src="i18n.js?v=df3b3db5"></script>
 <header class="mast">
   <div class="checker"></div>
   <button type="button" class="langbtn" id="langBtn" lang="ar">العربية</button>
@@ -49,13 +50,13 @@
   <div id="itemBox"></div>
   <aside class="sponsor-banner sp-row" hidden></aside>
 </main>
-<footer><div class="checker"></div><p>High End Communities, est. 2024</p><p class="copyr">© 2024–2026 High End Communities. All rights reserved.<br>The site design, code, logos, photos and content may not be copied, reproduced or reused without written permission.</p><p class="socials" hidden></p><p class="supportwrap" hidden><button type="button" class="supportbtn" data-member>⭐ Membership — unlimited bikes &amp; cars</button></p></footer>
+<footer><div class="checker"></div><p>High End Communities, est. 2024</p><p class="copyr">© 2024–2026 High End Communities. All rights reserved.<br>The site design, code, logos, photos and content may not be copied, reproduced or reused without written permission.</p><p class="socials" hidden></p><p class="supportwrap" hidden><button type="button" class="supportbtn" data-member>Membership — unlimited bikes &amp; cars</button></p></footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js" integrity="sha384-uteMfOloLDGt042uDz+xHGF3ym63/WQ6rFq7murQRG8Ih7QrXGEGNtWd8688sb4O" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js" integrity="sha384-8FWZA6BGMXhsfO+BLtrJK0We6gg5o1JyO8xQm6peWDEUs17ACA5ziE/NIAkl9z2k" crossorigin="anonymous"></script>
 <script src="config.js"></script>
-<script src="common.js?v=dcc06335"></script>
+<script src="common.js?v=72bff3f0"></script>
 
 <script>
 initHeader();
@@ -127,7 +128,7 @@ function draw(){
   const dl=body.querySelector("dl"); if (dl){ const t=document.createElement("h2"); t.className="sub"; t.textContent="Details"; dl.before(t); }
   if (live && L.discount && (L.stock===null || L.stock>0)){
     const d=document.createElement("button"); d.type="button"; d.className="btn primary small discbtn";
-    d.textContent=`🏷️ Get ${L.discount}% discount code`; d.onclick=()=>openDiscount(item);
+    d.textContent=`Get ${L.discount}% discount code`; d.onclick=()=>openDiscount(item);
     (contact||body).after(d);
   }
   if (live && INSPECT_TYPES.includes(L.type)){
@@ -138,7 +139,7 @@ function draw(){
     const s=document.createElement("button"); s.type="button"; s.className="seller";
     s.textContent = (L.stock!==null && L.stock!==undefined) ? "Seller? Edit, update stock or mark sold" : "Seller? Edit or mark as sold";
     s.onclick = ()=>openSold(item); body.appendChild(s);
-    if (!isFeatured(L) && paymentsOn()){ const pr=document.createElement("button"); pr.type="button"; pr.className="seller promote"; pr.textContent="⭐ Promote this listing"; pr.onclick=()=>openPromote(item); body.appendChild(pr); }
+    if (!isFeatured(L) && paymentsOn()){ const pr=document.createElement("button"); pr.type="button"; pr.className="seller promote"; pr.textContent="Promote this listing"; pr.onclick=()=>openPromote(item); body.appendChild(pr); }
   }
   body.appendChild(sellerRateBox(item));
   body.appendChild(meta);
@@ -151,7 +152,7 @@ function sellerRateBox(item){
   const top=document.createElement("div"); top.className="top";
   const h=document.createElement("h2"); h.className="sub"; h.style.margin="0"; h.textContent="Seller rating";
   const line=document.createElement("div"); line.className="rline";
-  const b=document.createElement("button"); b.type="button"; b.className="btn ghost small"; b.textContent="⭐ Rate the seller";
+  const b=document.createElement("button"); b.type="button"; b.className="btn ghost small"; b.textContent="Rate the seller";
   b.onclick=()=>openRate({target:"seller", listingId:item.id, title:titleOf(item.L), market:marketOf(item.L)});
   top.append(h,b); d.append(top,line);
   const hint=document.createElement("div"); hint.className="hint"; hint.textContent="From people who dealt with this seller."; d.appendChild(hint);

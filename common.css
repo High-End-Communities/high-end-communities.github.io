@@ -217,7 +217,7 @@ details.more .tools a,details.more .tools button{color:var(--text);text-decorati
   .badge{font-size:10px;letter-spacing:.5px}
   .item .contact a{padding:7px 8px;font-size:12px}
   .item .contact a[href^="tel:"]{font-size:0;padding:7px 10px}
-  .item .contact a[href^="tel:"]::before{content:"📞";font-size:14px}
+  .item .contact a[href^="tel:"]::before{content:none}
   .catsec h2{font-size:17px}
   .feedad{grid-column:1/-1}
 }

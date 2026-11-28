@@ -127,7 +127,7 @@ function checkSlotText(L){ return [L.checkWhen,L.checkWhere].filter(Boolean).joi
 function checkSlotEl(L){
   const t=checkSlotText(L); if (!t) return null;
   const d=document.createElement("div"); d.className="checkslot";
-  const a=document.createElement("span"); a.textContent="📍 See it & check"; const b=document.createElement("b"); b.setAttribute("data-noi18n",""); b.setAttribute("dir","auto"); b.textContent=t;
+  const a=document.createElement("span"); a.textContent="See it & check"; const b=document.createElement("b"); b.setAttribute("data-noi18n",""); b.setAttribute("dir","auto"); b.textContent=t;
   d.append(a,b); return d;
 }
 function inspectLabel(L){ return INSPECT[GROUP[L.type]]==="workshop" ? "Inspect before you buy" : "Authenticate before you buy"; }
@@ -402,15 +402,15 @@ const SCHEMAS = {
   ]
 };
 const LABELS = {bike:"Motorcycle", gear:"Safety gear", acc:"Moto accessory", watch:"Watch", car:"Car", carpart:"Car part / accessory", equine:"Horse", equinepart:"Equine accessory", boatpart:"Marine part / accessory", bag:"Boutique item", boat:"Marine", art:"Modern & art", estate:"Real estate", dune:"Buggy / ATV / sand bike", dunepart:"Desert gear & parts"};
-const ICONS = {bag:"👜", bike:"🏍️", gear:"🪖", acc:"🔧", watch:"⌚", car:"🚗", carpart:"🔩", equinepart:"🏇", boatpart:"⚓", equine:"🐎", boat:"🛥️", art:"🎨", estate:"🏠", dune:"🏜️", dunepart:"🧭"};
+const ICONS = {bag:"", bike:"", gear:"", acc:"", watch:"", car:"", carpart:"", equinepart:"", boatpart:"", equine:"", boat:"", art:"", estate:"", dune:"", dunepart:""};
 const GROUP = {bag:"bag", bike:"moto", gear:"moto", acc:"moto", watch:"watch", car:"car", carpart:"car", equinepart:"equine", boatpart:"boat", equine:"equine", boat:"boat", art:"art", estate:"estate", dune:"desert", dunepart:"desert"};
 const RANGES = {bag:BAG_RANGES, bike:BIKE_RANGE, gear:GEAR_RANGES, acc:ACC_RANGES, watch:WATCH_RANGE, car:CAR_RANGE, carpart:CARPART_RANGES, equine:HORSE_RANGE, equinepart:EQUINE_RANGES, boatpart:BOATPART_RANGES, boat:BOAT_RANGES, art:ART_RANGES, estate:ESTATE_RANGES, dune:DUNE_RANGES, dunepart:DUNEPART_RANGES};
 const SUBTYPES = {
-  moto:  [["bike","🏍️","Motorcycle"],["gear","🪖","Safety gear"],["acc","🔧","Accessory"]],
-  car:   [["car","🚗","Car"],["carpart","🔩","Parts & accessories"]],
-  boat:  [["boat","🛥️","Boats, yachts & jet skis"],["boatpart","⚓","Parts & accessories"]],
-  equine:[["equine","🐎","Horse"],["equinepart","🏇","Saddles, tack & accessories"]],
-  desert:[["dune","🏜️","Buggies, ATVs & sand bikes"],["dunepart","🧭","Gear & parts"]]
+  moto:  [["bike","","Motorcycle"],["gear","","Safety gear"],["acc","","Accessory"]],
+  car:   [["car","","Car"],["carpart","","Parts & accessories"]],
+  boat:  [["boat","","Boats, yachts & jet skis"],["boatpart","","Parts & accessories"]],
+  equine:[["equine","","Horse"],["equinepart","","Saddles, tack & accessories"]],
+  desert:[["dune","","Buggies, ATVs & sand bikes"],["dunepart","","Gear & parts"]]
 };
 const SECTION_NAMES = {bike:"Motorcycles", gear:"Safety gear & helmets", acc:"Motorcycle accessories & parts", watch:"Watches",
   car:"Cars", carpart:"Car parts & accessories", boat:"Boats, yachts & jet skis", boatpart:"Marine parts & accessories",
@@ -436,7 +436,7 @@ function annFor(g, market){
   const a=(ANN||[]).filter(r=>r.grp===g && (!r.market || r.market===market)); if (!a.length) return null;
   const box=document.createElement("div"); box.className="annbox";
   a.slice(0,3).forEach(r=>{ const d=document.createElement("div"); d.className="ann";
-    d.innerHTML=`<b>📢 ${esc(r.title)}</b>`+(r.body?`<p>${esc(r.body).replace(/\n/g,"<br>")}</p>`:"");
+    d.innerHTML=`<b>${esc(r.title)}</b>`+(r.body?`<p>${esc(r.body).replace(/\n/g,"<br>")}</p>`:"");
     if (r.link && /^https:\/\//.test(r.link)){ const l=document.createElement("a"); l.className="btn ghost small"; l.href=r.link; l.target="_blank"; l.rel="noopener"; l.textContent="Open"; d.appendChild(l); }
     box.appendChild(d); });
   return box;
@@ -649,7 +649,7 @@ function initCategoryPicker(){
     box.innerHTML = "";
     subs.forEach(([t,ic,label])=>{
       const b=document.createElement("button"); b.type="button"; b.dataset.t=t; b.className = t===type?"on":"";
-      b.innerHTML = `<span class="ic">${ic}</span>`; b.appendChild(document.createTextNode(label));
+      if (ic) b.innerHTML = `<span class="ic">${ic}</span>`; b.appendChild(document.createTextNode(label));
       b.onclick = (e)=>{
         if (e && e.isTrusted) CAT_PICKED = true;
         type = t; lastSub[group] = t;
@@ -762,7 +762,7 @@ function renderThumbs(){
     note.textContent = mainPicked ? "You chose this main photo. Tap any photo below to change it."
                                   : "We picked the clearest, best-lit photo as the main one. Tap any photo below to choose another.";
     pv.appendChild(note);
-    if (best!==0){ const ub=document.createElement("button"); ub.type="button"; ub.className="btn ghost small"; ub.textContent="✨ Use the suggested photo";
+    if (best!==0){ const ub=document.createElement("button"); ub.type="button"; ub.className="btn ghost small"; ub.textContent="Use the suggested photo";
       ub.onclick=()=>{ makeMain(best); mainPicked=true; renderThumbs(); }; pv.appendChild(ub); }
   }
   photos.forEach((p,i)=>{
@@ -864,20 +864,20 @@ function linkFor(id){ const s=safeId(id); return s ? baseUrl()+"/item.html?id="+
 function itemHref(id){ const s=safeId(id); return s ? "item.html?id="+s : "./"; }
 function waHref(text){ return "https://wa.me/?text="+encodeURIComponent(text); }
 function shareText(L,id){
-  const icon = ICONS[L.type] || "🏷️";
-  return `${icon} *${MARKET_NAME}*${isFeatured(L)?" ⭐":""}\n\n${listingText(L)}` + (L.discount ? `\n🏷️ *${L.discount}% off* — get your discount code on the site` : "") + (INCLUDE_LINK ? `\n\n📸 Photos & details: ${linkFor(id)}` : "") + `\n\n_⚠️ ${DISCLAIMER}_`;
+  const icon = ICONS[L.type] || "";
+  return `${icon} *${MARKET_NAME}*${isFeatured(L)?"":""}\n\n${listingText(L)}` + (L.discount ? `\n*${L.discount}% off* — get your discount code on the site` : "") + (INCLUDE_LINK ? `\n\nPhotos & details: ${linkFor(id)}` : "") + `\n\n_${DISCLAIMER}_`;
 }
 function catalogueText(items){
-  const groups = {bike:"🏍️ *Motorcycles*", gear:"🪖 *Safety gear*", acc:"🔧 *Moto accessories*", watch:"⌚ *Watches*", car:"🚗 *Cars*", carpart:"🔩 *Car parts & accessories*", bag:"👜 *The Boutique*", equinepart:"🏇 *Equine accessories*", boatpart:"⚓ *Marine parts & accessories*", dune:"🏜️ *Buggies, ATVs & sand bikes*", dunepart:"🧭 *Desert gear & parts*", equine:"🐎 *Equine*", boat:"🛥️ *Marine: boats, yachts & jet skis*", art:"🎨 *Modern & art*", estate:"🏠 *Real estate*"};
-  let t = `📒 *${MARKET_NAME} — ${CAT_TITLE ? CAT_TITLE+" catalogue" : "Catalogue"}*\n`;
+  const groups = {bike:"*Motorcycles*", gear:"*Safety gear*", acc:"*Moto accessories*", watch:"*Watches*", car:"*Cars*", carpart:"*Car parts & accessories*", bag:"*The Boutique*", equinepart:"*Equine accessories*", boatpart:"*Marine parts & accessories*", dune:"*Buggies, ATVs & sand bikes*", dunepart:"*Desert gear & parts*", equine:"*Equine*", boat:"*Marine: boats, yachts & jet skis*", art:"*Modern & art*", estate:"*Real estate*"};
+  let t = `*${MARKET_NAME} — ${CAT_TITLE ? CAT_TITLE+" catalogue" : "Catalogue"}*\n`;
   let n = 0;
   for (const [g, all] of bySection(items)){
     const xs = all.slice(0,40);
     t += `\n${groups[g]}\n`;
-    for (const {L} of xs){ n++; t += `${n}. ${titleOf(L)} — ${priceStr(L.f)} ${phoneOf(L)?" — 📞 "+phoneOf(L):""}\n`; }
+    for (const {L} of xs){ n++; t += `${n}. ${titleOf(L)} — ${priceStr(L.f)} ${phoneOf(L)?" — "+phoneOf(L):""}\n`; }
   }
-  if (INCLUDE_LINK) t += `\n📸 Photos & full details: ${baseUrl()}`;
-  t += `\n\n_⚠️ ${DISCLAIMER}_`;
+  if (INCLUDE_LINK) t += `\nPhotos & full details: ${baseUrl()}`;
+  t += `\n\n_${DISCLAIMER}_`;
   return t;
 }
 
@@ -1147,7 +1147,7 @@ function smallPhoto(file, max=700){
 }
 function photoPicker(id){
   const w=document.createElement("div"); w.className="rqphoto";
-  w.innerHTML=`<label class="btn ghost small" for="${id}">📷 Add a photo (optional)</label><input id="${id}" type="file" accept="image/*" hidden><img alt="" hidden><button type="button" class="btn ghost small" hidden>✕</button>`;
+  w.innerHTML=`<label class="btn ghost small" for="${id}">Add a photo (optional)</label><input id="${id}" type="file" accept="image/*" hidden><img alt="" hidden><button type="button" class="btn ghost small" hidden>✕</button>`;
   const inp=w.querySelector("input"), img=w.querySelector("img"), x=w.querySelector("button"); w.value=null;
   inp.onchange=async()=>{ const f=inp.files&&inp.files[0]; if(!f) return; try{ w.value=await smallPhoto(f); img.src=w.value; img.hidden=false; x.hidden=false; }catch(e){ w.value=null; } inp.value=""; };
   x.onclick=()=>{ w.value=null; img.hidden=true; x.hidden=true; };
@@ -1444,7 +1444,7 @@ function flyerSponsor(opt){ const l=sponsorsFor("flyer", opt); return l.length ?
 
 
 /* ===================== Seller tools & discount codes (catalogue and listing pages) ===================== */
-const SELLER_MODALS = "<div class=\"modal\" id=\"soldModal\" hidden>\n  <div class=\"card\">\n    <h3>Seller tools</h3>\n    <p class=\"muted\" id=\"soldTitle\" style=\"font-size:14px\"></p>\n    <label for=\"soldCode\">Your 6-digit seller code</label>\n    <input id=\"soldCode\" inputmode=\"numeric\" maxlength=\"12\" placeholder=\"e.g. 482913\">\n    <div class=\"hint\">You got it when you posted. Lost it? Ask the admin on WhatsApp.</div>\n    <div id=\"stockBox\" hidden style=\"margin-top:10px\">\n      <label for=\"stockIn\">Quantity in stock now</label>\n      <div class=\"unitrow\"><input id=\"stockIn\" inputmode=\"numeric\" placeholder=\"e.g. 12\"><button type=\"button\" class=\"btn ghost small\" id=\"stockGo\">Update stock</button></div>\n      <div class=\"hint\">Put 0 when everything is sold.</div>\n    </div>\n    <div class=\"actions\">\n      <button type=\"button\" class=\"btn primary\" id=\"soldEdit\">✏️ Edit my listing</button>\n      <button type=\"button\" class=\"btn ghost\" id=\"soldGo\">Mark as sold</button>\n      <a class=\"btn ghost\" id=\"soldAsk\" target=\"_blank\" rel=\"noopener\">Ask the admin</a>\n      <button type=\"button\" class=\"btn ghost\" id=\"soldClose\">Close</button>\n    </div>\n    <div class=\"msg\" id=\"soldMsg\"></div>\n  </div>\n</div>\n<div class=\"modal\" id=\"discModal\" hidden>\n  <div class=\"card\">\n    <h3>\ud83c\udff7\ufe0f Get your discount code</h3>\n    <p class=\"muted\" id=\"discTitle\" style=\"font-size:14px\"></p>\n    <div id=\"discAsk\">\n      <label for=\"discPhone\">Your mobile number</label>\n      <input id=\"discPhone\" type=\"tel\" inputmode=\"tel\" placeholder=\"01xxxxxxxxx\">\n      <div class=\"actions\"><button type=\"button\" class=\"btn primary\" id=\"discGo\">Get my code</button><button type=\"button\" class=\"btn ghost\" id=\"discClose\">Close</button></div>\n    </div>\n    <div id=\"discDone\" hidden style=\"text-align:center\">\n      <div class=\"code\" id=\"discCode\"></div>\n      <p style=\"font-size:14px;margin:6px 0 10px\">Send this code to High End on WhatsApp to get <b id=\"discPct\"></b> off. The code works once and only for this item.</p>\n      <a class=\"btn wa\" id=\"discSend\" target=\"_blank\" rel=\"noopener\">Send code on WhatsApp</a>\n      <div class=\"actions\" style=\"justify-content:center\"><button type=\"button\" class=\"btn ghost small\" id=\"discClose2\">Close</button></div>\n    </div>\n    <div class=\"msg\" id=\"discMsg\"></div>\n  </div>\n</div>";
+const SELLER_MODALS = "<div class=\"modal\" id=\"soldModal\" hidden>\n  <div class=\"card\">\n    <h3>Seller tools</h3>\n    <p class=\"muted\" id=\"soldTitle\" style=\"font-size:14px\"></p>\n    <label for=\"soldCode\">Your 6-digit seller code</label>\n    <input id=\"soldCode\" inputmode=\"numeric\" maxlength=\"12\" placeholder=\"e.g. 482913\">\n    <div class=\"hint\">You got it when you posted. Lost it? Ask the admin on WhatsApp.</div>\n    <div id=\"stockBox\" hidden style=\"margin-top:10px\">\n      <label for=\"stockIn\">Quantity in stock now</label>\n      <div class=\"unitrow\"><input id=\"stockIn\" inputmode=\"numeric\" placeholder=\"e.g. 12\"><button type=\"button\" class=\"btn ghost small\" id=\"stockGo\">Update stock</button></div>\n      <div class=\"hint\">Put 0 when everything is sold.</div>\n    </div>\n    <div class=\"actions\">\n      <button type=\"button\" class=\"btn primary\" id=\"soldEdit\">Edit my listing</button>\n      <button type=\"button\" class=\"btn ghost\" id=\"soldGo\">Mark as sold</button>\n      <a class=\"btn ghost\" id=\"soldAsk\" target=\"_blank\" rel=\"noopener\">Ask the admin</a>\n      <button type=\"button\" class=\"btn ghost\" id=\"soldClose\">Close</button>\n    </div>\n    <div class=\"msg\" id=\"soldMsg\"></div>\n  </div>\n</div>\n<div class=\"modal\" id=\"discModal\" hidden>\n  <div class=\"card\">\n    <h3>\ud83c\udff7\ufe0f Get your discount code</h3>\n    <p class=\"muted\" id=\"discTitle\" style=\"font-size:14px\"></p>\n    <div id=\"discAsk\">\n      <label for=\"discPhone\">Your mobile number</label>\n      <input id=\"discPhone\" type=\"tel\" inputmode=\"tel\" placeholder=\"01xxxxxxxxx\">\n      <div class=\"actions\"><button type=\"button\" class=\"btn primary\" id=\"discGo\">Get my code</button><button type=\"button\" class=\"btn ghost\" id=\"discClose\">Close</button></div>\n    </div>\n    <div id=\"discDone\" hidden style=\"text-align:center\">\n      <div class=\"code\" id=\"discCode\"></div>\n      <p style=\"font-size:14px;margin:6px 0 10px\">Send this code to High End on WhatsApp to get <b id=\"discPct\"></b> off. The code works once and only for this item.</p>\n      <a class=\"btn wa\" id=\"discSend\" target=\"_blank\" rel=\"noopener\">Send code on WhatsApp</a>\n      <div class=\"actions\" style=\"justify-content:center\"><button type=\"button\" class=\"btn ghost small\" id=\"discClose2\">Close</button></div>\n    </div>\n    <div class=\"msg\" id=\"discMsg\"></div>\n  </div>\n</div>";
 function ensureSellerModals(){
   if (document.getElementById("soldModal")) return;
   const w=document.createElement("div"); w.innerHTML=SELLER_MODALS; while (w.firstElementChild) document.body.appendChild(w.firstElementChild);
@@ -1455,7 +1455,7 @@ function openSold(item){
   ensureSellerModals();
   $("#soldTitle").textContent = titleOf(item.L);
   $("#soldCode").value = ""; showMsg("","info",$("#soldMsg"));
-  $("#soldAsk").href = adminHref(`✅ *Please mark as SOLD*\n\n${titleOf(item.L)}\nRef: ${item.id}\n\nI'm the seller${phoneOf(item.L)?" (listed number "+phoneOf(item.L)+")":""}. I lost my seller code.`);
+  $("#soldAsk").href = adminHref(`*Please mark as SOLD*\n\n${titleOf(item.L)}\nRef: ${item.id}\n\nI'm the seller${phoneOf(item.L)?" (listed number "+phoneOf(item.L)+")":""}. I lost my seller code.`);
   $("#soldGo").onclick = async ()=>{
     const code = $("#soldCode").value.replace(/\D/g,"");
     if (code.length<4){ showMsg("Enter your seller code.","err",$("#soldMsg")); return; }
@@ -1519,10 +1519,10 @@ function adminListingMsg(L, id, kind){
     let b = `${head}\n\n${t(LABELS[L.type])}: ${titleOf(L)}\n`;
     for (const [k,v] of rows(L)) b += `${t(k)}: ${t(v)}\n`;
     b += `السعر: ${priceStr(L.f)}` + (phoneOf(L) ? `\nرقم الموبايل: ${phoneOf(L)}` : "");
-    return b + `\n\n✅ للمراجعة والموافقة: ${review}` + (live ? `\n🔗 الإعلان: ${link}` : "") + `\nRef: ${id}`;
+    return b + `\n\nللمراجعة والموافقة: ${review}` + (live ? `\nالإعلان: ${link}` : "") + `\nRef: ${id}`;
   }
   const head = kind==="edit" ? "✏️ *Listing edited by the seller*" : kind==="live" ? "🆕 *New listing is live*" : "🆕 *New listing waiting for review*";
-  return `${head}\n\n${listingText(L)}\n\n✅ Review & approve: ${review}` + (live ? `\n🔗 Listing: ${link}` : "") + `\nRef: ${id}`;
+  return `${head}\n\n${listingText(L)}\n\nReview & approve: ${review}` + (live ? `\nListing: ${link}` : "") + `\nRef: ${id}`;
 }
 function openDiscount(item){
   ensureSellerModals();
@@ -1540,7 +1540,7 @@ function openDiscount(item){
       if (data && data.code){
         try{ localStorage.setItem("mm_phone", ph); }catch(e){}
         $("#discCode").textContent=data.code; $("#discPct").textContent=data.pct+"%";
-        $("#discSend").href = adminHref(`🏷️ *Discount code request*\n\n${titleOf(item.L)}\nPrice: ${priceStr(item.L.f)}\nDiscount: ${data.pct}%\nMy code: *${data.code}*\nMy number: ${ph}\nRef: ${item.id}`);
+        $("#discSend").href = adminHref(`*Discount code request*\n\n${titleOf(item.L)}\nPrice: ${priceStr(item.L.f)}\nDiscount: ${data.pct}%\nMy code: *${data.code}*\nMy number: ${ph}\nRef: ${item.id}`);
         $("#discAsk").hidden=true; $("#discDone").hidden=false; showMsg("","info",$("#discMsg"));
       } else {
         const m={no_discount:"This item has no discount right now.", sold_out:"Sorry, this item is sold out.", too_many:"You already asked for codes for this item today. Use the one you have.", bad_phone:"Check your mobile number.", try_again:"Please try again."}[(data||{}).error] || "Something went wrong.";
@@ -1575,9 +1575,9 @@ function payModal(title, intro, waText){
 function paymentsOn(){ return !!(SITE_ST && SITE_ST.pay_enabled); }
 function openPromote(item){
   const st = SITE_ST || {};
-  payModal("⭐ Promote this listing",
+  payModal("Promote this listing",
     "Featured listings show first in their category with a Featured mark." + (st.promo_price ? " Price: " + st.promo_price + "." : ""),
-    `⭐ *Promote my listing*\n\n${titleOf(item.L)}\nRef: ${item.id}\n${linkFor(item.id)}`);
+    `*Promote my listing*\n\n${titleOf(item.L)}\nRef: ${item.id}\n${linkFor(item.id)}`);
 }
 /* ===================== Membership: verified WhatsApp, unlimited bikes & cars =====================
    1) the site gives a 6-digit code, the seller sends it FROM that number to the admin's WhatsApp
@@ -1590,7 +1590,7 @@ function openMembership(prefill){
   if (!m){ m=document.createElement("div"); m.className="modal"; m.id="memberModal"; document.body.appendChild(m);
     m.addEventListener("click", e=>{ if (e.target===m || e.target.hasAttribute("data-close")) m.hidden=true; }); }
   const price = Number(st.member_price||0), days = Number(st.member_days||365);
-  m.innerHTML = `<div class="card"><h3>⭐ Membership</h3>
+  m.innerHTML = `<div class="card"><h3>Membership</h3>
     <p class="muted" style="font-size:14px">Members post as many motorcycles and cars as they like. Without membership the first ${Number(st.free_vehicles??1)} vehicle is free and each extra one is ${fmtMoney(st.extra_vehicle_fee??1000)}.</p>
     <div class="payrow"><span>Membership</span><b>${price?fmtMoney(price):"Ask the admin"} / ${days>=365&&days%365===0?(days/365>1?days/365+" years":"year"):days+" days"}</b></div>
     <label class="fl">Your WhatsApp number<input id="mbPhone" inputmode="tel" autocomplete="tel" placeholder="01xxxxxxxxx"></label>
@@ -1604,37 +1604,37 @@ function openMembership(prefill){
   try{ ph.value = prefill || localStorage.getItem("mm_phone") || ""; }catch(e){}
   const num=()=>{ const n=normPhone(ph.value, getMarket()); if(!n){ msg.textContent="Enter a valid WhatsApp number."; ph.focus(); } return n; };
   const showQ=async()=>{ const n=normPhone(ph.value,getMarket()); if(!n) return; const q=await vehicleQuota(n); if(!q) return;
-    msg.textContent = q.member ? `✅ Member until ${new Date(q.member_until).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}.` : q.verified ? "✅ WhatsApp verified. Step 2: pay to start the membership." : ""; };
+    msg.textContent = q.member ? `Member until ${new Date(q.member_until).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}.` : q.verified ? "WhatsApp verified. Step 2: pay to start the membership." : ""; };
   ph.addEventListener("change", showQ); showQ();
   $("#mbVerify").onclick = async ()=>{
     const n=num(); if(!n) return;
     const w = window.open("about:blank","_blank");
     const {data,error} = await sb.rpc("request_verify",{p_phone:n, p_name:nm.value.trim()});
     if (error||!data){ if(w) w.close(); msg.textContent = niceError(error||"Try again later."); return; }
-    if (data==="VERIFIED"){ if(w) w.close(); msg.textContent="✅ This number is already verified. Step 2: pay."; return; }
+    if (data==="VERIFIED"){ if(w) w.close(); msg.textContent="This number is already verified. Step 2: pay."; return; }
     try{ localStorage.setItem("mm_phone", n); }catch(e){}
-    const u = adminHref(`✅ *Verify my WhatsApp — High End*\n\nCode: ${data}\nNumber: ${n}${nm.value.trim()?"\nName: "+nm.value.trim():""}`);
+    const u = adminHref(`*Verify my WhatsApp — High End*\n\nCode: ${data}\nNumber: ${n}${nm.value.trim()?"\nName: "+nm.value.trim():""}`);
     if (w){ try{ w.opener=null; }catch(e){} w.location.href=u; } else location.href=u;
     msg.textContent = `Send the message with code ${data} from ${n} (don't change it). The admin confirms it.`;
   };
   $("#mbPay").onclick = ()=>{ const n=num(); if(!n) return; m.hidden=true;
-    payModal("⭐ Membership", `${price?fmtMoney(price)+" — ":""}unlimited motorcycles and cars for ${days} days. Pay, then send the receipt; the admin starts your membership.`,
-      `⭐ *Membership payment*\n\nNumber: ${n}${nm.value.trim()?"\nName: "+nm.value.trim():""}${price?"\nAmount: "+fmtMoney(price):""}`); };
+    payModal("Membership", `${price?fmtMoney(price)+" — ":""}unlimited motorcycles and cars for ${days} days. Pay, then send the receipt; the admin starts your membership.`,
+      `*Membership payment*\n\nNumber: ${n}${nm.value.trim()?"\nName: "+nm.value.trim():""}${price?"\nAmount: "+fmtMoney(price):""}`); };
   m.hidden=false;
 }
 /* ===================== Extra listings: every section can have a free limit, then a fee =====================
    The admin sets free listings + fee per section, a sale (% off for a period), discount codes and packs. */
 const FEE_GROUPS = {vehicle:"Motorcycles & cars", moto:"Motorcycle gear & accessories", car:"Car parts & accessories", watch:"Watches", desert:"Dune Riders (desert)",
   boat:"Marine", equine:"Horses & equine", art:"Modern & art", estate:"Real estate", bag:"Ladies boutique"};
-const FEE_ICON = {desert:"🏜️", vehicle:"🏍️", moto:"🪖", car:"🔧", watch:"⌚", boat:"🛥️", equine:"🐎", art:"🖼️", estate:"🏠", bag:"👜"};
+const FEE_ICON = {desert:"", vehicle:"", moto:"", car:"", watch:"", boat:"", equine:"", art:"", estate:"", bag:""};
 async function listingQuota(phone, type){ try{ const {data,error}=await sb.rpc("listing_quota",{p_phone:phone, p_type:type}); return error?null:data; }catch(e){ return null; } }
 function feeNeeded(q){ return !!(q && q.pay_enabled && !(q.member && q.grp==="vehicle") && q.free!=null && Number(q.fee)>0 && q.used>=q.free && !(q.credits>0)); }
 function feeAfter(fee, pct){ return Math.round(Number(fee||0)*(100-Number(pct||0))/100); }
 function saleLine(q){ if(!(q.sale_pct>0)) return ""; const u=q.sale_until?new Date(q.sale_until).toLocaleDateString("en-GB",{day:"numeric",month:"short"}):"";
-  return `🎉 ${q.sale_note?q.sale_note+": ":""}${q.sale_pct}% off extra listings${u?" until "+u:""}.`; }
+  return `${q.sale_note?q.sale_note+": ":""}${q.sale_pct}% off extra listings${u?" until "+u:""}.`; }
 function packsHtml(q){ return (q.packs||[]).filter(p=>Number(p.n)>0&&Number(p.price)>0).map(p=>{
     const each=Math.round(Number(p.price)/Number(p.n)), save=Number(q.fee)>0?Math.round(100-100*each/Number(q.fee)):0;
-    return `<button type="button" class="btn ghost small" data-pack="${Number(p.n)}" data-price="${Number(p.price)}" data-days="${packDays(p)}">📦 ${Number(p.n)} listings ${packPer(p)} · ${fmtMoney(p.price)}${save>0?" (save "+save+"%)":""}</button>`; }).join(""); }
+    return `<button type="button" class="btn ghost small" data-pack="${Number(p.n)}" data-price="${Number(p.price)}" data-days="${packDays(p)}">${Number(p.n)} listings ${packPer(p)} · ${fmtMoney(p.price)}${save>0?" (save "+save+"%)":""}</button>`; }).join(""); }
 function packDays(p){ return Number(p.days)>0?Number(p.days):30; }
 function packPer(p){ const d=packDays(p); return d===30?"a month":d===365?"a year":"for "+d+" days"; }
 async function openListingFee(row){
@@ -1642,8 +1642,8 @@ async function openListingFee(row){
   const g=q.grp, sec=FEE_GROUPS[g]||"this section", free=Number(q.free||0);
   let pct = Number(q.sale_pct||0), code="";
   const amt=()=>feeAfter(q.fee, Math.max(pct, 0));
-  const wa=()=>`${FEE_ICON[g]||"➕"} *Extra listing fee*\n\n${titleOf(row)}\nNumber: ${row.phone}\nRef: ${row.id}\nAmount: ${fmtMoney(amt())}${code?"\nCode: "+code:""}${pct&&!code?"\nSale: "+pct+"% off":""}`;
-  payModal(`${FEE_ICON[g]||"➕"} Extra listing fee`, `${sec}: the first ${free} listing${free===1?" is":"s are"} free for each number. Pay the fee and send the receipt: the listing goes live when the admin confirms.`, wa());
+  const wa=()=>`${FEE_ICON[g]||""} *Extra listing fee*\n\n${titleOf(row)}\nNumber: ${row.phone}\nRef: ${row.id}\nAmount: ${fmtMoney(amt())}${code?"\nCode: "+code:""}${pct&&!code?"\nSale: "+pct+"% off":""}`;
+  payModal(`${FEE_ICON[g]||""} Extra listing fee`, `${sec}: the first ${free} listing${free===1?" is":"s are"} free for each number. Pay the fee and send the receipt: the listing goes live when the admin confirms.`, wa());
   const card=document.querySelector("#payModal .card"), acts=card.querySelector(".actions"), waBtn=acts.querySelector("a.btn.wa");
   const box=document.createElement("div"); box.className="feebox";
   const price=document.createElement("div"); price.className="payrow";
@@ -1656,12 +1656,12 @@ async function openListingFee(row){
   cb.onclick=async()=>{ const c=ci.value.trim().toUpperCase(); if(!c) return; cb.disabled=true;
     const {data,error}=await sb.rpc("fee_code_check",{p_code:c, p_listing:row.id}); cb.disabled=false;
     if(error||!data){ cm.textContent="This code isn't valid for this listing."; return; }
-    code=c; pct=Math.max(Number(data), Number(q.sale_pct||0)); cm.textContent=`✅ ${data}% off`; draw(); };
+    code=c; pct=Math.max(Number(data), Number(q.sale_pct||0)); cm.textContent=`${data}% off`; draw(); };
   cr.append(ci,cb);
   box.append(price); if(sale.textContent) box.append(sale); box.append(cr, cm);
   const ph=packsHtml(q);
   if (ph){ const pk=document.createElement("div"); pk.className="packs"; pk.innerHTML=`<p class="muted" style="font-size:13px;margin:10px 0 6px">Posting more? Take a monthly pack: this listing uses one and the rest are ready for your next ones.</p><div class="dlrow" style="flex-wrap:wrap">${ph}</div>`;
-    pk.querySelectorAll("[data-pack]").forEach(b=>b.onclick=()=>{ waBtn.href=adminHref(`📦 *Listings pack*\n\n${b.dataset.pack} ${sec} listings ${packPer({days:b.dataset.days})} for ${fmtMoney(b.dataset.price)}\nNumber: ${row.phone}\nFirst one: ${titleOf(row)} (Ref: ${row.id})`);
+    pk.querySelectorAll("[data-pack]").forEach(b=>b.onclick=()=>{ waBtn.href=adminHref(`*Listings pack*\n\n${b.dataset.pack} ${sec} listings ${packPer({days:b.dataset.days})} for ${fmtMoney(b.dataset.price)}\nNumber: ${row.phone}\nFirst one: ${titleOf(row)} (Ref: ${row.id})`);
       price.innerHTML=`<span>Pack: ${b.dataset.pack} listings</span><b>${fmtMoney(b.dataset.price)}</b>`; pk.querySelectorAll("[data-pack]").forEach(x=>x.classList.toggle("on",x===b)); });
     box.append(pk); }
   card.insertBefore(box, acts); draw();
@@ -1675,7 +1675,7 @@ function showMaintenance(kind, msg){
   if (document.getElementById("maint")) return;
   const d = document.createElement("div"); d.id="maint"; d.className="maint";
   const img = document.createElement("img"); img.onerror=()=>{ img.onerror=null; img.src=MAIN_LOGO; }; img.src = BRAND_ART; img.alt = "High End Communities";
-  const h = document.createElement("h2"); h.className="slab"; h.textContent = "🛠 Website under maintenance";
+  const h = document.createElement("h2"); h.className="slab"; h.textContent = "Website under maintenance";
   const ar = document.createElement("div"); ar.className="ar"; ar.textContent = kind==="manual" ? "الموقع تحت الصيانة — هنرجع قريب" : "الموقع عليه ضغط أو مش متاح دلوقتي — جرّب كمان شوية";
   const p = document.createElement("p");
   p.textContent = kind==="manual" ? (msg || "We're updating the site. Please check back soon.")
@@ -1731,7 +1731,7 @@ async function siteCheck(page, quiet){
 function isTouchDevice(){ const ua=navigator.userAgent||"";
   return /Android|iPhone|iPad|iPod|Mobile/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints>1); }
 async function saveFile(filename, blob, fallbackImgUrl){
-  const type = /\.pdf$/i.test(filename) ? "application/pdf" : "image/jpeg";
+  const type = /\.pdf$/i.test(filename) ? "application/pdf" : /\.json$/i.test(filename) ? "application/json" : "image/jpeg";
   try{
     const file = new File([blob], filename, {type});
     // phones/tablets: the share sheet (save to Photos, send on WhatsApp); computers: a normal download
@@ -1771,7 +1771,7 @@ const BRAND_ART = "brand.jpg";   // the engraved community crest (motorcycle sto
 function initHeader(){
   const m=$("#mainLogo"); if (m){ m.onerror=()=>{ m.onerror=null; m.src=MAIN_LOGO; }; m.src = BRAND_ART; m.classList.add("crest"); }
   const b=$("#brands"); if (b){ b.innerHTML=""; [["moto","Motorcycles"],["car","Cars"],["watch","Watches"],["boat","Marine Market"],["equine","Equine Haven"]].forEach(([k,n])=>{ const i=document.createElement("img"); i.src=BRAND_LOGOS[k]; i.alt="High End "+n; b.appendChild(i); }); }
-  document.querySelectorAll("img[data-brand]").forEach(i=>{ i.src = BRAND_LOGOS[i.dataset.brand]; });
+  document.querySelectorAll("img[data-brand]").forEach(i=>{ i.src = BRAND_LOGOS[i.dataset.brand] || BRAND_ART; });   // no logo of its own: the crest
 }
 function fmtDate(t){ return new Date(t).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}); }
 // Builds a listing card. Photos load in full only when the viewer asks for them.
@@ -1817,14 +1817,14 @@ function buildCard(item, mode){
     const wa=document.createElement("a"); wa.className="wa"; wa.target="_blank"; wa.rel="noopener"; wa.textContent="WhatsApp";
     const tel=document.createElement("a"); tel.className="tel";
     if (phone){ wa.href="https://wa.me/"+waNum(phone)+"?text="+encodeURIComponent(hello); tel.href="tel:"+phone; tel.textContent=phone; tel.setAttribute("aria-label","Call "+phone); }
-    else { hiddenContact(wa,"listing",id,p=>"https://wa.me/"+waNum(p)+"?text="+encodeURIComponent(hello)); hiddenContact(tel,"listing",id,p=>"tel:+"+waNum(p)); tel.textContent="📞 Call"; tel.setAttribute("aria-label","Call the seller"); }
+    else { hiddenContact(wa,"listing",id,p=>"https://wa.me/"+waNum(p)+"?text="+encodeURIComponent(hello)); hiddenContact(tel,"listing",id,p=>"tel:+"+waNum(p)); tel.textContent="Call"; tel.setAttribute("aria-label","Call the seller"); }
     c.append(wa,tel);
     if (mode!=="pending"){
       const sh=document.createElement("a"); sh.href=waHref(shareText(L,id)); sh.target="_blank"; sh.rel="noopener"; sh.textContent="↗ Share";
-      const bI=document.createElement("button"); bI.type="button"; bI.textContent="🖼️ Image"; bI.onclick=()=>exportImage(L,id);
-      const bP=document.createElement("button"); bP.type="button"; bP.textContent="📄 PDF"; bP.onclick=()=>exportPdf(L,id);
-      const bH=document.createElement("button"); bH.type="button"; bH.textContent="⭐ HD image"; bH.onclick=()=>exportHD(L,id,false);
-      const bHP=document.createElement("button"); bHP.type="button"; bHP.textContent="⭐ HD PDF"; bHP.onclick=()=>exportHD(L,id,true);
+      const bI=document.createElement("button"); bI.type="button"; bI.textContent="Image"; bI.onclick=()=>exportImage(L,id);
+      const bP=document.createElement("button"); bP.type="button"; bP.textContent="PDF"; bP.onclick=()=>exportPdf(L,id);
+      const bH=document.createElement("button"); bH.type="button"; bH.textContent="HD image"; bH.onclick=()=>exportHD(L,id,false);
+      const bHP=document.createElement("button"); bHP.type="button"; bHP.textContent="HD PDF"; bHP.onclick=()=>exportHD(L,id,true);
       c.append(sh,bI,bP,bH,bHP);
     }
   }
@@ -1862,7 +1862,7 @@ function buildCard(item, mode){
   if (!sold){ const se=checkSlotEl(L); if (se) body.appendChild(se); }
   const meta=document.createElement("div"); meta.className="muted";
   meta.textContent = (L.at?"Posted "+fmtDate(L.at):"") + (sold&&L.soldAt?" · Sold "+fmtDate(L.soldAt):"");
-  if (L.status!=="pending"){ const v=document.createElement("span"); v.className="views"; v.textContent="  ·  👁 "+fmtViews(L.views)+(Number(L.views)===1?" view":" views"); meta.appendChild(v); }
+  if (L.status!=="pending"){ const v=document.createElement("span"); v.className="views"; v.textContent="  ·  "+fmtViews(L.views)+(Number(L.views)===1?" view":" views"); meta.appendChild(v); }
   card.appendChild(body);
   return {card, body, meta};
 }
@@ -2257,8 +2257,8 @@ function runIntro(key){ key = key || "he_intro";
   const END_AT = 6;    // short opening ("A moment for you · Pause · Breathe"), then the features with the countdown
   const ov=document.createElement("div"); ov.className="intro"; ov.setAttribute("role","dialog"); ov.setAttribute("aria-label","Welcome");
   ov.innerHTML=`<video class="intro-vid" playsinline muted preload="auto" poster="intro-poster.jpg"><source src="intro.mp4" type="video/mp4"></video>
-    <div class="intro-btns"><button type="button" class="intro-sound" aria-label="Sound off">🔊</button><button type="button" class="intro-skip">Skip ›</button></div>
-    <button type="button" class="intro-gate" hidden><span>🔊</span>Tap to enter</button>
+    <div class="intro-btns"><button type="button" class="intro-sound" aria-label="Sound off"></button><button type="button" class="intro-skip">Skip ›</button></div>
+    <button type="button" class="intro-gate" hidden><span><svg viewBox='0 0 24 24' width='34' height='34' aria-hidden='true' fill='none' stroke='currentColor' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'><path d='M4 9h4l5-4v14l-5-4H4z'/><path d='M16.5 9a4 4 0 0 1 0 6M19 6.5a7.5 7.5 0 0 1 0 11'/></svg></span>Tap to enter</button>
     <div class="intro-end" hidden>
       <div class="intro-ring">
         <svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="54" class="r-bg"/><circle cx="60" cy="60" r="54" class="r-fg"/></svg>
@@ -2272,7 +2272,9 @@ function runIntro(key){ key = key || "he_intro";
   const music=new Audio("intro-music.m4a"); music.preload="auto";      // the music plays from its own file, with sound from the start
   v.muted=true;                                                       // the picture is silent, so it may always start by itself
   let done=false, counting=false, started=false;
-  const setSnd=()=>{ snd.textContent = music.muted ? "🔇" : "🔊"; snd.setAttribute("aria-label", music.muted?"Sound on":"Sound off"); };
+  const SND_ON="<svg viewBox='0 0 24 24' width='18' height='18' aria-hidden='true' fill='none' stroke='currentColor' stroke-width='1.75' stroke-linejoin='round' stroke-linecap='round'><path d='M4 9h4l5-4v14l-5-4H4z'/><path d='M16.5 9a4 4 0 0 1 0 6M19 6.5a7.5 7.5 0 0 1 0 11'/></svg>";
+  const SND_OFF="<svg viewBox='0 0 24 24' width='18' height='18' aria-hidden='true' fill='none' stroke='currentColor' stroke-width='1.75' stroke-linejoin='round' stroke-linecap='round'><path d='M4 9h4l5-4v14l-5-4H4z'/><path d='M17 9.5l5 5M22 9.5l-5 5'/></svg>";
+  const setSnd=()=>{ snd.innerHTML = music.muted ? SND_OFF : SND_ON; snd.setAttribute("aria-label", music.muted?"Sound on":"Sound off"); };
   const fadeOut=()=>{ const t=setInterval(()=>{ music.volume=Math.max(0,music.volume-0.1); if (music.volume<=0.05){ clearInterval(t); try{ music.pause(); }catch(e){} } },60); };
   const finish=()=>{ if (done) return; done=true; window.__introMuted=null; try{ v.pause(); }catch(e){} fadeOut(); ov.classList.add("out"); setTimeout(()=>{ ov.remove(); document.body.style.overflow=""; },600); };
   const countdown=()=>{                         // the music keeps playing under the countdown
@@ -2293,7 +2295,7 @@ function runIntro(key){ key = key || "he_intro";
   ov.querySelector(".intro-skip").onclick=(e)=>{ e.stopPropagation(); finish(); };
   snd.onclick=(e)=>{ e.stopPropagation(); if (!started){ start(); return; } music.muted=!music.muted; if (!music.muted && music.paused && !done) music.play().catch(()=>{}); setSnd(); };
   gate.onclick=(e)=>{ e.stopPropagation(); start(); };
-  // the admin can make the intro start silent (Settings → "Intro starts with the sound off"); visitors tap 🔇 to hear it
+  // the admin can make the intro start silent (Settings → "Intro starts with the sound off"); visitors tap to hear it
   let touched=false; const startSilent=()=>{ if (!started) start(); if (!touched){ music.muted=true; setSnd(); } };
   snd.addEventListener("click",()=>{ touched=true; });
   window.__introMuted=(m)=>{ if (done) return; if (m) startSilent(); };
@@ -2344,7 +2346,7 @@ function openRate(opts){
     <div id="rateDone" hidden><p>Thank you! Your rating has been sent.</p><div class="actions"><button type="button" class="btn primary" data-close>Done</button></div></div>
     <div class="msg" id="rateMsg"></div></div>`;
   document.body.appendChild(ov);
-  $("#rateH").textContent = opts.target==="seller" ? "⭐ Rate the seller" : "⭐ Rate this business";
+  $("#rateH").textContent = opts.target==="seller" ? "Rate the seller" : "Rate this business";
   $("#rateFor").textContent = opts.title||"";
   const mk=opts.market||MARKET; $("#ratePhone").placeholder=(MARKET_BY_ID[mk]||MARKET_BY_ID.EG).local;
   try{ const p=localStorage.getItem("mm_phone"); if (p) $("#ratePhone").value=p; const n=localStorage.getItem("mm_name"); if (n) $("#rateName").value=n; }catch(e){}
@@ -2370,7 +2372,7 @@ function openRate(opts){
   ov.hidden=false; setTimeout(()=>btns[0].focus(),50);
 }
 
-/* ===================== ☰ Menu: About High End + how-to videos ===================== */
+/* ===================== Menu: About High End + how-to videos ===================== */
 const HOWTO_VIDEOS = [
   {file:"videos/howto-moto.mp4",   ar:"الموتوسيكلات", en:"Motorcycles", fr:"Motos"},
   {file:"videos/howto-cars.mp4",   ar:"العربيات",     en:"Cars",        fr:"Voitures"},

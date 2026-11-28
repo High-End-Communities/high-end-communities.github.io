@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <script>try{var l=new URLSearchParams(location.search).get("lang")||localStorage.getItem("he_lang");if(l==="ar"){document.documentElement.lang="ar";document.documentElement.dir="rtl"}}catch(e){}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' blob: data:; connect-src 'self' https://uaaprhjjnjsimeebnslr.supabase.co wss://uaaprhjjnjsimeebnslr.supabase.co https://open.er-api.com https://get.geojs.io https://cdn.jsdelivr.net; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
 <title>Admin — High End Communities</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#f8f3e8">
@@ -18,10 +19,10 @@
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=Jost:wght@300;400;500;600&family=Roboto+Slab:wght@600;700;800&family=Inter:wght@400;500;600&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=a5f21c5a">
+<link rel="stylesheet" href="common.css?v=348be04a">
 </head>
 <body>
-<script src="i18n.js?v=d8ede9d8"></script>
+<script src="i18n.js?v=df3b3db5"></script>
 <header class="mast">
   <div class="checker"></div>
   <button type="button" class="langbtn" id="langBtn" lang="ar">العربية</button>
@@ -516,6 +517,12 @@
     </div>
 
     <div data-pane="stats" hidden>
+      <div class="card" id="backupCard" style="margin-bottom:12px">
+        <h3 style="margin:0 0 6px">Backup</h3>
+        <div class="hint" style="margin-bottom:8px">Downloads every table you can read as one JSON file on this device. Do it once a week and keep the file somewhere safe (a private drive). Photos are included, so the file can be large.</div>
+        <div class="actions"><button type="button" class="btn primary small" id="backupBtn">Download backup</button></div>
+        <div class="msg" id="backupMsg"></div>
+      </div>
       <div class="card" style="margin-bottom:12px">
         <h3 style="margin:0 0 6px">💾 Database space</h3>
         <div style="height:12px;background:#efece5;border-radius:999px;overflow:hidden"><div id="dbBar" style="height:100%;width:0;background:#1f8a4c"></div></div>
@@ -575,7 +582,7 @@
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js" integrity="sha384-8FWZA6BGMXhsfO+BLtrJK0We6gg5o1JyO8xQm6peWDEUs17ACA5ziE/NIAkl9z2k" crossorigin="anonymous"></script>
 <script src="config.js"></script>
-<script src="common.js?v=dcc06335"></script>
+<script src="common.js?v=72bff3f0"></script>
 
 <script>
 initHeader();
@@ -677,6 +684,32 @@ document.addEventListener("click", async e=>{
 (function(){ const v=$("#adminView"); if (!v || v.querySelector(".admbody")) return;
   const body=document.createElement("div"); body.className="admbody";
   [...v.children].filter(e=>!e.classList.contains("tabs")).forEach(e=>body.appendChild(e)); v.appendChild(body); v.classList.add("admlayout"); })();
+
+/* ---------- weekly backup: every readable table into one JSON file ---------- */
+const BACKUP_TABLES = ["settings","listings","sponsors","trusted_sellers","members","ratings","requests","providers","experts","announcements","discount_codes","fee_codes","fee_code_uses","seller_credits","payments","money_alerts","admins","site_stats"];
+document.addEventListener("click", async e=>{
+  if (e.target.id!=="backupBtn") return;
+  const btn=e.target, msg=$("#backupMsg"); btn.disabled=true;
+  const out={site:"highendcommunities.com", made_at:new Date().toISOString(), tables:{}, skipped:{}};
+  try{
+    for (const t of BACKUP_TABLES){
+      showMsg("Reading "+t+"…","ok",msg);
+      const rows=[]; let from=0;
+      for (;;){
+        const {data,error}=await sb.from(t).select("*").range(from, from+499);
+        if (error){ out.skipped[t]=error.message; break; }
+        rows.push(...(data||[])); if (!data || data.length<500) break; from+=500;
+      }
+      if (!out.skipped[t]) out.tables[t]=rows;
+    }
+    const day=new Date().toISOString().slice(0,10);
+    const blob=new Blob([JSON.stringify(out)],{type:"application/json"});
+    await saveFile("high-end-backup-"+day+".json", blob);
+    const n=Object.values(out.tables).reduce((a,r)=>a+r.length,0), sk=Object.keys(out.skipped);
+    showMsg(`Saved ${n} rows from ${Object.keys(out.tables).length} tables (${(blob.size/1048576).toFixed(1)} MB).`+(sk.length?" Not readable: "+sk.join(", ")+".":""),"ok",msg);
+  }catch(err){ showMsg(niceError(err),"err",msg); }
+  btn.disabled=false;
+});
 
 /* ---------- tabs ---------- */
 function tab(t){
