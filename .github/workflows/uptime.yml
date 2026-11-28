@@ -1,0 +1,63 @@
+name: Uptime monitor
+# Every 30 minutes: checks the public site and the Supabase backend.
+# If something is down it opens one GitHub issue (GitHub emails you), and closes it when everything is back.
+# The Supabase call also keeps the free project from pausing for inactivity.
+on:
+  schedule:
+    - cron: "7,37 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check site and backend
+        id: check
+        run: |
+          fail=""
+          check() { # name url must-contain
+            body=$(curl -sS -L --max-time 25 -w '\n%{http_code}' "$2" 2>&1) || true
+            code=$(echo "$body" | tail -1)
+            if [ "$code" != "200" ] || ! echo "$body" | grep -q "$3"; then
+              fail="$fail- $1 ($2): HTTP $code"$'\n'
+            fi
+          }
+          check "Home page" "https://highendcommunities.com/" "High End Communities"
+          check "The Boutique" "https://highendcommunities.com/bags.html" "Boutique"
+          check "Listing page" "https://highendcommunities.com/item.html" "High End"
+          URL=$(grep -o 'https://[a-z0-9]*\.supabase\.co' config.js | head -1)
+          KEY=$(grep -oE 'sb_publishable_[A-Za-z0-9_-]+|eyJ[A-Za-z0-9._-]+' config.js | head -1)
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 25 -H "apikey: $KEY" "$URL/auth/v1/health" || echo 000)
+          [ "$code" = "200" ] || fail="$fail- Supabase backend ($URL): HTTP $code"$'\n'
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 25 -H "apikey: $KEY" -H "Authorization: Bearer $KEY" "$URL/rest/v1/" || echo 000)
+          case "$code" in 200|401|403|404) ;; *) fail="$fail- Supabase database API ($URL): HTTP $code"$'\n';; esac
+          {
+            echo "fail<<EOF"
+            printf '%s' "$fail"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+          if [ -n "$fail" ]; then echo "::error::Down:"; printf '%s' "$fail"; else echo "All up"; fi
+      - name: Open or update the outage issue
+        uses: actions/github-script@v7
+        env:
+          FAIL: ${{ steps.check.outputs.fail }}
+        with:
+          script: |
+            const fail = process.env.FAIL.trim();
+            const { owner, repo } = context.repo;
+            const open = (await github.rest.issues.listForRepo({ owner, repo, state: "open", labels: "outage" })).data;
+            const when = new Date().toISOString().replace("T", " ").slice(0, 16) + " UTC";
+            if (fail) {
+              const body = `Detected at ${when}:\n\n${fail}\n\nRun: ${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
+              if (open.length) await github.rest.issues.createComment({ owner, repo, issue_number: open[0].number, body: "Still down. " + body });
+              else await github.rest.issues.create({ owner, repo, title: "Site down: highendcommunities.com", body, labels: ["outage"] });
+              core.setFailed(fail);
+            } else if (open.length) {
+              for (const i of open) {
+                await github.rest.issues.createComment({ owner, repo, issue_number: i.number, body: `Back up at ${when}.` });
+                await github.rest.issues.update({ owner, repo, issue_number: i.number, state: "closed" });
+              }
+            }
