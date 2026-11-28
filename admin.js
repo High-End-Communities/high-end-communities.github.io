@@ -1,0 +1,1630 @@
+initHeader();
+let items = [], editing = null, sponsorsAll = [], spEditing = null, spImage = null;
+const REASONS = ["Missing photos","Photos not clear","Missing ownership papers","Price looks wrong","Missing details","Duplicate listing","Item already sold","Not allowed in this group"];
+// message to the seller, in the language they posted in, with the link to fix it themselves using their seller code
+const REASONS_AR = {"Missing photos":"الصور ناقصة","Photos not clear":"الصور مش واضحة","Missing ownership papers":"أوراق الملكية ناقصة","Price looks wrong":"السعر شكله غلط","Missing details":"التفاصيل ناقصة","Duplicate listing":"الإعلان متكرر","Item already sold":"القطعة اتباعت خلاص","Not allowed in this group":"مش مسموح في الجروب ده"};
+const REASONS_FR = {"Missing photos":"photos manquantes","Photos not clear":"photos pas nettes","Missing ownership papers":"papiers de propriété manquants","Price looks wrong":"le prix semble incorrect","Missing details":"détails manquants","Duplicate listing":"annonce en double","Item already sold":"article déjà vendu","Not allowed in this group":"non autorisé dans ce groupe"};
+const editLink = id => baseUrl()+"/post.html#edit="+id;
+const reasonMsg = (L,r,kind,id)=>{
+  const lang = (L.f && L.f._lang) || "en", t = titleOf(L), fix = id ? editLink(id) : "";
+  if (lang==="ar") return kind==="changes"
+    ? `أهلاً، معاك أدمن ${MARKET_NAME}.\n\nبخصوص إعلانك "${t}": محتاج تعديل قبل ما ننشره.\nالمطلوب: ${REASONS_AR[r]||r}.\n\n${fix?`تقدر تعدّله بنفسك بكود البائع من هنا:\n${fix}\n\n`:""}أو ابعتلنا التعديل (أو الصور الجديدة) هنا. شكرًا!`
+    : `أهلاً، معاك أدمن ${MARKET_NAME}.\n\nإعلانك "${t}" مااتنشرش / اتشال.\nالسبب: ${REASONS_AR[r]||r}.\n\nتقدر تنشره تاني بعد ما يتصلّح. شكرًا!`;
+  if (lang==="fr") return kind==="changes"
+    ? `Bonjour, ici l'admin de ${MARKET_NAME}.\n\nAu sujet de votre annonce « ${t} » : merci de la modifier avant publication.\nÀ corriger : ${REASONS_FR[r]||r}.\n\n${fix?`Vous pouvez la modifier vous-même avec votre code vendeur ici :\n${fix}\n\n`:""}Ou envoyez-nous la correction (ou les nouvelles photos) ici. Merci !`
+    : `Bonjour, ici l'admin de ${MARKET_NAME}.\n\nVotre annonce « ${t} » n'a pas été publiée / a été retirée.\nRaison : ${REASONS_FR[r]||r}.\n\nVous pouvez la republier une fois corrigée. Merci !`;
+  return kind==="changes"
+    ? `Hello, this is the ${MARKET_NAME} admin.\n\nAbout your listing "${t}": please update it before we publish it.\nWhat's needed: ${r}.\n\n${fix?`You can edit it yourself with your seller code here:\n${fix}\n\n`:""}Or reply here with the fix (or new photos) and we'll update it. Thank you!`
+    : `Hello, this is the ${MARKET_NAME} admin.\n\nYour listing "${t}" was not published / was removed.\nReason: ${r}.\n\nYou're welcome to post it again once it's fixed. Thank you!`;
+};
+
+/* ---------- login ---------- */
+async function enter(){
+  const {data:{session}} = await sb.auth.getSession();
+  if (!session){ $("#loginView").hidden=false; $("#adminView").hidden=true; return; }
+  const mp = await sb.rpc("my_perms");
+  let ok;
+  if (mp.error){ const r=await sb.rpc("is_admin"); ok=r.data; ME={root:false, full:!!ok, perms:[]}; }   // before update17
+  else { ok=!!mp.data; if (ok) ME={root:!!mp.data.root, full:!!mp.data.full, perms:mp.data.perms||[]}; }
+  if (!ok){ showMsg("This account is not an admin. Add its email to the admins table (setup.sql step 1).","err",$("#loginMsg")); await sb.auth.signOut(); return; }
+  $("#loginView").hidden=true; $("#adminView").hidden=false;
+  $("#who").textContent = "Logged in as " + session.user.email;
+  countPage("admin");
+  initCategoryPicker(); initPhotoInputs(); renderFields(); $("#terms").checked=true;
+  $("#submitBtn").textContent = "Publish now";
+  applyPerms();
+  await Promise.all([can("listings")?loadAll():null, can("sponsors")?loadSponsorsAdmin():null, loadSettings(), can("listings")?loadTrusted():null]);
+  if (can("wanted")) loadWanted(); if (can("money")) loadMoney(); loadAdmins(); ratingsCount();
+  if (can("codes")) loadCodes();
+  loadSponsors();
+}
+$("#loginBtn").onclick = async ()=>{
+  if (!sb){ showMsg("Add your Supabase details to config.js first.","err",$("#loginMsg")); return; }
+  $("#loginBtn").disabled=true;
+  const {error} = await sb.auth.signInWithPassword({email:$("#email").value.trim(), password:$("#pass").value});
+  $("#loginBtn").disabled=false;
+  if (error){ showMsg(niceError(error),"err",$("#loginMsg")); return; }
+  enter();
+};
+$("#pass").addEventListener("keydown",e=>{ if(e.key==="Enter") $("#loginBtn").click(); });
+$("#logout").onclick = async ()=>{ await sb.auth.signOut(); location.reload(); };
+
+/* ---------- what this admin may manage (set by the root admin) ---------- */
+let ME = {root:false, full:true, perms:[]};
+const TAB_PERM = {pending:"listings", live:"listings", sold:"listings", add:"listings", codes:"codes", sponsors:"sponsors", limits:"settings", settings:"settings", admins:"settings",
+  inspect:"inspect", ratings:"ratings", wanted:"wanted", announce:"announce", share:"share", money:"money", stats:"stats"};
+const PERM_SECTIONS = [["moto","🏍️ Motorcycles"],["watch","⌚ Watches"],["car","🚗 Cars"],["boat","🛥️ Marine"],["desert","🏜️ Dune Riders"],["equine","🐎 Equine"],["art","🎨 Art"],["estate","🏠 Real estate"],["bag","👜 The Boutique (ladies)"]];
+const PERM_FEATURES = [["listings","Listings: review, edit, add"],["share","Share to WhatsApp"],["announce","Announcements"],["wanted","Wanted requests"],["codes","Discount codes"],
+  ["sponsors","Sponsors & ads"],["inspect","Inspection partners"],["ratings","Ratings: approve or mark fake"],["confirm","Confirm payments (no totals)"],["stats","Stats"]];   // money, fees, totals and site settings: full admins only
+function can(p){ if (p==="money"||p==="settings") return !!ME.full; return ME.full || ME.perms.includes(p); }
+function applyPerms(){
+  let first=null;
+  document.querySelectorAll("#adminView .tabs button").forEach(b=>{ const ok=b.dataset.tab==="money" ? (can("money")||can("confirm")) : can(TAB_PERM[b.dataset.tab]||"settings"); b.hidden=!ok; if (ok && !first) first=b.dataset.tab; });
+  ["#maintCard","#boutCard","#introCard","#rentCard","#moveCard","#payCard"].forEach(id=>{ const el=$(id); if (el) el.hidden=!can("settings"); });
+  document.querySelectorAll("#adminView .tabgrp").forEach(g=>g.hidden=![...g.querySelectorAll("button")].some(b=>!b.hidden));
+  const aa=$("#autoApprove"); if (aa) aa.closest(".disc").hidden=!can("settings");
+  const so=$("#soSave"); if (so) so.closest(".card").hidden=!can("settings");
+  document.querySelectorAll("[data-pane=money] .fullonly").forEach(el=>{ if(!can("money")) el.hidden=true; });
+  $("#mnStaffHint").hidden=can("money");
+  if (!can("money")){ const k=$("#mpKind"); [...k.options].forEach(o=>{ if(o.value!=="membership") o.remove(); }); }
+  if (can("inspect")) loadSvcAdmin();
+  if (!ME.full){ $("#who").textContent += " · limited: "+PERM_SECTIONS.filter(([k])=>can(k)).map(([,l])=>l).join(", "); }
+  // admin.html#digest (from the daily reminder) opens straight on the WhatsApp share & digest tab
+  const sh=document.querySelector('#adminView .tabs [data-tab="share"]');
+  const want = (location.hash==="#digest" && sh && !sh.hidden) ? "share" : first;
+  if (want) tab(want);
+  if (want==="share" && location.hash==="#digest") setTimeout(()=>{ const d=$("#digestAfter"); if (d) d.closest(".card").scrollIntoView({block:"start",behavior:"smooth"}); },400);
+}
+
+/* ---------- house sponsor (MASAR): where it may fill an empty sponsor place ---------- */
+const HOUSE_PLACES = [["home","🏠 Home page"]].concat(PERM_SECTIONS);
+function drawHouseGroups(on, hasCol){
+  const box=$("#houseGroups"); if (!box) return;
+  const cur = on || ["home","moto","watch","car","boat","desert","equine","art","estate"];
+  box.innerHTML=""; HOUSE_PLACES.forEach(([k,l])=>{ const lab=document.createElement("label"); const c=document.createElement("input"); c.type="checkbox"; c.value=k; c.checked=cur.includes(k);
+    lab.append(c," "+l); box.appendChild(lab); });
+  box.dataset.ready = hasCol ? "1" : "";
+}
+document.addEventListener("click", async e=>{
+  if (e.target.id!=="houseSave") return;
+  const v=[...document.querySelectorAll("#houseGroups input:checked")].map(c=>c.value);
+  const {error}=await sb.from("settings").update({house_sponsor_groups:v}).eq("id",1);
+  if (error) return showMsg(/house_sponsor_groups/.test(error.message||"") ? "One-time setup needed: run the house-sponsor SQL in Supabase first." : niceError(error),"err",$("#houseMsg"));
+  showMsg(v.length ? "Saved. MASAR can show in: "+v.length+" place"+(v.length>1?"s":"")+"." : "Saved. MASAR is switched off.","ok",$("#houseMsg"));
+});
+
+/* ---------- layout: section menu on the side (desktop), content on the right ---------- */
+(function(){ const v=$("#adminView"); if (!v || v.querySelector(".admbody")) return;
+  const body=document.createElement("div"); body.className="admbody";
+  [...v.children].filter(e=>!e.classList.contains("tabs")).forEach(e=>body.appendChild(e)); v.appendChild(body); v.classList.add("admlayout"); })();
+
+/* ---------- weekly backup: every readable table into one JSON file ---------- */
+const BACKUP_TABLES = ["settings","listings","sponsors","trusted_sellers","members","ratings","requests","providers","experts","announcements","discount_codes","fee_codes","fee_code_uses","seller_credits","payments","money_alerts","admins","site_stats"];
+document.addEventListener("click", async e=>{
+  if (e.target.id!=="backupBtn") return;
+  const btn=e.target, msg=$("#backupMsg"); btn.disabled=true;
+  const out={site:"highendcommunities.com", made_at:new Date().toISOString(), tables:{}, skipped:{}};
+  try{
+    for (const t of BACKUP_TABLES){
+      showMsg("Reading "+t+"…","ok",msg);
+      const rows=[]; let from=0;
+      for (;;){
+        const {data,error}=await sb.from(t).select("*").range(from, from+499);
+        if (error){ out.skipped[t]=error.message; break; }
+        rows.push(...(data||[])); if (!data || data.length<500) break; from+=500;
+      }
+      if (!out.skipped[t]) out.tables[t]=rows;
+    }
+    const day=new Date().toISOString().slice(0,10);
+    const blob=new Blob([JSON.stringify(out)],{type:"application/json"});
+    await saveFile("high-end-backup-"+day+".json", blob);
+    const n=Object.values(out.tables).reduce((a,r)=>a+r.length,0), sk=Object.keys(out.skipped);
+    showMsg(`Saved ${n} rows from ${Object.keys(out.tables).length} tables (${(blob.size/1048576).toFixed(1)} MB).`+(sk.length?" Not readable: "+sk.join(", ")+".":""),"ok",msg);
+  }catch(err){ showMsg(niceError(err),"err",msg); }
+  btn.disabled=false;
+});
+
+/* ---------- tabs ---------- */
+function tab(t){
+  document.querySelectorAll("#adminView .tabs button").forEach(b=>{ b.classList.toggle("on",b.dataset.tab===t); b.setAttribute("aria-current", b.dataset.tab===t ? "page" : "false"); });
+  if (innerWidth<1000){ const nav=document.querySelector("#adminView .tabs"), on=nav && nav.querySelector("button.on"); if (on) nav.scrollLeft = on.offsetLeft - (nav.clientWidth-on.offsetWidth)/2; }
+  document.querySelectorAll("[data-pane]").forEach(p=>p.hidden = p.dataset.pane!==t);
+  if (t==="stats") loadStats();
+  if (t==="codes") loadCodes();
+  if (t==="inspect"){ loadExpertsAdmin(); loadSvcAdmin(); loadChecks(); }
+  if (t==="ratings") loadRatings();
+  if (t==="wanted") loadWanted();
+  if (t==="announce") loadAnn();
+  if (t==="share") loadShare();
+  if (t==="money") loadMoney();
+}
+document.querySelectorAll("#adminView .tabs button").forEach(b=>b.onclick=()=>tab(b.dataset.tab));
+
+/* ---------- send new listings to the WhatsApp groups ---------- */
+const WA_GROUP = {moto:"High End Motorcycles Community", car:"High End Cars Community", watch:"High End Watches", boat:"High End Marine Community",
+  desert:"High End Dune Riders", equine:"EQUINE HAVEN Community", art:"High End General Talks", estate:"🏠 Real estate group", bag:"The Boutique group"};
+let SHARED = {};                 // listing id -> shared_at
+function noPhone(L){ const f={...L.f}; delete f.phone; return {...L, f}; }
+// the flyer image keeps the number only when the seller ticked "Show my number"
+function flyerL(L){ return (L.f && L.f.show_phone) ? L : noPhone(L); }
+async function loadShare(){
+  const box=$("#shList"); box.innerHTML='<div class="empty">Loading…</div>';
+  const st = await sb.from("settings").select("digest_after").eq("id",1).maybeSingle();
+  if (!st.error && st.data) $("#digestAfter").value = st.data.digest_after || 5; else if (!$("#digestAfter").value) $("#digestAfter").value = 5;
+  const since = new Date(Date.now()-14*864e5).toISOString();
+  const {data,error} = await sb.from("listings").select("id,shared_at").eq("status","live").gte("created_at",since).limit(1000);
+  if (error){ box.innerHTML=""; showMsg(/shared_at/.test(error.message||"") ? "Run update17 in Supabase first (it adds the 'shared' marker)." : niceError(error),"err",$("#shMsg")); return; }
+  SHARED = Object.fromEntries((data||[]).map(r=>[r.id, r.shared_at]));
+  renderShare();
+}
+function renderShare(){
+  const box=$("#shList"); box.innerHTML=""; showMsg("","info",$("#shMsg"));
+  const lim = Math.max(1, +$("#digestAfter").value || 5);
+  const todo = items.filter(it=>it.L.status==="live" && (it.id in SHARED) && !SHARED[it.id]);
+  $("#nShare").textContent = todo.length || "";
+  if (!todo.length){ box.innerHTML='<div class="empty">✅ All new listings are already in the groups.</div>'; return; }
+  GROUP_ORDER.forEach(g=>{
+    const its = todo.filter(it=>GROUP[it.L.type]===g); if (!its.length || !can(g)) return;
+    const c=document.createElement("div"); c.className="card"; c.style.marginBottom="12px";
+    const digest = its.length > lim;
+    c.innerHTML=`<h3 style="margin:0 0 4px">${esc(GROUP_ICON_A[g]||"")} ${esc(WA_GROUP[g]||GROUP_NAMES[g])} <span class="muted" style="font-weight:400">· ${its.length} new</span></h3>`
+      + `<div class="hint">${digest ? "More than "+lim+" new — send them together as today's digest." : "Share each one to this group."}</div>`;
+    const acts=document.createElement("div"); acts.className="actions";
+    const dg=document.createElement("button"); dg.type="button"; dg.className="btn "+(digest?"primary":"ghost")+" small"; dg.textContent="📋 Send daily digest ("+its.length+")";
+    dg.onclick=()=>shareDigest(g, its); acts.appendChild(dg); c.appendChild(acts);
+    if (!digest) its.forEach(it=>{
+      const r=document.createElement("div"); r.className="unitrow"; r.style.cssText="justify-content:space-between;border-top:1px solid var(--line,#e6e0d4);padding-top:8px;margin-top:8px";
+      const t=document.createElement("span"); t.textContent=`${ICONS[it.L.type]||""} ${titleOf(it.L)} — ${priceStr(it.L.f)}`;
+      const b=document.createElement("button"); b.type="button"; b.className="btn wa small"; b.textContent="Share";
+      b.onclick=()=>shareOne(it,b);
+      const sk=document.createElement("button"); sk.type="button"; sk.className="btn ghost small"; sk.textContent="Skip"; sk.title="Don't send this one";
+      sk.onclick=()=>markShared([it.id]);
+      const ig=document.createElement("button"); ig.type="button"; ig.className="btn ghost small"; ig.textContent="📸 Instagram";
+      ig.onclick=()=>shareInsta(it,ig);
+      const fb=document.createElement("button"); fb.type="button"; fb.className="btn ghost small"; fb.textContent="📘 Facebook";
+      fb.onclick=()=>shareFb(it,fb);
+      const w=document.createElement("span"); w.style.cssText="display:flex;gap:6px;flex-wrap:wrap"; w.append(b,ig,fb,sk); r.append(t,w); c.appendChild(r);
+    });
+    box.appendChild(c);
+  });
+}
+const GROUP_ICON_A={moto:"🏍️",car:"🚗",watch:"⌚",bag:"👜",boat:"🛥️",desert:"🏜️",equine:"🐎",art:"🎨",estate:"🏠"};
+async function markShared(ids){
+  const now=new Date().toISOString();
+  const {error}=await sb.from("listings").update({shared_at:now}).in("id",ids);
+  if (error){ showMsg(niceError(error),"err",$("#shMsg")); return; }
+  ids.forEach(id=>SHARED[id]=now); renderShare();
+}
+async function shareTo(text, files){
+  try{
+    if (files && files.length && navigator.canShare && navigator.canShare({files, text})){ await navigator.share({files, text}); return true; }
+    if (navigator.share && !files){ await navigator.share({text}); return true; }
+  }catch(e){ if (e && e.name==="AbortError") return false; }
+  window.open(waHref(text),"_blank","noopener"); return true;    // computer: WhatsApp opens with the text, pick the group
+}
+function askSent(ids, what){
+  setTimeout(()=>{ if (confirm(`Did you send ${what} to the group?\n\nOK = mark as sent · Cancel = keep it in the list`)) markShared(ids); }, 600);
+}
+async function flyerFile(it){
+  const L=flyerL(it.L);
+  await ensureFonts(); if (!L.photos || !L.photos.length) L.photos = await loadPhotos({id:it.id,L});
+  const k=1080/FW, c=document.createElement("canvas"); c.width=1080; c.height=Math.round(FH*k);
+  FLYER_IMAGE=true; try{ await drawFlyer(canvasPainter(c.getContext("2d"),k), L, it.id); } finally{ FLYER_IMAGE=false; }
+  const blob=await new Promise(r=>c.toBlob(r,"image/jpeg",0.85));
+  return blob ? new File([blob], fileBase(L)+".jpg", {type:"image/jpeg"}) : null;
+}
+function instaCaption(it){
+  const L=it.L, g=GROUP[L.type];
+  const tags={moto:"#motorcycles #bikersofegypt #harleydavidson #bmwmotorrad #ducati",car:"#cars #carsforsale #luxurycars #4x4",watch:"#watches #rolex #omega #watchcollector",
+    boat:"#yachts #boats #jetski #marine",equine:"#horses #equestrian #arabianhorse",desert:"#dunebuggy #atv #sandbike #desert #offroad #utv",bag:"#luxurybags #hermes #chanel #preloved",art:"#art #collectibles",estate:"#realestate #luxuryhomes"}[g]||"";
+  return `${ICONS[L.type]||""} ${titleOf(L)}\n💰 ${priceStr(L.f)}\n\n${rows(L).slice(0,6).map(([k,v])=>k+": "+v).join("\n")}\n\n📸 Photos, details & contact the seller:\n🔗 ${linkFor(it.id)}\n\n#HighEndCommunities #forsale ${tags}`;
+}
+/* ---------- Social posts: an Instagram portrait (1080×1350) and a Facebook landscape (1200×630), each in its own look ---------- */
+const SO={ink:"#1d1b18", cream:"#f7f3e8", gold:"#b08d57", mute:"#8a8478", line:"#e4dccb"};
+function soCover(x,img,dx,dy,dw,dh){ const r=Math.max(dw/img.naturalWidth, dh/img.naturalHeight), sw=dw/r, sh=dh/r;
+  x.drawImage(img,(img.naturalWidth-sw)/2,(img.naturalHeight-sh)/2,sw,sh,dx,dy,dw,dh); }
+function soWrap(x,t,maxW,lines){ const w=String(t).split(/\s+/), out=[]; let cur="";
+  for (const word of w){ const tr=cur?cur+" "+word:word; if (x.measureText(tr).width<=maxW) cur=tr; else { if(cur) out.push(cur); cur=word; } if(out.length===lines) break; }
+  if (out.length<lines && cur) out.push(cur);
+  if (out.length===lines && w.join(" ").length>out.join(" ").length){ let l=out[lines-1]; while(l && x.measureText(l+"…").width>maxW) l=l.slice(0,-1); out[lines-1]=l.replace(/\s+$/,"")+"…"; }
+  return out; }
+function soSpaced(x,t,X,Y,sp){ let cx=X; for (const ch of t){ x.fillText(ch,cx,Y); cx+=x.measureText(ch).width+sp; } return cx-X; }
+function soSpacedW(x,t,sp){ let w=0; for (const ch of t) w+=x.measureText(ch).width+sp; return w-sp; }
+function soSpecs(L,n){ const SKIP=["Add-ons","Options & extras","Item type","Accessory type","Type","Part type","Property type","Phone number"]; return rows(L).filter(([k])=>!SKIP.includes(k)).slice(0,n); }
+function soSection(L){ return (GROUP_NAMES[GROUP[L.type]]||LABELS[L.type]||"").replace(/^High End\s+/,"").replace(/\s+Community$/,""); }
+async function soPrep(it){ const L=noPhone(it.L); await ensureFonts(); if (!L.photos||!L.photos.length) L.photos=await loadPhotos({id:it.id,L});
+  const ph=await loadPhotoImgs(L.photos,3); let logo=null; try{ logo=await loadSrc(BRAND_ART); }catch(e){} return {L,ph,logo}; }
+function soRound(x,X,Y,w,h,r){ x.beginPath(); x.moveTo(X+r,Y); x.arcTo(X+w,Y,X+w,Y+h,r); x.arcTo(X+w,Y+h,X,Y+h,r); x.arcTo(X,Y+h,X,Y,r); x.arcTo(X,Y,X+w,Y,r); x.closePath(); }
+function soLogo(x,logo,cx,cy,r){ x.save(); x.beginPath(); x.arc(cx,cy,r,0,7); x.fillStyle=SO.cream; x.fill(); x.lineWidth=3; x.strokeStyle=SO.gold; x.stroke(); x.clip();
+  if (logo){ const k=Math.min(1.7*r/logo.naturalWidth,1.7*r/logo.naturalHeight); x.drawImage(logo,cx-logo.naturalWidth*k/2,cy-logo.naturalHeight*k/2,logo.naturalWidth*k,logo.naturalHeight*k); } x.restore(); }
+async function instaImage(it){
+  const {L,ph,logo}=await soPrep(it); const W=1080,H=1350, c=document.createElement("canvas"); c.width=W; c.height=H; const x=c.getContext("2d");
+  x.fillStyle=SO.cream; x.fillRect(0,0,W,H);
+  const PH=860;
+  if (ph[0]) soCover(x,ph[0],0,0,W,PH); else { x.fillStyle=SO.ink; x.fillRect(0,0,W,PH); }
+  const g=x.createLinearGradient(0,0,0,260); g.addColorStop(0,"rgba(0,0,0,.45)"); g.addColorStop(1,"rgba(0,0,0,0)"); x.fillStyle=g; x.fillRect(0,0,W,260);
+  soLogo(x,logo,104,104,58);
+  x.font='600 24px Inter'; x.fillStyle="#fff"; x.textBaseline="middle"; const sec=soSection(L).toUpperCase(), sw=soSpacedW(x,sec,5);
+  x.strokeStyle="rgba(255,255,255,.85)"; x.lineWidth=2; soRound(x,W-64-sw-48,76,sw+48,56,28); x.stroke(); soSpaced(x,sec,W-64-sw-24,105,5);
+  ph.slice(1,3).forEach((im,i)=>{ const s=170, X=W-64-s, Y=PH-110-s-i*(s+24); x.fillStyle="#fff"; x.fillRect(X-6,Y-6,s+12,s+12); soCover(x,im,X,Y,s,s); });
+  const cy=PH-70; x.fillStyle=SO.cream; soRound(x,48,cy,W-96,H-cy-48,30); x.fill();
+  x.fillStyle=SO.gold; x.fillRect(96,cy+52,70,4);
+  x.textBaseline="alphabetic"; x.fillStyle=SO.ink; x.font='700 58px "Roboto Slab"';
+  const tl=soWrap(x,titleOf(L),W-192,2); tl.forEach((l,i)=>x.fillText(l,96,cy+130+i*68));
+  let y=cy+130+(tl.length-1)*68+56;
+  x.font='400 27px Inter'; x.fillStyle=SO.mute; const tt=titleOf(L).toLowerCase(), sp=soSpecs(L,8).map(([k,v])=>v).filter(v=>v && !tt.includes(String(v).toLowerCase())).slice(0,3); let sx=96;
+  for (let i=0;i<sp.length;i++){ const t=String(sp[i]); const tw=x.measureText(t).width; if (sx+tw>W-96) break; x.fillText(t,sx,y); sx+=tw;
+    if(i<sp.length-1){ x.fillStyle=SO.gold; x.fillText("  ·  ",sx,y); sx+=x.measureText("  ·  ").width; x.fillStyle=SO.mute; } }
+  y+=78; x.font='700 64px "Roboto Slab"'; x.fillStyle=SO.ink; x.fillText(priceStr(L.f),96,y);
+  x.fillStyle=SO.line; x.fillRect(96,H-150,W-192,2);
+  x.font='600 24px Inter'; x.fillStyle=SO.gold; soSpaced(x,"HIGH END COMMUNITIES",96,H-100,4);
+  x.font='400 24px Inter'; x.fillStyle=SO.mute; x.textAlign="right"; x.fillText("Details & contact: link in bio",W-96,H-100); x.textAlign="left";
+  const b=await new Promise(r=>c.toBlob(r,"image/jpeg",0.9)); return b?new File([b],fileBase(L)+"-instagram.jpg",{type:"image/jpeg"}):null;
+}
+async function fbImage(it){
+  const {L,ph,logo}=await soPrep(it); const W=1200,H=630, c=document.createElement("canvas"); c.width=W; c.height=H; const x=c.getContext("2d");
+  x.fillStyle=SO.ink; x.fillRect(0,0,W,H);
+  const PW=700;
+  if (ph[0]) soCover(x,ph[0],0,0,PW,H);
+  if (ph[1]){ const s=150; x.fillStyle=SO.cream; x.fillRect(28,H-28-s-8,s+16,s+16); soCover(x,ph[1],36,H-28-s,s,s); }
+  const g=x.createLinearGradient(PW-120,0,PW,0); g.addColorStop(0,"rgba(29,27,24,0)"); g.addColorStop(1,"rgba(29,27,24,1)"); x.fillStyle=g; x.fillRect(PW-120,0,120,H);
+  const X=PW+40, R=W-48, w=R-X;
+  soLogo(x,logo,X+38,78,38);
+  x.font='600 18px Inter'; x.fillStyle=SO.gold; x.textBaseline="middle"; soSpaced(x,soSection(L).toUpperCase(),X+92,78,4); x.textBaseline="alphabetic";
+  x.fillStyle=SO.cream; x.font='700 44px "Roboto Slab"'; const tl=soWrap(x,titleOf(L),w,3); tl.forEach((l,i)=>x.fillText(l,X,186+i*52));
+  let y=186+(tl.length-1)*52+30; x.fillStyle=SO.gold; x.fillRect(X,y,56,3); y+=44;
+  x.font='400 21px Inter'; soSpecs(L,4).forEach(([k,v])=>{ x.fillStyle="#a8a294"; x.fillText(k,X,y); x.fillStyle=SO.cream; x.textAlign="right"; let t=String(v); while(t && x.measureText(t).width>w-x.measureText(k).width-24) t=t.slice(0,-1); x.fillText(t,R,y); x.textAlign="left"; y+=34; });
+  const py=H-118; x.fillStyle=SO.cream; soRound(x,X,py,w,62,31); x.fill();
+  x.fillStyle=SO.ink; x.font='700 32px "Roboto Slab"'; x.textAlign="center"; x.fillText(priceStr(L.f),X+w/2,py+42);
+  x.font='400 18px Inter'; x.fillStyle="#a8a294"; x.fillText(baseUrl().replace(/^https?:\/\//,""),X+w/2,H-24); x.textAlign="left";
+  const b=await new Promise(r=>c.toBlob(r,"image/jpeg",0.9)); return b?new File([b],fileBase(L)+"-facebook.jpg",{type:"image/jpeg"}):null;
+}
+async function socialPost(it, btn, kind){
+  btn.disabled=true; const old=btn.textContent; btn.textContent="Preparing…";
+  const cap=instaCaption(it); let copied=false; try{ await navigator.clipboard.writeText(cap); copied=true; }catch(e){}
+  let f=null; try{ f=await (kind==="fb"?fbImage(it):instaImage(it)); }catch(e){ console.warn(e); }
+  btn.disabled=false; btn.textContent=old;
+  const app=kind==="fb"?"Facebook":"Instagram";
+  if (f && navigator.canShare && navigator.canShare({files:[f]})){
+    alert((copied?"The caption is copied. ":"")+`Next: choose ${app}, then paste the caption.`);
+    try{ await navigator.share({files:[f]}); }catch(e){} return;
+  }
+  if (f){ const u=URL.createObjectURL(f); const a=document.createElement("a"); a.href=u; a.download=f.name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),30000); }
+  alert(`The ${app} picture is downloaded`+(copied?" and the caption is copied":"")+`. ${app} opens now: make a new post, add the picture, paste the caption.`);
+  const st=SITE_ST||{}; window.open(kind==="fb"?(st.social_fb||"https://www.facebook.com/"):(st.social_ig||"https://www.instagram.com/"),"_blank","noopener");
+}
+function shareInsta(it,btn){ return socialPost(it,btn,"ig"); }
+function shareFb(it,btn){ return socialPost(it,btn,"fb"); }
+(async function(){
+  if (!sb) return; const {data}=await sb.from("settings").select("social_fb,social_ig").eq("id",1).maybeSingle();
+  if (data){ $("#soFb").value=data.social_fb||""; $("#soIg").value=data.social_ig||""; SITE_ST=Object.assign(SITE_ST||{},data); }
+})();
+$("#soSave").onclick=async()=>{
+  const fb=$("#soFb").value.trim(), ig=$("#soIg").value.trim();
+  if (fb && !/^https:\/\/(www\.|m\.)?(facebook|fb)\.com\/[A-Za-z0-9._\/?=&%-]{1,200}$/.test(fb)){ showMsg("Facebook: paste the page link, e.g. https://www.facebook.com/highend","err",$("#soMsg")); return; }
+  if (ig && !/^https:\/\/(www\.)?instagram\.com\/[A-Za-z0-9._\/-]{1,100}$/.test(ig)){ showMsg("Instagram: paste the account link, e.g. https://www.instagram.com/highend","err",$("#soMsg")); return; }
+  const {error}=await sb.from("settings").update({social_fb:fb||null, social_ig:ig||null}).eq("id",1);
+  showMsg(error?(/column/.test(error.message||"")?"Run update18 in Supabase first.":niceError(error)):"Saved.", error?"err":"ok", $("#soMsg"));
+  if(!error) SITE_ST=Object.assign(SITE_ST||{},{social_fb:fb||null,social_ig:ig||null});
+};
+async function shareOne(it, btn){
+  btn.disabled=true; const old=btn.textContent; btn.textContent="Preparing…";
+  let files=null;
+  try{
+    const L=flyerL(it.L);
+    await ensureFonts(); if (!L.photos || !L.photos.length) L.photos = await loadPhotos({id:it.id,L});
+    const k=1080/FW, c=document.createElement("canvas"); c.width=1080; c.height=Math.round(FH*k);
+    FLYER_IMAGE=true; try{ await drawFlyer(canvasPainter(c.getContext("2d"),k), L, it.id); } finally{ FLYER_IMAGE=false; }
+    const blob=await new Promise(r=>c.toBlob(r,"image/jpeg",0.82));
+    if (blob) files=[new File([blob], fileBase(L)+".jpg", {type:"image/jpeg"})];
+  }catch(e){ files=null; }
+  btn.disabled=false; btn.textContent=old;
+  const ok = await shareTo(shareText(noPhone(it.L), it.id), files);
+  if (ok) askSent([it.id], `"${titleOf(it.L)}"`);
+}
+async function shareDigest(g, its){
+  const d=new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"short"});
+  let t=`${GROUP_ICON_A[g]||"📒"} *${WA_GROUP[g]||GROUP_NAMES[g]} — new today (${d})*\n`;
+  its.slice(0,40).forEach((it,i)=>{ t+=`\n${i+1}. ${titleOf(it.L)} — ${priceStr(it.L.f)}\n${linkFor(it.id)}\n`; });
+  if (its.length>40) t+=`\n…and ${its.length-40} more on the site`;
+  t+=`\n📸 All listings: ${baseUrl()}\n\n_⚠️ ${DISCLAIMER}_`;
+  const ok = await shareTo(t, null);
+  if (ok) askSent(its.map(x=>x.id), "today's digest");
+}
+$("#digestSave").onclick = async ()=>{
+  const v=Math.min(100,Math.max(1,parseInt($("#digestAfter").value,10)||5)); $("#digestAfter").value=v;
+  const {error}=await sb.from("settings").update({digest_after:v}).eq("id",1);
+  showMsg(error ? niceError(error) : "Saved.", error?"err":"ok", $("#shMsg")); renderShare();
+};
+
+/* ---------- announcements ---------- */
+function annSetup(){
+  if ($("#anGrp").options.length) return;
+  $("#anGrp").innerHTML = `<option value="all">🏠 Home page — everyone</option>`+GROUP_ORDER.filter(g=>can(g)).map(g=>`<option value="${g}">${esc(GROUP_NAMES[g])}</option>`).join("");
+  $("#anMarket").innerHTML = `<option value="">All countries</option>`+MARKETS.map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join("");
+}
+$("#anPost").onclick = async ()=>{
+  const title=$("#anTitle").value.trim(); if (title.length<2){ showMsg("Write a title.","err",$("#anMsg")); return; }
+  let link=$("#anLink").value.trim(); if (link && !/^https?:\/\//i.test(link)) link="https://"+link;
+  const days=+$("#anDays").value;
+  const row={active:true, grp:$("#anGrp").value, market:$("#anMarket").value||null, title, body:$("#anBody").value.trim()||null, link:link||null,
+    expires_at: days ? new Date(Date.now()+days*864e5).toISOString() : null};
+  const {error}=await sb.from("announcements").insert(row);
+  if (error){ showMsg(niceError(error),"err",$("#anMsg")); return; }
+  showMsg("Published — it's on the site now.","ok",$("#anMsg")); $("#anTitle").value=""; $("#anBody").value=""; $("#anLink").value=""; loadAnn();
+};
+async function loadAnn(){
+  annSetup();
+  const {data,error}=await sb.from("announcements").select("*").order("created_at",{ascending:false}).limit(100);
+  const box=$("#anList"); box.innerHTML="";
+  if (error){ box.innerHTML=`<div class="msg err">${esc(niceError(error))}</div>`; return; }
+  const now=Date.now(), on=r=>r.active && (!r.expires_at || Date.parse(r.expires_at)>now);
+  $("#nAnn").textContent = (data||[]).filter(on).length || "";
+  if (!data || !data.length){ box.innerHTML='<div class="empty">No announcements yet.</div>'; return; }
+  data.forEach(r=>{
+    const c=document.createElement("div"); c.className="card"; c.style.marginBottom="8px";
+    const where = r.grp==="all" ? "Home page" : (GROUP_NAMES[r.grp]||r.grp);
+    const until = r.expires_at ? "until "+fmtDate(Date.parse(r.expires_at)) : "no end date";
+    c.innerHTML=`<b>📢 ${esc(r.title)}</b><div class="hint">${esc(where)} · ${r.market?esc(marketName(r.market)):"All countries"} · ${on(r)?"🟢 Showing":"⚪ Off"} · ${until}</div>`+(r.body?`<p style="margin:6px 0 0">${esc(r.body)}</p>`:"");
+    const a=document.createElement("div"); a.className="actions";
+    const t=document.createElement("button"); t.type="button"; t.className="btn ghost small"; t.textContent = on(r) ? "Turn off" : "Show again";
+    t.onclick=async()=>{ const upd = on(r) ? {active:false} : {active:true, expires_at: r.expires_at && Date.parse(r.expires_at)<=now ? new Date(now+7*864e5).toISOString() : r.expires_at};
+      const {error}=await sb.from("announcements").update(upd).eq("id",r.id); if (error) alert(niceError(error)); loadAnn(); };
+    const d=document.createElement("button"); d.type="button"; d.className="btn ghost small"; d.textContent="Delete";
+    d.onclick=async()=>{ if (!confirm("Delete this announcement?")) return; const {error}=await sb.from("announcements").delete().eq("id",r.id); if (error) alert(niceError(error)); loadAnn(); };
+    a.append(t,d); c.appendChild(a); box.appendChild(c);
+  });
+}
+
+/* ---------- listings ---------- */
+async function loadAll(){
+  showMsg("Loading…","info",$("#listMsg"));
+  const {data,error} = await sb.from("listings").select(LIST_COLS+",note,reviewed").neq("status","rejected").order("created_at",{ascending:false}).limit(1000);
+  if (error){ showMsg(niceError(error),"err",$("#listMsg")); return; }
+  showMsg("","info",$("#listMsg"));
+  items = (data||[]).map(r=>{ const it=rowToItem(r); it.L.reviewed=!!r.reviewed; return it; });
+  if (!ME.full) items = items.filter(it=>can(GROUP[it.L.type]));
+  await adminPhones("listing", items, it=>it.id, (it,ph)=>{ it.L.f.phone=ph; });
+  renderAll();
+  focusFromLink();
+}
+// admin.html?review=<listing id> (from the seller's WhatsApp message): open that listing
+let FOCUSED=false;
+function focusFromLink(){
+  const id=(location.search.match(/[?&]review=([0-9a-f-]{36})/)||[])[1]; if (!id || FOCUSED) return; FOCUSED=true;
+  const it=items.find(x=>x.id===id);
+  if (!it){ showMsg("That listing isn't in the list any more (it may have been removed or rejected).","err",$("#listMsg")); return; }
+  const pend = it.L.status==="pending" || (it.L.status==="live" && !it.L.reviewed);
+  tab(pend ? "pending" : it.L.status==="sold" ? "sold" : "live");
+  setTimeout(()=>{ const c=document.querySelector(`[data-pane="${pend?"pending":it.L.status}"] [data-lid="${id}"]`) || document.querySelector(`[data-lid="${id}"]`);
+    if (c){ c.scrollIntoView({behavior:"smooth", block:"center"}); c.style.outline="3px solid #d4a017"; c.style.outlineOffset="3px"; setTimeout(()=>{ c.style.outline=""; },6000); } }, 300);
+}
+async function loadSettings(){
+  const {data} = await sb.from("settings").select("*").eq("id",1).maybeSingle();
+  drawHouseGroups(data && Array.isArray(data.house_sponsor_groups) ? data.house_sponsor_groups : null, data && ("house_sponsor_groups" in data));
+  if (data){ $("#maintOn").checked = !!data.maintenance; $("#maintMsg").value = data.maintenance_msg || ""; maintUi(); }
+  if (data && data.report_wa) $("#repWa").value = data.report_wa;
+  drawLimits(data);
+  if (data) $("#payOn").checked=!!data.pay_enabled;
+  if (data){ $("#payLink").value=data.pay_link||""; $("#payInsta").value=data.pay_instapay||""; $("#payWallet").value=data.pay_wallet||""; $("#adminWa").value=data.admin_wa||ADMIN_WA; $("#cashWa").value=data.cash_wa||""; $("#promoPrice").value=data.promo_price||""; $("#valueMax").value=data.value_max_egp||"";
+    $("#freeVeh").value=data.free_vehicles??1; $("#vehFee").value=data.extra_vehicle_fee??1000; $("#memPrice").value=data.member_price||""; $("#memDays").value=data.member_days||365;
+    $("#mnAdPrice").value=data.ad_price_month||""; $("#moveUrl").value=data.redirect_url||""; moveUi(); $("#boutOn").checked=!!data.boutique_on; $("#introMuted").checked=!!data.intro_muted; $("#rentMin").value = data.rent_min!=null ? data.rent_min : 500; }
+  const on = !data || data.auto_approve!==false;
+  $("#autoApprove").checked = on; autoHint(on);
+}
+function maintUi(){ const on=$("#maintOn").checked; const fl=$("#maintFlag"); if (fl) fl.hidden=!on; $("#maintCard").style.background = on ? "#fff3cd" : ""; $("#maintHint").textContent = on ? "Maintenance is ON — visitors see the maintenance page. Untick and Save to open the site again." : "You can still use admin while it's on. The page also shows by itself if the database is down or overloaded."; }
+async function saveMaint(){
+  const {error} = await sb.from("settings").update({maintenance:$("#maintOn").checked, maintenance_msg:$("#maintMsg").value.trim()||null}).eq("id",1);
+  if (error){ showMsg(niceError(error),"err",$("#listMsg")); $("#maintOn").checked=!$("#maintOn").checked; }
+  maintUi();
+}
+/* ---------- payments & value style ---------- */
+$("#paySave").onclick = async ()=>{
+  const link=$("#payLink").value.trim(), vm=parseInt(String($("#valueMax").value).replace(/\D/g,""),10);
+  if (link && !/^https:\/\//.test(link)){ showMsg("The payment link must start with https://","err",$("#payMsg")); return; }
+  const rec={pay_enabled:$("#payOn").checked, pay_link:link||null, pay_instapay:$("#payInsta").value.trim()||null, pay_wallet:$("#payWallet").value.trim()||null, promo_price:$("#promoPrice").value.trim()||null};
+  if (vm) rec.value_max_egp=vm;
+  { const w=String($("#adminWa").value).replace(/[^\d]/g,"").replace(/^00/,""); if (w && !/^(01[0125]\d{8}|(966|971|973|974|90|212|213|216|218|20)\d{7,10})$/.test(w)){ showMsg("Admin WhatsApp: 01xxxxxxxxx, or the country code + number.","err",$("#payMsg")); return; }
+    if (w) rec.admin_wa = w===ADMIN_WA ? null : w; }
+  { const w=String($("#cashWa").value).replace(/[^\d]/g,"").replace(/^00/,""); if (w && !/^(01[0125]\d{8}|(966|971|973|974|90|212|213|216|218|20)\d{7,10})$/.test(w)){ showMsg("Cash admin WhatsApp: 01xxxxxxxxx, or the country code + number.","err",$("#payMsg")); return; }
+    rec.cash_wa = w||null; }
+  const num=(id,d)=>{ const v=String($(id).value).trim(); return v==="" ? d : Number(v); };
+  Object.assign(rec,{free_vehicles:num("#freeVeh",1), extra_vehicle_fee:num("#vehFee",1000), member_price:num("#memPrice",0), member_days:num("#memDays",365)});
+  const {error}=await sb.from("settings").update(rec).eq("id",1);
+  showMsg(error ? (/column/.test(error.message||"") ? "Run the latest update SQL in Supabase first." : niceError(error)) : "Saved.", error?"err":"ok", $("#payMsg"));
+  if (!error) SITE_ST = Object.assign(SITE_ST||{}, rec);
+};
+
+
+/* ---------- The Boutique switch ---------- */
+$("#rentSave").onclick=async()=>{ const v=Math.round(Number($("#rentMin").value));
+  if (!(v>=0 && v<=10000000)) return showMsg("Enter a number from 0 to 10,000,000.","err",$("#listMsg"));
+  const {error}=await sb.from("settings").update({rent_min:v}).eq("id",1);
+  if (error) return showMsg(/column/.test(error.message||"")?"Run update24 in Supabase first.":niceError(error),"err",$("#listMsg"));
+  showMsg(`Lowest rent saved: ${v.toLocaleString("en-US")} EGP.`,"ok",$("#listMsg"));
+};
+$("#introMuted").onchange=async()=>{ const on=$("#introMuted").checked;
+  const {error}=await sb.from("settings").update({intro_muted:on}).eq("id",1);
+  if (error){ $("#introMuted").checked=!on; showMsg(/column/.test(error.message||"")?"Run update22 in Supabase first.":niceError(error),"err",$("#listMsg")); return; }
+  showMsg(on?"The intro now starts silent.":"The intro now tries to start with sound.","ok",$("#listMsg"));
+};
+$("#boutOn").onchange=async()=>{ const on=$("#boutOn").checked;
+  const {error}=await sb.from("settings").update({boutique_on:on}).eq("id",1);
+  if (error){ $("#boutOn").checked=!on; showMsg(/column/.test(error.message||"")?"Run the latest update SQL (update15) in Supabase first.":niceError(error),"err",$("#listMsg")); return; }
+  toast(on?"The Boutique is visible now.":"The Boutique is hidden."); };
+
+/* ---------- Admins ---------- */
+async function loadAdmins(){
+  const t=$("#admList"); const [l,r]=await Promise.all([sb.rpc("admin_list"), sb.rpc("is_root_admin")]);
+  if (l.error){ t.innerHTML=`<tr><td class="muted">${/admin_list/.test(l.error.message||"")?"Run the latest update SQL (update15) in Supabase first.":esc(niceError(l.error))}</td></tr>`; return; }
+  const root=!!r.data; $("#admAddBox").hidden=!root;
+  t.innerHTML="<tr><th>Email</th><th>Added</th><th></th></tr>";
+  (l.data||[]).forEach(a=>{ const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${a.is_root?"👑 ":""}${esc(a.email)}</td><td><small>${a.is_root?"root":fmtDate(a.added_at)+(a.added_by?" · by "+esc(a.added_by):"")}</small></td>`;
+    const td=document.createElement("td");
+    if (!a.is_root){ const sm=document.createElement("small"); sm.className="muted"; sm.style.display="block";
+      sm.textContent = a.perms ? "Can manage: "+[...PERM_SECTIONS,...PERM_FEATURES].filter(([k])=>a.perms.includes(k)).map(([,l])=>l.replace(/^\p{Extended_Pictographic}\S*\s/u,"")).join(", ") : "Full access";
+      tr.children[0].appendChild(sm); }
+    if (root && !a.is_root){ const pb=document.createElement("button"); pb.type="button"; pb.className="btn ghost small"; pb.textContent="Permissions";
+      pb.onclick=()=>permEditor(a, tr); td.appendChild(pb); }
+    if (root && !a.is_root){ const b=document.createElement("button"); b.type="button"; b.className="btn ghost small"; b.textContent="Remove";
+      b.onclick=async()=>{ if(!confirm("Remove "+a.email+" as admin?")) return; const {error}=await sb.rpc("admin_remove",{p_email:a.email}); if(error){ showMsg(niceError(error),"err",$("#admMsg")); return; } loadAdmins(); };
+      td.appendChild(b); }
+    tr.appendChild(td); t.appendChild(tr); });
+}
+function permEditor(a, tr){
+  const old=document.getElementById("permRow"); if (old){ const same=old.dataset.email===a.email; old.remove(); if (same) return; }
+  const row=document.createElement("tr"); row.id="permRow"; row.dataset.email=a.email;
+  const td=document.createElement("td"); td.colSpan=3;
+  const full = !a.perms, has=k=>!!a.perms && a.perms.includes(k);
+  const box=(list)=>list.map(([k,l])=>`<label class="showsold" style="color:var(--text);margin:2px 12px 2px 0;display:inline-flex"><input type="checkbox" value="${k}" ${has(k)?"checked":""}> ${esc(l)}</label>`).join("");
+  td.innerHTML=`<div class="card" style="margin:6px 0">
+    <b>Permissions for ${esc(a.email)}</b>
+    <label class="showsold" style="color:var(--text);font-weight:600;display:block;margin:8px 0"><input type="checkbox" class="pmFull" ${full?"checked":""}> Full access (everything)</label>
+    <div class="pmBody" ${full?"hidden":""}>
+      <div class="hint" style="margin:6px 0 2px">Sections (pages) they manage</div><div>${box(PERM_SECTIONS)}</div>
+      <div class="hint" style="margin:10px 0 2px">What they can do</div><div>${box(PERM_FEATURES)}</div>
+    </div>
+    <div class="actions"><button type="button" class="btn primary small pmSave">Save</button></div></div>`;
+  row.appendChild(td); tr.after(row);
+  td.querySelector(".pmFull").onchange=e=>{ td.querySelector(".pmBody").hidden=e.target.checked; };
+  td.querySelector(".pmSave").onclick=async()=>{
+    const isFull=td.querySelector(".pmFull").checked;
+    const perms = isFull ? null : [...td.querySelectorAll(".pmBody input:checked")].map(i=>i.value);
+    if (perms && !perms.some(p=>PERM_SECTIONS.some(([k])=>k===p))){ showMsg("Pick at least one section.","err",$("#admMsg")); return; }
+    const {error}=await sb.rpc("admin_set_perms",{p_email:a.email, p_perms:perms});
+    if (error){ showMsg(/admin_set_perms/.test(error.message||"")?"Run update17 in Supabase first.":niceError(error),"err",$("#admMsg")); return; }
+    showMsg("Saved — "+a.email+" sees the change next time they open admin.","ok",$("#admMsg")); loadAdmins();
+  };
+}
+$("#admAdd").onclick=async()=>{ const e=$("#admEmail").value.trim(); const {error}=await sb.rpc("admin_add",{p_email:e});
+  if (error){ showMsg(niceError(error),"err",$("#admMsg")); return; }
+  showMsg("Added. Now invite "+e+" in Supabase → Authentication → Users.","ok",$("#admMsg")); $("#admEmail").value=""; loadAdmins(); };
+/* ---------- moving the site ---------- */
+function moveUi(){ const on=!!$("#moveUrl").value.trim(); $("#moveCard").style.background = on ? "#fff3cd" : ""; }
+async function saveMove(url){
+  if (url && !/^https:\/\/[A-Za-z0-9.-]+\.[A-Za-z]{2,}(\/\S*)?$/.test(url)){ showMsg("The new address must start with https:// (e.g. https://www.example.com)","err",$("#listMsg")); return; }
+  if (url && url.replace(/\/+$/,"").startsWith(location.origin)){ showMsg("That's this same site.","err",$("#listMsg")); return; }
+  if (url && !confirm("Every page will forward visitors to "+url+". Continue?")) return;
+  const {error}=await sb.from("settings").update({redirect_url:url||null}).eq("id",1);
+  if (error){ showMsg(/column/.test(error.message||"")?"Run the latest update SQL in Supabase first.":niceError(error),"err",$("#listMsg")); return; }
+  $("#moveUrl").value=url||""; moveUi(); toast(url?"Forwarding is on.":"Forwarding is off.");
+}
+$("#moveSave").onclick=()=>saveMove($("#moveUrl").value.trim());
+$("#moveClear").onclick=()=>saveMove("");
+
+/* ---------- money: members, payments, projections ---------- */
+let moneyPays=[], moneyMembers=[], moneyInfo=null;
+const egp = n => fmtMoney(Math.round(Number(n)||0));
+async function loadMoney(){
+  showMsg("Loading…","info",$("#mnMsg"));
+  if (!can("money")){   // confirm-only admin: no totals, no payments list
+    const mems=await sb.from("members").select("phone,name,verified,verify_code,verify_asked,created_at").eq("verified",false).limit(500);
+    showMsg(mems.error?niceError(mems.error):"","err",$("#mnMsg"));
+    moneyInfo={}; moneyPays=[]; moneyMembers=mems.data||[]; renderMoney(); loadFees(); return;
+  }
+  const [mi, pays, mems] = await Promise.all([ sb.rpc("admin_money"),
+    sb.from("payments").select("*").order("paid_at",{ascending:false}).limit(2000),
+    sb.from("members").select("*").order("created_at",{ascending:false}).limit(2000) ]);
+  const err = mi.error||pays.error||mems.error;
+  if (err){ showMsg(/admin_money|payments|members|does not exist/.test(err.message||"") ? "Run the latest update SQL (update14) in Supabase first." : niceError(err),"err",$("#mnMsg")); return; }
+  showMsg("","",$("#mnMsg"));
+  moneyInfo=mi.data||{}; moneyPays=pays.data||[]; moneyMembers=mems.data||[];
+  renderMoney(); loadFees(); loadAlerts();
+}
+function renderMoney(){
+  const m=moneyInfo||{};
+  if (can("money")){
+  $("#mnTotal").textContent=egp(m.total); $("#mnMonth").textContent=egp(m.this_month); $("#mnMembers").textContent=fmt(m.members||0);
+  // last 12 months
+  const now=new Date(), months=[]; for(let i=11;i>=0;i--){ const d=new Date(now.getFullYear(), now.getMonth()-i, 1); months.push(d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")); }
+  const byM={}; (m.months||[]).forEach(x=>byM[x.m]=Number(x.t)); const mx=Math.max(1,...months.map(k=>byM[k]||0));
+  $("#mnBars").innerHTML = months.map(k=>`<div style="height:${Math.round((byM[k]||0)/mx*100)}%" data-t="${k}: ${egp(byM[k]||0)}"></div>`).join("");
+  // projection
+  const runMonth = Number(m.last_90||0)/3, adPrice=Number($("#mnAdPrice").value||m.ad_price||0), slots=Number($("#mnSlots").value||0), spons=Number(m.sponsors||0);
+  const adNow=spons*adPrice, adMore=(spons+slots)*adPrice;
+  $("#mnProj").innerHTML = `<tr><th></th><th class="n">Month</th><th class="n">Year</th></tr>
+    <tr><td>Payments run-rate (last 90 days)</td><td class="n">${egp(runMonth)}</td><td class="n">${egp(runMonth*12)}</td></tr>
+    <tr><td>Ads: ${spons} active sponsor${spons===1?"":"s"} × ${egp(adPrice)}</td><td class="n">${egp(adNow)}</td><td class="n">${egp(adNow*12)}</td></tr>
+    ${slots?`<tr><td>Ads with ${slots} more slot${slots===1?"":"s"}</td><td class="n">${egp(adMore)}</td><td class="n">${egp(adMore*12)}</td></tr>`:""}
+    <tr><td><b>Projected total</b></td><td class="n"><b>${egp(runMonth+adMore)}</b></td><td class="n"><b>${egp((runMonth+adMore)*12)}</b></td></tr>`;
+  }
+  // WhatsApp checks
+  const ver = moneyMembers.filter(x=>!x.verified && x.verify_code);
+  $("#mnVerN").textContent = ver.length?`(${ver.length})`:"";
+  const vb=$("#mnVerify"); vb.innerHTML = ver.length ? "" : '<div class="muted" style="font-size:14px">None waiting.</div>';
+  ver.forEach(x=>{ const r=document.createElement("div"); r.className="payrow"; r.style.alignItems="center";
+    r.innerHTML=`<span><b>${esc(x.phone)}</b>${x.name?" · "+esc(x.name):""}<br><small>code <b>${esc(x.verify_code)}</b> · ${fmtDate(x.verify_asked||x.created_at)}</small></span>`;
+    const ok=document.createElement("button"); ok.type="button"; ok.className="btn primary small"; ok.textContent="Verified";
+    ok.onclick=async()=>{ const {error}=await sb.rpc("admin_verify_member",{p_phone:x.phone}); if(error){ toast(niceError(error)); return; } tellCash(`✅ WhatsApp verified: ${x.phone}${x.name?" ("+x.name+")":""}`); loadMoney(); };
+    const no=document.createElement("button"); no.type="button"; no.className="btn ghost small"; no.textContent="✕";
+    no.onclick=async()=>{ if(!confirm("Delete this request?")) return; await sb.from("members").delete().eq("phone",x.phone).eq("verified",false); loadMoney(); };
+    const bx=document.createElement("span"); bx.style.cssText="display:flex;gap:6px"; bx.append(ok); if (can("money")) bx.append(no); r.appendChild(bx); vb.appendChild(r); });
+  // unpaid listings
+  const un = items.filter(x=>x.L.status==="unpaid");
+  $("#mnUnpaidN").textContent = un.length?`(${un.length})`:""; $("#nMoney").textContent = (un.length+ver.length) ? `(${un.length+ver.length})` : "";
+  const ub=$("#mnUnpaid"); ub.innerHTML = un.length ? "" : '<div class="muted" style="font-size:14px">None waiting.</div>';
+  un.forEach(x=>{ const r=document.createElement("div"); r.className="payrow"; r.style.alignItems="center";
+    r.innerHTML=`<span><a href="${esc(itemHref(x.id))}" target="_blank" rel="noopener"><b>${esc(titleOf(x.L))}</b></a><br><small>${esc(phoneOf(x.L))} · ${fmtDate(x.L.at||Date.now())}</small></span>`;
+    const ok=document.createElement("button"); ok.type="button"; ok.className="btn primary small"; ok.textContent="Paid ✓";
+    ok.onclick=async()=>{ const amt=prompt("Amount received (EGP)", String(feeOfType(x.L.type))); if(amt===null) return;
+      const how=prompt("Paid by (InstaPay / Wallet / Cash…)","InstaPay"); if(how===null) return;
+      const {error}=await sb.rpc("admin_mark_paid",{p_listing:x.id, p_amount:Number(amt)||0, p_method:how}); if(error){ toast(niceError(error)); return; }
+      tellCash(`💵 Fee received: ${egp(Number(amt)||0)} by ${how}\n${titleOf(x.L)}\nNumber: ${phoneOf(x.L)}\n${itemHref(x.id)}`);
+      toast("Recorded — the listing is out."); await loadAll(); loadMoney(); };
+    const wa=document.createElement("a"); wa.className="btn ghost small"; wa.target="_blank"; wa.rel="noopener"; wa.textContent="WhatsApp";
+    wa.href="https://wa.me/"+waNum(phoneOf(x.L))+"?text="+encodeURIComponent(`Hello, about your listing "${titleOf(x.L)}" on ${MARKET_NAME}: it goes live once the extra listing fee (${egp(feeOfType(x.L.type))}) is received.`);
+    const bx=document.createElement("span"); bx.style.cssText="display:flex;gap:6px"; bx.append(ok,wa); r.appendChild(bx); ub.appendChild(r); });
+  renderPeople(); renderPays();
+}
+function renderPeople(){
+  const nt=v=>String(v||"").toLowerCase().replace(/\s+/g,""); const q=nt($("#mnFind").value); const by={};
+  moneyMembers.forEach(x=>by[x.phone]={phone:x.phone,name:x.name,mem:x,total:0,n:0,last:null});
+  moneyPays.forEach(p=>{ const o=by[p.phone]||(by[p.phone]={phone:p.phone,name:"",mem:null,total:0,n:0,last:null}); o.total+=Number(p.amount)||0; o.n++; if(!o.last||p.paid_at>o.last) o.last=p.paid_at; });
+  const counts={}; items.forEach(x=>{ const ph=phoneOf(x.L); if(ph && x.L.status!=="rejected") counts[ph]=(counts[ph]||0)+1; });
+  const rows=Object.values(by).filter(o=>o.mem?.verified || o.n).filter(o=>!q || nt(o.phone+" "+(o.name||"")).includes(q))
+    .sort((a,b)=>b.total-a.total);
+  const t=$("#mnPeople"); t.innerHTML="<tr><th>Number</th><th>Member</th><th class='n'>Listings</th><th class='n'>Paid</th><th></th></tr>";
+  if (!rows.length){ t.insertAdjacentHTML("beforeend","<tr><td colspan='5' class='muted'>No members or payments yet.</td></tr>"); return; }
+  rows.forEach(o=>{ const tr=document.createElement("tr"); const act=o.mem && o.mem.verified && o.mem.member_until && new Date(o.mem.member_until)>new Date();
+    tr.innerHTML=`<td><b>${esc(o.phone)}</b>${o.name?"<br><small>"+esc(o.name)+"</small>":""}</td><td>${act?"⭐ until "+fmtDate(o.mem.member_until):o.mem&&o.mem.verified?"✅ verified":"–"}</td><td class="n">${counts[o.phone]||0}</td><td class="n">${egp(o.total)}${o.n>1?"<br><small>"+o.n+" payments</small>":""}</td>`;
+    const td=document.createElement("td"); const b=document.createElement("button"); b.type="button"; b.className="btn ghost small"; b.textContent="+ Pay";
+    b.onclick=()=>{ $("#mpPhone").value=o.phone; $("#mpKind").value="membership"; $("#mpAmount").value=(SITE_ST||{}).member_price||""; $("#mpAmount").focus(); $("#mpPhone").scrollIntoView({behavior:"smooth",block:"center"}); };
+    const w=document.createElement("a"); w.className="btn ghost small"; w.target="_blank"; w.rel="noopener"; w.textContent="WA"; w.href="https://wa.me/"+waNum(o.phone);
+    td.append(b,w); tr.appendChild(td); t.appendChild(tr); });
+}
+$("#mnFind").addEventListener("input", renderPeople);
+function renderPays(){
+  const t=$("#mnPays"); const kinds={membership:"Membership",extra_vehicle:"Extra vehicle",extra_listing:"Extra listing",pack:"Monthly pack",promote:"Promoted",ad:"Sponsor / ad",other:"Other"};
+  t.innerHTML="<tr><th>Date</th><th>Number</th><th>For</th><th class='n'>EGP</th><th></th></tr>";
+  if (!moneyPays.length){ t.insertAdjacentHTML("beforeend","<tr><td colspan='5' class='muted'>No payments yet.</td></tr>"); return; }
+  moneyPays.slice(0,200).forEach(p=>{ const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${fmtDate(p.paid_at)}</td><td>${esc(p.phone)}</td><td>${kinds[p.kind]||esc(p.kind)}${p.method?"<br><small>"+esc(p.method)+"</small>":""}${p.note?"<br><small>"+esc(p.note)+"</small>":""}</td><td class="n">${fmt(Number(p.amount)||0)}</td>`;
+    const td=document.createElement("td"); const d=document.createElement("button"); d.type="button"; d.className="btn ghost small"; d.textContent="🗑";
+    d.onclick=async()=>{ if(!confirm("Delete this payment record?")) return; const {error}=await sb.from("payments").delete().eq("id",p.id); if(error){ toast(niceError(error)); return; } loadMoney(); };
+    td.appendChild(d); tr.appendChild(td); t.appendChild(tr); });
+}
+$("#mnCsv").onclick=()=>{
+  const q=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
+  const csv=["date,number,for,method,amount_egp,note"].concat(moneyPays.map(p=>[p.paid_at.slice(0,10),p.phone,p.kind,p.method,p.amount,p.note].map(q).join(","))).join("\n");
+  const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv"})); a.download="high-end-payments.csv"; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),20000);
+};
+$("#mnSlots").addEventListener("input", renderMoney);
+$("#mnAdPrice").addEventListener("input", renderMoney);
+$("#mnAdSave").onclick=async()=>{ const v=Number($("#mnAdPrice").value||0); const {error}=await sb.from("settings").update({ad_price_month:v}).eq("id",1); toast(error?niceError(error):"Saved."); };
+$("#mpSave").onclick=async()=>{
+  const ph=normPhone($("#mpPhone").value, "EG") || normPhone($("#mpPhone").value, getMarket()); const amt=Number($("#mpAmount").value);
+  if (!ph){ showMsg("Enter a valid WhatsApp number.","err",$("#mpMsg")); return; }
+  if (!(amt>=0) || $("#mpAmount").value===""){ showMsg("Enter the amount.","err",$("#mpMsg")); return; }
+  const kind=$("#mpKind").value, method=$("#mpMethod").value, note=$("#mpNote").value.trim()||null;
+  let error;
+  if (kind==="membership"){ ({error}=await sb.rpc("admin_add_membership",{p_phone:ph,p_amount:amt,p_method:method}));
+    if (!error && note){ const last=await sb.from("payments").select("id").eq("phone",ph).order("paid_at",{ascending:false}).limit(1).maybeSingle(); if(last.data) await sb.from("payments").update({note}).eq("id",last.data.id); } }
+  else ({error}=await sb.from("payments").insert({phone:ph, amount:amt, kind, method, note}));
+  if (error){ showMsg(niceError(error),"err",$("#mpMsg")); return; }
+  showMsg(kind==="membership" ? `Saved. ${ph} is a member for ${(SITE_ST||{}).member_days||365} days more; their waiting vehicles are out.` : "Saved.","ok",$("#mpMsg"));
+  if (kind==="membership") tellCash(`⭐ Membership started / extended: ${ph}\n${egp(amt)} by ${method}`);
+  $("#mpAmount").value=""; $("#mpNote").value=""; if (kind==="membership") await loadAll(); loadMoney();
+};
+/* ---------- Payment confirmations: limited admins tell the cash admin; full admins see an alert list ---------- */
+function tellCash(text){
+  if (ME.full) return;   // full admins see everything already
+  const v=String((SITE_ST&&(SITE_ST.cash_wa||SITE_ST.admin_wa))||ADMIN_WA).replace(/\D/g,""), n=/^0/.test(v)?"2"+v:v;
+  const who=(sbUserEmail||"").trim();
+  const u="https://wa.me/"+n+"?text="+encodeURIComponent(text+"\n\nConfirmed by "+(who||"an admin")+" on "+MARKET_NAME);
+  const w=window.open(u,"_blank","noopener"); if(!w) location.href=u;
+}
+let sbUserEmail="";
+(async()=>{ try{ const {data}=await sb.auth.getUser(); sbUserEmail=(data&&data.user&&data.user.email)||""; }catch(e){} })();
+async function loadAlerts(){
+  if (!ME.full) return;
+  const {data,error}=await sb.from("money_alerts").select("*").eq("seen",false).order("at",{ascending:false}).limit(200);
+  const card=$("#mnAlertCard"); if (error||!data){ card.hidden=true; return; }
+  card.hidden=!data.length; $("#mnAlertN").textContent=data.length?`(${data.length})`:"";
+  const icon={verified:"✅",extra_listing:"💵",membership:"⭐",pack:"📦"};
+  $("#mnAlerts").innerHTML=data.map(a=>`<div class="payrow"><span>${icon[a.kind]||"💳"} <b>${esc(a.phone||"")}</b>${a.amount!=null?" · "+egp(a.amount):""}<br><small>${esc(a.note||a.kind)} · by ${esc(a.by_email||"?")} · ${fmtDate(a.at)}</small></span></div>`).join("");
+  const nb=$("#nMoney"); const cur=parseInt((nb.textContent||"").replace(/\D/g,""))||0; if (data.length) nb.textContent=`(${cur+data.length})`;
+}
+$("#mnAlertSeen").onclick=async()=>{ const {error}=await sb.from("money_alerts").update({seen:true}).eq("seen",false); if(error){ toast(niceError(error)); return; } loadAlerts(); };
+
+/* ---------- Schools, rentals, tours & safaris (applications from the site) ---------- */
+const SVC_KINDS_A = {school:"🎓 Riding school", rental:"🔑 Rental", tour:"🧭 Guided tours", safari:"🏜️ Desert safari", sea:"🌊 Sea trips & safari"};
+async function loadSvcAdmin(){
+  const {data,error}=await sb.from("providers").select("*").neq("status","rejected").order("created_at",{ascending:false}).limit(500);
+  const box=$("#svList"); if (!box) return;
+  if (error){ box.innerHTML=""; showMsg(/providers/.test(error.message||"")?"Run update21 in Supabase first.":niceError(error),"err",$("#svMsg")); return; }
+  const list=(data||[]).sort((a,b)=>(a.status==="pending"?0:1)-(b.status==="pending"?0:1));
+  const pend=list.filter(x=>x.status==="pending").length; $("#nSvc").textContent=pend?`(${pend})`:"";
+  box.innerHTML=list.length?"":'<div class="muted" style="font-size:14px">No applications yet.</div>';
+  list.forEach(p=>{ const r=document.createElement("div"); r.className="sp-row";
+    const x=document.createElement("div"); x.className="x";
+    if (p.photo && /^data:image\/jpeg;base64,/.test(p.photo)){ const im=document.createElement("img"); im.src=p.photo; im.alt=""; im.style.cssText="width:72px;height:72px;object-fit:cover;border-radius:10px;float:left;margin-right:10px"; x.appendChild(im); }
+    const st={pending:"Waiting",live:"Showing",hidden:"Hidden"}[p.status]||p.status;
+    x.insertAdjacentHTML("beforeend",`<b dir="auto">${esc(p.name)} <span class="pill${p.status==="live"?"":" off"}">${st}</span></b><span style="white-space:pre-line">${SVC_KINDS_A[p.kind]||p.kind} · ${(p.groups||[]).map(g=>GROUP_NAMES[g]||g).join(", ")} · ${esc(marketName(p.market))}${p.city?" · "+esc(p.city):""}${p.price_from?" · from "+esc(p.price_from):""}
+${esc(p.phone)} · ${fmtDate(Date.parse(p.created_at))}${p.about?"\n"+esc(p.about):""}</span>${p.link&&/^https:\/\//.test(p.link)?`<a href="${esc(p.link)}" target="_blank" rel="noopener noreferrer" style="display:block">Open their page</a>`:""}`);
+    const tools=document.createElement("div"); tools.className="admin"; tools.style.cssText="border:0;margin:0;padding:0";
+    const set=stt=>async()=>{ const {error}=await sb.from("providers").update({status:stt}).eq("id",p.id); if(error){ toast(niceError(error)); return; } loadSvcAdmin(); };
+    if (p.status!=="live") tools.append(btn("✅ Approve","",set("live")));
+    if (p.status==="live") tools.append(btn("Hide","",set("hidden")));
+    if (p.status==="pending") tools.append(btn("✕ Reject","",set("rejected")));
+    tools.append(btn("✎ Edit","",async()=>svaLoad(p)));
+    const wa=document.createElement("a"); wa.className="btn ghost small"; wa.target="_blank"; wa.rel="noopener"; wa.textContent="WhatsApp"; wa.href="https://wa.me/"+waNum(p.phone); tools.append(wa);
+    r.append(x,tools); box.appendChild(r); });
+}
+
+
+/* ---------- add a business for its owner ---------- */
+const SVA_GROUPS=[["moto","🏍️ Motorcycles"],["desert","🏜️ Dune Riders"],["boat","🛥️ Marine"]];
+let svaPhoto=null, svaOldPhoto=null;
+(function(){
+  const ms=$("#svaMarket"); if (!ms) return; MARKETS.forEach(m=>ms.add(new Option(m.name,m.id)));
+  const gb=$("#svaGroups"); SVA_GROUPS.forEach(([k,n])=>{ const l=document.createElement("label"); l.innerHTML=`<input type="checkbox" value="${k}"> ${n}`; gb.appendChild(l); });
+  svaPhoto=photoPicker("svaPh"); $("#svaPhotoBox").appendChild(svaPhoto);
+  const kd=()=>{ if ($("#svaId").value) return; const k=$("#svaKind").value; gb.querySelectorAll("input").forEach(i=>i.checked = i.value===({school:"moto",rental:"moto",tour:"moto",safari:"desert",sea:"boat"}[k])); };
+  $("#svaKind").onchange=kd; kd();
+})();
+function svaClear(){ $("#svaId").value=""; ["svaName","svaPhone","svaCity","svaPrice","svaLink","svaAbout"].forEach(i=>$("#"+i).value=""); $("#svaLive").checked=true; svaOldPhoto=null; svaPhoto.reset(); $("#svaSave").textContent="Save business"; $("#svaKind").onchange(); }
+$("#svaClear").onclick=()=>{ svaClear(); showMsg("","",$("#svaMsg")); };
+function svaLoad(p){
+  $("#svaId").value=p.id; $("#svaKind").value=p.kind; $("#svaMarket").value=p.market; $("#svaName").value=p.name||""; $("#svaPhone").value=p.phone||"";
+  $("#svaCity").value=p.city||""; $("#svaPrice").value=p.price_from||""; $("#svaLink").value=p.link||""; $("#svaAbout").value=p.about||"";
+  $("#svaGroups").querySelectorAll("input").forEach(i=>i.checked=(p.groups||[]).includes(i.value)); $("#svaLive").checked=p.status==="live";
+  svaPhoto.reset(); svaOldPhoto=p.photo||null; $("#svaSave").textContent="Save changes";
+  showMsg(`Editing ${p.name}.`+(svaOldPhoto?" Its photo stays unless you pick a new one.":""),"info",$("#svaMsg")); $("#svaCard").scrollIntoView({behavior:"smooth"});
+}
+$("#svaSave").onclick=async()=>{
+  const mk=$("#svaMarket").value, ph=anyPhone($("#svaPhone").value,mk), name=$("#svaName").value.trim(), link=$("#svaLink").value.trim();
+  const groups=[...$("#svaGroups").querySelectorAll("input:checked")].map(i=>i.value);
+  if (name.length<2) return showMsg("Enter the business name.","err",$("#svaMsg"));
+  if (!ph) return showMsg(PHONE_HELP,"err",$("#svaMsg"));
+  if (!groups.length) return showMsg("Pick where it shows: Motorcycles, Dune Riders or Marine.","err",$("#svaMsg"));
+  if (link && !/^https:\/\/[A-Za-z0-9.-]+\.[A-Za-z]{2,}(\/[^\s"<>]*)?$/.test(link)) return showMsg("The link must start with https://","err",$("#svaMsg"));
+  const row={kind:$("#svaKind").value, groups, market:mk, name, phone:ph, city:$("#svaCity").value.trim()||null, about:$("#svaAbout").value.trim()||null,
+    price_from:$("#svaPrice").value.trim()||null, link:link||null};
+  if (svaPhoto.value) row.photo=svaPhoto.value;
+  const live=$("#svaLive").checked, id=$("#svaId").value;
+  $("#svaSave").disabled=true;
+  try{
+    let pid=id;
+    if (id){ const {error}=await sb.from("providers").update({...row, status: live?"live":"hidden"}).eq("id",id); if (error) throw error; }
+    else {
+      const {data,error}=await sb.from("providers").insert(row).select("id").single(); if (error) throw error; pid=data.id;
+      if (live){ const {error:e2}=await sb.from("providers").update({status:"live"}).eq("id",pid); if (e2) throw e2; }
+    }
+    const msg=`Hello, this is High End Communities. ${name} is now listed in ${groups.map(g=>GROUP_NAMES[g]||g).join(", ")} on ${MARKET_NAME}${live?"":" (hidden for now)"}. Customers reach you on this WhatsApp number. Send us any changes here.`;
+    showMsg("","",$("#svaMsg"));
+    const m=$("#svaMsg"); m.className="msg ok"; m.textContent=`Saved — ${name}${live?" is showing on the site.":" is saved but hidden."} `;
+    const a=document.createElement("a"); a.className="btn ghost small"; a.target="_blank"; a.rel="noopener"; a.href="https://wa.me/"+waNum(ph)+"?text="+encodeURIComponent(msg); a.textContent="✉️ Tell the owner on WhatsApp"; m.appendChild(a);
+    svaClear(); loadSvcAdmin();
+  }catch(e){ showMsg(niceError(e),"err",$("#svaMsg")); }
+  finally{ $("#svaSave").disabled=false; }
+};
+
+/* ---------- viewing slot + booked checks ---------- */
+function fmtWhen(t){ try{ return new Date(t).toLocaleString("en-GB",{weekday:"short",day:"numeric",month:"short",hour:"numeric",minute:"2-digit"}); }catch(e){ return String(t); } }
+function slotTools(item){
+  const L=item.L, a=document.createElement("div"); a.className="admin";
+  const w=document.createElement("input"); w.maxLength=120; w.placeholder="When to see it, e.g. Fri & Sat 5–9 pm"; w.value=L.checkWhen||""; w.style.cssText="flex:1 1 180px";
+  const p=document.createElement("input"); p.maxLength=160; p.placeholder="Where, e.g. Nasr City, near City Stars"; p.value=L.checkWhere||""; p.style.cssText="flex:1 1 180px";
+  a.append(w,p, btn(L.checkWhen||L.checkWhere?"📍 Update":"📍 Set viewing","",async()=>{
+    const patch={check_when:w.value.trim()||null, check_where:p.value.trim()||null};
+    const {error}=await sb.from("listings").update(patch).eq("id",item.id); if (error) throw error;
+    L.checkWhen=patch.check_when; L.checkWhere=patch.check_where; renderAll();
+  }));
+  if (can("inspect")) a.append(btn("📅 Book a check","ok",async()=>openBook(item)));
+  return a;
+}
+function checkMsgs(c){
+  const when=fmtWhen(c.at), link=c.listing_id?linkFor(c.listing_id):"", t=c.title||"the item";
+  const partner=c.partner_name?`\n🔧 ${c.partner_name}`:"";
+  return {
+    owner:`Hello, this is High End Communities about your listing *${t}*.\nA buyer${c.buyer_name?" ("+c.buyer_name+")":""} would like to see it${c.partner_name?" with "+c.partner_name:""}.\n\n🗓 ${when}\n📍 ${c.place}\n\nPlease reply to confirm, or suggest another time.`,
+    buyer:`Hello${c.buyer_name?" "+c.buyer_name:""}, this is High End Communities. Your check is booked:\n*${t}*${link?"\n"+link:""}\n\n🗓 ${when}\n📍 ${c.place}${partner}${c.note?"\n📝 "+c.note:""}\n\nReply here if you need to change it.`,
+    partner:`Hello${c.partner_name?" "+c.partner_name:""}, this is High End Communities. Please check *${t}*${link?"\n"+link:""}\n\n🗓 ${when}\n📍 ${c.place}${c.buyer_name?"\nBuyer: "+c.buyer_name:""}${c.note?"\n📝 "+c.note:""}\n\nPlease reply to confirm.`
+  };
+}
+function checkSends(c, partnerPhone){
+  const m=checkMsgs(c), d=document.createElement("div"); d.className="chk-sends";
+  const add=(ph,txt,label)=>{ if(!ph) return; const a=document.createElement("a"); a.className="btn ghost small"; a.target="_blank"; a.rel="noopener"; a.href="https://wa.me/"+waNum(ph)+"?text="+encodeURIComponent(txt); a.textContent=label; d.appendChild(a); };
+  add(c.owner_phone,m.owner,"✉️ Owner"); add(c.buyer_phone,m.buyer,"✉️ Buyer"); add(partnerPhone,m.partner,"✉️ Partner");
+  return d;
+}
+async function openBook(item){
+  const L=item.L, g=GROUP[L.type], mk=marketOf(L), kind=INSPECT[g]||"expert";
+  const ex=(await loadExperts(true)).filter(e=>e.active!==false && e.market===mk && (e.groups||[]).includes(g));
+  const ov=document.createElement("div"); ov.className="modal"; const c=document.createElement("div"); c.className="card"; c.style.maxWidth="560px";
+  const pre=new Date(Date.now()+864e5); pre.setHours(17,0,0,0); const loc=new Date(pre.getTime()-pre.getTimezoneOffset()*6e4).toISOString().slice(0,16);
+  c.innerHTML=`<h3 style="margin:0 0 4px">📅 Book a check</h3><p class="hint" style="margin:0 0 10px"></p>
+  <div class="bookgrid">
+    <div><label for="bkBuyer">Buyer's name</label><input id="bkBuyer" maxlength="60"></div>
+    <div><label for="bkBuyerPh">Buyer's WhatsApp</label><input id="bkBuyerPh" type="tel" inputmode="tel" placeholder="01xxxxxxxxx"></div>
+    <div class="full"><label for="bkPartner">Partner</label><select id="bkPartner"></select></div>
+    <div class="full" id="bkOtherBox" hidden><label for="bkOther">Partner name</label><input id="bkOther" maxlength="80"></div>
+    <div><label for="bkAt">Date and time</label><input id="bkAt" type="datetime-local"></div>
+    <div><label for="bkPlace">Place</label><input id="bkPlace" maxlength="160" placeholder="e.g. the owner's garage, Nasr City"></div>
+    <div class="full"><label for="bkNote">Note (optional)</label><input id="bkNote" maxlength="300" placeholder="e.g. bring the papers and spare key"></div>
+  </div>
+  <div class="actions"><button type="button" class="btn primary small" id="bkSave">Save booking</button><button type="button" class="btn ghost small" id="bkClose">Close</button></div>
+  <div class="msg" id="bkMsg"></div>`;
+  c.querySelector(".hint").textContent=titleOf(L)+(checkSlotText(L)?" · usually seen: "+checkSlotText(L):"");
+  ov.appendChild(c); document.body.appendChild(ov);
+  const sel=$("#bkPartner"); sel.add(new Option("No partner — the buyer checks it","")); ex.forEach(e=>sel.add(new Option(`${e.kind==="workshop"?"🔧":"🔎"} ${e.name}${e.city?" · "+e.city:""}`,e.id))); sel.add(new Option("Other partner…","other"));
+  if (ex.find(e=>e.kind===kind)) sel.value=ex.find(e=>e.kind===kind).id;
+  sel.onchange=()=>{ $("#bkOtherBox").hidden=sel.value!=="other"; }; sel.onchange();
+  $("#bkAt").value=loc; $("#bkPlace").value=L.checkWhere||"";
+  const close=()=>ov.remove(); $("#bkClose").onclick=close; ov.onclick=e=>{ if(e.target===ov) close(); };
+  $("#bkSave").onclick=async()=>{
+    const bph=$("#bkBuyerPh").value.trim()?anyPhone($("#bkBuyerPh").value,mk):null, at=$("#bkAt").value, place=$("#bkPlace").value.trim();
+    if ($("#bkBuyerPh").value.trim() && !bph) return showMsg(PHONE_HELP,"err",$("#bkMsg"));
+    if (!at || isNaN(Date.parse(at))) return showMsg("Pick the date and time.","err",$("#bkMsg"));
+    if (place.length<2) return showMsg("Write where the check happens.","err",$("#bkMsg"));
+    const e=ex.find(x=>x.id===sel.value);
+    const row={listing_id:item.id, title:titleOf(L).slice(0,160), owner_phone:(String(L.f.phone||"").replace(/\D/g,"")||null), buyer_name:$("#bkBuyer").value.trim()||null, buyer_phone:bph,
+      expert_id:e?e.id:null, partner_name:e?e.name:(sel.value==="other"?($("#bkOther").value.trim()||null):null), at:new Date(at).toISOString(), place, note:$("#bkNote").value.trim()||null, status:"booked"};
+    $("#bkSave").disabled=true;
+    const {error}=await sb.from("checks").insert(row);
+    if (error){ $("#bkSave").disabled=false; return showMsg(/checks/.test(error.message||"")&&/exist|schema/i.test(error.message||"")?"Run update22 in Supabase first.":niceError(error),"err",$("#bkMsg")); }
+    const m=$("#bkMsg"); m.className="msg ok"; m.textContent="Booked. Send the messages:"; m.appendChild(checkSends(row, e?e.phone:null));
+    $("#bkSave").hidden=true; loadChecks();
+  };
+}
+async function loadChecks(){
+  const box=$("#chkList"); if (!box || !can("inspect")) return;
+  let q=sb.from("checks").select("*").order("at",{ascending:true}).limit(300);
+  if (!$("#chkAll").checked) q=q.eq("status","booked");
+  const [{data,error}, ex]=await Promise.all([q, loadExperts(true)]);
+  if (error){ box.innerHTML=""; showMsg(/checks/.test(error.message||"")?"Run update22 in Supabase to turn this on.":niceError(error),"err",$("#chkMsg")); return; }
+  box.innerHTML=(data||[]).length?"":'<div class="muted" style="font-size:14px">No checks booked.</div>';
+  (data||[]).forEach(c=>{
+    const r=document.createElement("div"); r.className="sp-row"+(c.status==="booked"?"":" off");
+    const x=document.createElement("div"); x.className="x"; const past=c.status==="booked" && Date.parse(c.at)<Date.now()-3*36e5;
+    x.insertAdjacentHTML("beforeend",`<b dir="auto">🗓 ${esc(fmtWhen(c.at))} · ${esc(c.title||"")} <span class="pill${c.status==="booked"?"":" off"}">${c.status==="booked"?(past?"Past — mark done?":"Booked"):c.status==="done"?"Done":"Cancelled"}</span></b><span style="white-space:pre-line">📍 ${esc(c.place)}${c.partner_name?" · 🔧 "+esc(c.partner_name):""}${c.buyer_name||c.buyer_phone?"\nBuyer: "+esc(c.buyer_name||"")+(c.buyer_phone?" "+esc(c.buyer_phone):""):""}${c.note?"\n📝 "+esc(c.note):""}${c.created_by?"\nBooked by "+esc(c.created_by):""}</span>`);
+    const tools=document.createElement("div"); tools.className="admin"; tools.style.cssText="border:0;margin:0;padding:0";
+    const e=(ex||[]).find(z=>z.id===c.expert_id);
+    if (c.status==="booked"){ tools.append(...checkSends(c, e?e.phone:null).childNodes); }
+    const set=st=>async()=>{ const {error}=await sb.from("checks").update({status:st}).eq("id",c.id); if(error) throw error; loadChecks(); };
+    if (c.status==="booked") tools.append(btn("✓ Done","ok",set("done")), btn("Cancel","",set("cancelled"),"Tap again: cancel"));
+    else tools.append(btn("↺ Booked again","",set("booked")));
+    if (can("money")) tools.append(btn("🗑","bad",async()=>{ const {error}=await sb.from("checks").delete().eq("id",c.id); if(error) throw error; loadChecks(); },"Delete?"));
+    r.append(x,tools); box.appendChild(r);
+  });
+}
+$("#chkAll").onchange=loadChecks;
+/* ---------- Free listings, fees & promotions ---------- */
+const FEE_KEYS=["watch","bag","art","estate","boat","desert","equine","moto","car"];
+let feeSt={rules:{}, packs:[]};
+function feeGrpOf(t){ return (t==="bike"||t==="car")?"vehicle":({gear:"moto",acc:"moto",carpart:"car",boatpart:"boat",equinepart:"equine",dune:"desert",dunepart:"desert"}[t]||t); }
+function feeOfType(t){ const st=SITE_ST||{}, g=feeGrpOf(t); const fee = g==="vehicle" ? (st.extra_vehicle_fee??1000) : Number(((st.fee_rules||{})[g]||{}).fee||0);
+  const sale = Number(st.fee_sale_pct||0)>0 && (!st.fee_sale_until || Date.parse(st.fee_sale_until)>Date.now()) ? Number(st.fee_sale_pct) : 0; return feeAfter(fee, sale); }
+function feeGrpSelect(sel, withAll){ sel.innerHTML=""; if(withAll) sel.add(new Option("All sections","all")); Object.entries(FEE_GROUPS).forEach(([k,v])=>sel.add(new Option(v,k))); }
+function drawFeeRules(){
+  const t=$("#feRules"); t.innerHTML="<tr><th>Section</th><th class='n'>Free</th><th class='n'>Fee (EGP)</th></tr>";
+  FEE_KEYS.forEach(k=>{ const r=feeSt.rules[k]||{}; if(!can(k==="bag"?"bag":k)) return; const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${FEE_ICON[k]} ${esc(FEE_GROUPS[k])}</td><td class="n"><input data-free="${k}" type="number" min="0" max="1000" inputmode="numeric" style="width:70px" value="${r.free??""}"></td><td class="n"><input data-fee="${k}" type="number" min="0" inputmode="numeric" style="width:90px" value="${r.fee??""}"></td>`; t.appendChild(tr); });
+}
+function drawPacks(){
+  const t=$("#fePacks"); t.innerHTML="<tr><th>Section</th><th class='n'>Listings</th><th class='n'>Price</th><th class='n'>Days</th><th></th></tr>";
+  if(!feeSt.packs.length) t.insertAdjacentHTML("beforeend","<tr><td colspan='5' class='muted'>No packs.</td></tr>");
+  feeSt.packs.forEach((p,i)=>{ const tr=document.createElement("tr");
+    tr.innerHTML=`<td><select data-k="grp" style="min-width:130px"></select></td><td class="n"><input data-k="n" type="number" min="1" style="width:60px" value="${Number(p.n)||""}"></td><td class="n"><input data-k="price" type="number" min="0" style="width:80px" value="${Number(p.price)||""}"></td><td class="n"><input data-k="days" type="number" min="1" style="width:60px" value="${Number(p.days)||30}"></td>`;
+    const sel=tr.querySelector("select"); feeGrpSelect(sel); sel.value=p.grp||"watch";
+    tr.querySelectorAll("[data-k]").forEach(el=>el.onchange=()=>{ p[el.dataset.k]= el.dataset.k==="grp"?el.value:Number(el.value); });
+    const td=document.createElement("td"); const d=document.createElement("button"); d.type="button"; d.className="btn ghost small"; d.textContent="✕";
+    d.onclick=()=>{ feeSt.packs.splice(i,1); drawPacks(); }; td.appendChild(d); tr.appendChild(td); t.appendChild(tr); });
+  const fp=$("#fpPack"); fp.innerHTML="";
+  feeSt.packs.forEach((p,i)=>fp.add(new Option(`${FEE_GROUPS[p.grp]||p.grp}: ${p.n} listings / ${Number(p.days)||30} days · ${fmtMoney(p.price)}`, i)));
+  fp.onchange=()=>{ const p=feeSt.packs[fp.value]; if(p) $("#fpAmount").value=p.price; }; fp.onchange();
+}
+async function loadFees(){
+  const {data,error}=await sb.from("settings").select("fee_rules,fee_packs,fee_sale_pct,fee_sale_until,fee_sale_note").eq("id",1).maybeSingle();
+  if(error){ showMsg(/fee_/.test(error.message||"")?"Run update18 in Supabase first.":niceError(error),"err",$("#feMsg")); return; }
+  feeSt={rules:JSON.parse(JSON.stringify(data.fee_rules||{})), packs:JSON.parse(JSON.stringify(data.fee_packs||[]))};
+  $("#feSalePct").value=data.fee_sale_pct||0; $("#feSaleUntil").value=data.fee_sale_until?data.fee_sale_until.slice(0,10):""; $("#feSaleNote").value=data.fee_sale_note||"";
+  drawPacks(); if (!can("money")) return; drawFeeRules(); loadFeeCodes(); loadCredits();
+}
+$("#fePackAdd").onclick=()=>{ feeSt.packs.push({grp:"watch",n:5,price:0,days:30}); drawPacks(); };
+$("#feSave").onclick=async()=>{
+  const rules={...feeSt.rules};
+  document.querySelectorAll("#feRules [data-free]").forEach(el=>{ const k=el.dataset.free, fe=document.querySelector(`#feRules [data-fee="${k}"]`);
+    if(el.value===""&&fe.value===""){ delete rules[k]; return; } rules[k]={free: el.value===""?null:Math.max(0,Math.round(Number(el.value))), fee: Math.max(0,Number(fe.value)||0)}; });
+  const packs=feeSt.packs.filter(p=>Number(p.n)>0&&Number(p.price)>0).map(p=>({grp:p.grp, n:Math.round(Number(p.n)), price:Number(p.price), days:Math.round(Number(p.days))||30}));
+  const pct=Math.min(90,Math.max(0,Math.round(Number($("#feSalePct").value)||0))), u=$("#feSaleUntil").value;
+  const {error}=await sb.from("settings").update({fee_rules:rules, fee_packs:packs, fee_sale_pct:pct, fee_sale_until:u?new Date(u+"T23:59:59").toISOString():null, fee_sale_note:$("#feSaleNote").value.trim()||null}).eq("id",1);
+  showMsg(error?niceError(error):"Saved.", error?"err":"ok", $("#feMsg")); if(!error){ SITE_ST=Object.assign(SITE_ST||{},{fee_rules:rules,fee_packs:packs,fee_sale_pct:pct}); loadFees(); }
+};
+$("#fpSave").onclick=async()=>{
+  const ph=normPhone($("#fpPhone").value,"EG")||normPhone($("#fpPhone").value,getMarket()); const p=feeSt.packs[$("#fpPack").value];
+  if(!ph){ showMsg("Enter a valid WhatsApp number.","err",$("#fpMsg")); return; } if(!p){ showMsg("Add a pack first.","err",$("#fpMsg")); return; }
+  const {data,error}=await sb.rpc("admin_add_credits",{p_phone:ph,p_grp:p.grp,p_n:Number(p.n),p_amount:Number($("#fpAmount").value)||0,p_method:$("#fpMethod").value,p_days:Number(p.days)||30});
+  if(error){ showMsg(niceError(error),"err",$("#fpMsg")); return; }
+  showMsg(`Started. ${Number(p.n)-Number(data)} waiting listing(s) went out; ${data} left as credit for ${Number(p.days)||30} days.`,"ok",$("#fpMsg")); $("#fpPhone").value="";
+  tellCash(`📦 Pack started: ${ph}\n${FEE_GROUPS[p.grp]||p.grp}: ${p.n} listings / ${Number(p.days)||30} days\n${egp(Number($("#fpAmount").value)||0)} by ${$("#fpMethod").value}`);
+  await loadAll(); loadMoney(); loadCredits();
+};
+async function loadCredits(){
+  const {data}=await sb.from("seller_credits").select("*").order("updated_at",{ascending:false}).limit(300);
+  const t=$("#feCredits"); const rows=(data||[]).filter(c=>c.n>0).filter(c=>!c.expires_at||Date.parse(c.expires_at)>Date.now());
+  t.innerHTML=rows.length?"<tr><th>Number</th><th>Section</th><th class='n'>Left</th><th>Until</th></tr>":"";
+  rows.forEach(c=>t.insertAdjacentHTML("beforeend",`<tr><td>${esc(c.phone)}</td><td>${esc(FEE_GROUPS[c.grp]||c.grp)}</td><td class="n">${c.n}</td><td>${c.expires_at?fmtDate(c.expires_at):"–"}</td></tr>`));
+}
+async function loadFeeCodes(){
+  const [c,u]=await Promise.all([sb.from("fee_codes").select("*").order("created_at",{ascending:false}), sb.from("fee_code_uses").select("code")]);
+  const n={}; (u.data||[]).forEach(x=>n[x.code]=(n[x.code]||0)+1);
+  const t=$("#feCodes"); t.innerHTML=(c.data||[]).length?"<tr><th>Code</th><th class='n'>Off</th><th>Section</th><th class='n'>Used</th><th></th></tr>":"";
+  (c.data||[]).forEach(x=>{ const tr=document.createElement("tr"); const over=x.until&&Date.parse(x.until)<Date.now();
+    tr.innerHTML=`<td><b>${esc(x.code)}</b>${x.note?"<br><small>"+esc(x.note)+"</small>":""}${over?"<br><small>ended</small>":x.until?"<br><small>until "+fmtDate(x.until)+"</small>":""}</td><td class="n">${x.pct}%</td><td>${x.grp==="all"?"All":esc(FEE_GROUPS[x.grp]||x.grp)}</td><td class="n">${n[x.code]||0}${x.max_uses?" / "+x.max_uses:""}</td>`;
+    const td=document.createElement("td"); const d=document.createElement("button"); d.type="button"; d.className="btn ghost small"; d.textContent="🗑";
+    d.onclick=async()=>{ if(!confirm("Delete code "+x.code+"?")) return; const {error}=await sb.from("fee_codes").delete().eq("code",x.code); if(error){ toast(niceError(error)); return; } loadFeeCodes(); };
+    td.appendChild(d); tr.appendChild(td); t.appendChild(tr); });
+}
+$("#fcSave").onclick=async()=>{
+  const code=$("#fcCode").value.trim().toUpperCase(), pct=Math.round(Number($("#fcPct").value)), u=$("#fcUntil").value, mx=Number($("#fcMax").value)||null;
+  if(!/^[A-Z0-9]{3,20}$/.test(code)){ showMsg("Code: 3 to 20 letters or numbers.","err",$("#fcMsg")); return; }
+  if(!(pct>=1&&pct<=100)){ showMsg("% off: 1 to 100.","err",$("#fcMsg")); return; }
+  const {error}=await sb.from("fee_codes").insert({code,pct,grp:$("#fcGrp").value,until:u?new Date(u+"T23:59:59").toISOString():null,max_uses:mx,note:$("#fcNote").value.trim()||null});
+  if(error){ showMsg(/duplicate/.test(error.message||"")?"This code already exists.":niceError(error),"err",$("#fcMsg")); return; }
+  showMsg("Added. Send the code to the seller; they type it when paying.","ok",$("#fcMsg")); ["#fcCode","#fcPct","#fcUntil","#fcMax","#fcNote"].forEach(i=>$(i).value=""); loadFeeCodes();
+};
+feeGrpSelect($("#fcGrp"), true);
+
+/* ---------- Wanted ads from High End ---------- */
+(function(){
+  const g=$("#hwGrp"); [["watch","Watches"],["bag","The Boutique"],["moto","Motorcycles"],["car","Cars"],["boat","Marine"],["desert","Dune Riders"],["equine","Equine"],["art","Modern & art"],["estate","Real estate"],["other","Other"]].forEach(([v,t])=>g.add(new Option(t,v)));
+  const m=$("#hwMarket"); MARKETS.forEach(x=>m.add(new Option(x.name,x.id)));
+})();
+$("#hwPost").onclick=async()=>{
+  const title=$("#hwTitle").value.trim(); if (title.length<3){ showMsg("Write what you're looking for.","err",$("#hwMsg")); return; }
+  const bud=parseInt(String($("#hwBudget").value).replace(/\D/g,""),10)||null;
+  const {error}=await sb.rpc("admin_post_request",{p_market:$("#hwMarket").value, p_grp:$("#hwGrp").value, p_title:title, p_details:$("#hwDetails").value.trim()||null, p_budget:bud, p_budget_unit:bud?$("#hwUnit").value:null, p_phone:ADMIN_WA});
+  if (error){ showMsg(/admin_post_request|featured/.test(error.message||"")?"Run the latest update SQL (update14) in Supabase first.":niceError(error),"err",$("#hwMsg")); return; }
+  showMsg("Posted — it's live under Wanted.","ok",$("#hwMsg")); $("#hwTitle").value=""; $("#hwDetails").value=""; $("#hwBudget").value=""; loadWanted();
+};
+/* ---------- Wanted requests ---------- */
+let wantedAll=[];
+async function loadWanted(){
+  const {data,error}=await sb.from("requests").select("id,created_at,status,market,grp,title,details,budget,budget_unit,name,kind,link,source,quote,quoted_at,photo").neq("status","rejected").order("created_at",{ascending:false}).limit(500);
+  if (error){ showMsg(/requests/.test(error.message||"") ? "Run update11.sql in Supabase to turn on Wanted." : niceError(error),"err",$("#wqMsg")); return; }
+  wantedAll=data||[]; await adminPhones("request", wantedAll, r=>r.id, (r,ph)=>{ r.phone=ph; }); renderWanted();
+}
+function renderWanted(){
+  const box=$("#wqList"); box.innerHTML="";
+  const pend=wantedAll.filter(r=>r.status==="pending").length;   // includes orders from abroad waiting for a price $("#nWanted").textContent = pend ? "("+pend+")" : "";
+  if (!wantedAll.length){ box.innerHTML='<div class="empty">No requests yet.</div>'; return; }
+  wantedAll.forEach(r=>{
+    const row=document.createElement("div"); row.className="sp-row";
+    const x=document.createElement("div"); x.className="x";
+    const b=document.createElement("b"); b.textContent=r.title+" ";
+    const imp = r.kind==="import";
+    const pill=document.createElement("span"); pill.className="pill"+(r.status==="live"?"":" off");
+    pill.textContent = imp ? ({pending:"🌍 Needs a price",quoted:"🌍 Price sent",closed:"🌍 Closed"}[r.status]||r.status) : ({pending:"Waiting",live:"Showing",closed:"Closed"}[r.status]||r.status); b.appendChild(pill);
+    const sp=document.createElement("span");
+    sp.textContent = imp
+      ? `Order from abroad${r.source?" · from "+r.source:""} · ${marketName(r.market)} · ${r.name||""} ${r.phone} · ${fmtDate(Date.parse(r.created_at))}`+(r.details?"\n"+r.details:"")+(r.quote?"\nPrice sent: "+r.quote:"")
+      : `${GROUP_NAMES[r.grp]||r.grp} · ${marketName(r.market)} · ${r.budget?fmt(r.budget)+" "+(r.budget_unit||""):"no budget"} · ${r.name||""} ${r.phone} · ${fmtDate(Date.parse(r.created_at))}`+(r.details?"\n"+r.details:"");
+    sp.style.whiteSpace="pre-line"; x.append(b,sp);
+    if (r.photo && /^data:image\/jpeg;base64,/.test(r.photo)){ const im=document.createElement("img"); im.src=r.photo; im.alt=""; im.style.cssText="display:block;max-width:220px;max-height:220px;border-radius:10px;margin:6px 0;cursor:zoom-in"; im.onclick=()=>{ const w=window.open(); if(w) w.document.write('<img src="'+r.photo+'" style="max-width:100%">'); }; x.appendChild(im); }
+    if (imp && r.link && /^https?:\/\//.test(r.link)){ const a=document.createElement("a"); a.href=r.link; a.target="_blank"; a.rel="noopener noreferrer"; a.textContent="Open product link"; a.style.display="block"; x.appendChild(a); }
+    const tools=document.createElement("div"); tools.className="admin"; tools.style.border="0"; tools.style.margin="0"; tools.style.padding="0";
+    const set=st=>async()=>{ const {error}=await sb.from("requests").update({status:st}).eq("id",r.id); if(error) throw error; r.status=st; if (st==="rejected") wantedAll=wantedAll.filter(z=>z!==r); renderWanted(); };
+    if (imp){
+      tools.append(btn("💬 Send price","",async()=>{
+        const q=prompt("Price to send (e.g. 18,500 EGP delivered in 3 weeks)", r.quote||""); if (!q) return;
+        const {error}=await sb.from("requests").update({quote:q.slice(0,300), quoted_at:new Date().toISOString(), status:"quoted"}).eq("id",r.id); if (error) throw error;
+        r.quote=q; r.status="quoted"; renderWanted();
+        const msg=`Hello${r.name?" "+r.name:""}, this is High End Communities about your order from abroad:\n*${r.title}*\n\nPrice: ${q}\n\nReply here to confirm.`;
+        window.open("https://wa.me/"+waNum(r.phone)+"?text="+encodeURIComponent(msg),"_blank","noopener");
+      }));
+      if (r.status!=="closed") tools.append(btn("Close","",set("closed")));
+    } else {
+      if (r.status!=="live") tools.append(btn("✓ Approve","",set("live")));
+      if (r.status==="live") tools.append(btn("Close","",set("closed")));
+      if (r.status==="pending") tools.append(btn("✕","bad",set("rejected"),"Reject?"));
+    }
+    tools.append(btn("🗑","bad",async()=>{ const {error}=await sb.from("requests").delete().eq("id",r.id); if(error) throw error; wantedAll=wantedAll.filter(z=>z!==r); renderWanted(); },"Delete?"));
+    row.append(x,tools); box.appendChild(row);
+  });
+}
+/* ---------- monthly limit for each main category + trusted numbers ---------- */
+const LIMIT_CATS = [["moto","🏍️ Motorcycles"],["car","🚗 Cars"],["boat","🛥️ Marine"],["desert","🏜️ Dune Riders"],["equine","🐎 Horses"],["watch","⌚ Watches"],["art","🎨 Art"],["estate","🏠 Real estate"],["bag","👜 The Boutique"]];
+let LIM_HAS_COL = false;
+function drawLimits(data){
+  const box=$("#limGrid"); if (!box) return;
+  LIM_HAS_COL = !!(data && "monthly_limits" in data);
+  const cur = (data && data.monthly_limits) || (data ? {moto:data.bike_monthly_limit} : {});
+  box.innerHTML="";
+  LIMIT_CATS.forEach(([k,l])=>{ const lab=document.createElement("label"); lab.className="limrow";
+    const t=document.createElement("span"); t.textContent=l;
+    const i=document.createElement("input"); i.type="number"; i.min="1"; i.max="500"; i.inputMode="numeric"; i.placeholder="No limit"; i.dataset.k=k;
+    if (cur[k]) i.value=cur[k];
+    const u=document.createElement("small"); u.className="muted"; u.textContent="/ month";
+    lab.append(t,i,u); box.appendChild(lab); });
+}
+$("#limSave").onclick = async ()=>{
+  const v={}; let bad=false;
+  document.querySelectorAll("#limGrid input").forEach(i=>{ const s=i.value.trim(); if (!s) return; const n=parseInt(s,10); if (!(n>=1&&n<=500)) bad=true; else v[i.dataset.k]=n; });
+  if (bad) return showMsg("Each limit must be 1–500, or empty for no limit.","err",$("#limMsg"));
+  if (!LIM_HAS_COL) return showMsg("One-time setup needed: run the limits SQL in Supabase first.","err",$("#limMsg"));
+  const rec={monthly_limits:v}; if (v.moto && v.moto<=100) rec.bike_monthly_limit=v.moto;
+  const {error}=await sb.from("settings").update(rec).eq("id",1);
+  if (error) return showMsg(niceError(error),"err",$("#limMsg"));
+  const set=LIMIT_CATS.filter(([k])=>v[k]).map(([k,l])=>l.replace(/^\S+\s/,"")+" "+v[k]);
+  showMsg(set.length ? "Saved: "+set.join(" · ") : "Saved: no monthly limits.","ok",$("#limMsg"));
+};
+async function loadTrusted(){
+  const {data,error}=await sb.from("trusted_sellers").select("*").order("created_at",{ascending:false});
+  const box=$("#trList"); box.innerHTML="";
+  if (error){ box.innerHTML='<div class="muted">Run update6.sql in Supabase to turn this on.</div>'; return; }
+  if (!data.length){ box.innerHTML='<div class="muted">No trusted numbers yet.</div>'; return; }
+  data.forEach(t=>{
+    const r=document.createElement("div"); r.className="sp-row";
+    const x=document.createElement("div"); x.className="x";
+    const b=document.createElement("b"); b.textContent=t.phone; const sp=document.createElement("span"); sp.textContent=`${t.monthly_limit} motorcycles / month`+(t.note?" · "+t.note:"");
+    x.append(b,sp);
+    const ed=document.createElement("button"); ed.type="button"; ed.className="btn ghost small"; ed.textContent="Edit";
+    ed.onclick=()=>{ $("#trPhone").value=t.phone; $("#trLim").value=t.monthly_limit; $("#trNote").value=t.note||""; $("#trPhone").focus(); };
+    const del=document.createElement("button"); del.type="button"; del.className="btn ghost small"; del.textContent="🗑";
+    del.onclick=async()=>{ if(!confirm("Remove "+t.phone+" from trusted numbers?")) return; const {error}=await sb.from("trusted_sellers").delete().eq("phone",t.phone); if(error) showMsg(niceError(error),"err",$("#trMsg")); loadTrusted(); };
+    r.append(x,ed,del); box.appendChild(r);
+  });
+}
+$("#trAdd").onclick = async ()=>{
+  const ph=anyPhone($("#trPhone").value,"EG"), n=parseInt($("#trLim").value,10);
+  if (!ph){ showMsg(PHONE_HELP,"err",$("#trMsg")); return; }
+  if (!(n>=1&&n<=500)){ showMsg("Enter how many per month (1–500).","err",$("#trMsg")); return; }
+  const {error}=await sb.from("trusted_sellers").upsert({phone:ph, monthly_limit:n, note:$("#trNote").value.trim()||null});
+  if (error){ showMsg(niceError(error),"err",$("#trMsg")); return; }
+  showMsg(`Saved — ${ph} can post ${n} motorcycles a month.`,"ok",$("#trMsg")); $("#trPhone").value=$("#trLim").value=$("#trNote").value=""; loadTrusted();
+};
+/* ---------- inspection partners ---------- */
+(function(){
+  const ms=$("#exMarket"); MARKETS.forEach(m=>{ const o=document.createElement("option"); o.value=m.id; o.textContent=m.name; ms.appendChild(o); });
+  const gb=$("#exGroups"); INSPECT_GROUPS.forEach(([k,n])=>{ const l=document.createElement("label"); l.innerHTML=`<input type="checkbox" value="${k}"> ${n}`; gb.appendChild(l); });
+  $("#exKind").onchange=()=>{ const w=$("#exKind").value==="workshop"; gb.querySelectorAll("input").forEach(i=>{ if(!$("#exId").value) i.checked = w ? ["moto","car"].includes(i.value) : ["watch","bag","art"].includes(i.value); }); };
+  $("#exKind").onchange();
+})();
+function exClear(){ $("#exId").value=""; ["exName","exPhone","exCity","exNote"].forEach(i=>$("#"+i).value=""); $("#exSort").value=0; $("#exActive").checked=true; $("#exKind").onchange(); }
+$("#exClear").onclick=exClear;
+async function loadExpertsAdmin(){
+  const box=$("#exList"); box.innerHTML='<div class="muted">Loading…</div>';
+  const {data,error}=await sb.from("experts").select("*").order("market").order("kind").order("sort").order("name");
+  if (error){ box.innerHTML='<div class="muted">Run update8.sql in Supabase to turn this on.</div>'; return; }
+  EXPERTS=null; box.innerHTML="";
+  if (!data.length){ box.innerHTML='<div class="muted">No partners yet. Add your trusted workshops and experts above.</div>'; return; }
+  data.forEach(e=>{
+    const r=document.createElement("div"); r.className="sp-row"+(e.active?"":" off");
+    const x=document.createElement("div"); x.className="x";
+    const b=document.createElement("b"); b.textContent=e.name+(e.active?"":" (hidden)");
+    const sp=document.createElement("span"); sp.textContent=`${e.kind==="workshop"?"Workshop":"Expert"} · ${marketName(e.market)}${e.city?" · "+e.city:""} · ${e.phone} · `+(e.groups||[]).map(g=>(INSPECT_GROUPS.find(x=>x[0]===g)||[g,g])[1]).join(", ");
+    x.append(b,sp);
+    const ed=document.createElement("button"); ed.type="button"; ed.className="btn ghost small"; ed.textContent="Edit";
+    ed.onclick=()=>{ $("#exId").value=e.id; $("#exKind").value=e.kind; $("#exMarket").value=e.market; $("#exName").value=e.name; $("#exPhone").value=e.phone; $("#exCity").value=e.city||""; $("#exNote").value=e.note||""; $("#exSort").value=e.sort||0; $("#exActive").checked=e.active;
+      $("#exGroups").querySelectorAll("input").forEach(i=>i.checked=(e.groups||[]).includes(i.value)); window.scrollTo({top:0,behavior:"smooth"}); };
+    const del=document.createElement("button"); del.type="button"; del.className="btn ghost small"; del.textContent="🗑";
+    del.onclick=async()=>{ if(!confirm("Remove "+e.name+"?")) return; const {error}=await sb.from("experts").delete().eq("id",e.id); if(error) showMsg(niceError(error),"err",$("#exMsg")); loadExpertsAdmin(); };
+    r.append(x,ed,del); box.appendChild(r);
+  });
+}
+$("#exSave").onclick = async ()=>{
+  const mk=$("#exMarket").value, ph=anyPhone($("#exPhone").value, mk), name=$("#exName").value.trim();
+  const groups=[...$("#exGroups").querySelectorAll("input:checked")].map(i=>i.value);
+  if (name.length<2){ showMsg("Enter the partner's name.","err",$("#exMsg")); return; }
+  if (!ph){ showMsg(PHONE_HELP,"err",$("#exMsg")); return; }
+  if (!groups.length){ showMsg("Pick at least one category.","err",$("#exMsg")); return; }
+  const row={kind:$("#exKind").value, market:mk, name, phone:ph, city:$("#exCity").value.trim()||null, note:$("#exNote").value.trim()||null, sort:parseInt($("#exSort").value,10)||0, active:$("#exActive").checked, groups};
+  const id=$("#exId").value;
+  const {error} = id ? await sb.from("experts").update(row).eq("id",id) : await sb.from("experts").insert(row);
+  if (error){ showMsg(niceError(error),"err",$("#exMsg")); return; }
+  showMsg(`Saved — ${name}.`,"ok",$("#exMsg")); exClear(); loadExpertsAdmin();
+};
+$("#maintOn").onchange = saveMaint; $("#maintSave").onclick = saveMaint;
+function autoHint(on){ $("#autoHint").textContent = on ? "New listings go live at once and appear here for you to check." : "New listings wait here until you approve them."; }
+$("#autoApprove").onchange = async e=>{
+  const on=e.target.checked;
+  const {error} = await sb.from("settings").update({auto_approve:on}).eq("id",1);
+  if (error){ e.target.checked=!on; showMsg(niceError(error),"err",$("#listMsg")); return; }
+  autoHint(on);
+};
+async function setStatus(item, patch){
+  const {error} = await sb.from("listings").update(patch).eq("id",item.id);
+  if (error) throw error;
+  if ("reviewed" in patch) item.L.reviewed = patch.reviewed;
+  Object.assign(item.L, {status:patch.status??item.L.status, soldAt:patch.sold_at?Date.parse(patch.sold_at):(patch.status==="live"?null:item.L.soldAt), note:patch.note??item.L.note});
+  renderAll();
+}
+async function removeItem(item){
+  const {error} = await sb.from("listings").delete().eq("id",item.id);
+  if (error) throw error;
+  const paths = photoPaths(item.L); if (paths.length && sb.storage) sb.storage.from(PHOTO_BUCKET).remove(paths).then(()=>{},()=>{});
+  items = items.filter(x=>x!==item); renderAll();
+}
+function btn(label, cls, fn, confirmText){
+  const b=document.createElement("button"); b.type="button"; b.textContent=label; if (cls) b.className=cls;
+  b.onclick = async ()=>{
+    if (confirmText && b.dataset.c!=="1"){ b.dataset.c="1"; b.textContent=confirmText; return; }
+    b.disabled=true; try{ await fn(); }catch(e){ showMsg(niceError(e),"err",$("#listMsg")); b.disabled=false; b.dataset.c=""; b.textContent=label; }
+  };
+  return b;
+}
+function adminTools(item){
+  const L=item.L, a=document.createElement("div"); a.className="admin";
+  const phone=String(L.f.phone||"").replace(/\D/g,"");
+  const sel=document.createElement("select"); REASONS.forEach(r=>{ const o=document.createElement("option"); o.textContent=r; sel.appendChild(o); });
+  const ask=document.createElement("a"); ask.className="btn ghost small"; ask.target="_blank"; ask.rel="noopener";
+  const upd=()=>{ ask.textContent = L.status==="pending"?"✏️ Ask for changes":"✉️ Tell seller";
+    ask.href="https://wa.me/"+waNum(phone)+"?text="+encodeURIComponent(reasonMsg(L, sel.value, L.status==="pending"?"changes":"removed", item.id)); };
+  sel.onchange=upd; upd();
+  ask.addEventListener("click",()=>{ if (L.status==="pending") sb.from("listings").update({note:"Changes requested: "+sel.value}).eq("id",item.id).then(()=>{ L.note="Changes requested: "+sel.value; renderAll(); }); });
+  const edit=btn("✎ Edit","",()=>startEdit(item));
+  if (L.status==="pending"){
+    a.append(btn("✓ Approve","ok",()=>setStatus(item,{status:"live", note:null, reviewed:true})), edit, sel, ask,
+             btn("✕ Reject","bad",()=>removeItem(item),"Tap again: reject & delete"));
+  } else if (L.status==="live" && !L.reviewed){
+    a.append(btn("✓ Looks good","ok",()=>setStatus(item,{reviewed:true})), edit, sel, ask,
+             btn("⏸ Hide for changes","",()=>setStatus(item,{status:"pending", note:"Hidden for changes: "+sel.value})),
+             btn("✕ Reject","bad",()=>removeItem(item),"Tap again: reject & delete"));
+  } else if (L.status==="live"){
+    a.append(btn("🏷️ Mark sold","",()=>setStatus(item,{status:"sold", sold_at:new Date().toISOString()})), edit, sel, ask,
+             btn("⏸ Hide","",()=>setStatus(item,{status:"pending", note:"Hidden for changes: "+sel.value})),
+             btn("🗑 Delete","bad",()=>removeItem(item),"Tap again: delete"));
+  } else {
+    a.append(btn("↺ Mark available","",()=>setStatus(item,{status:"live", sold_at:null})),
+             btn("🗑 Delete","bad",()=>removeItem(item),"Tap again: delete"));
+  }
+  return a;
+}
+function offerTools(item){
+  const L=item.L, a=document.createElement("div"); a.className="admin";
+  // ⭐ Featured
+  const dur=document.createElement("select"); [["3","3 days"],["7","7 days"],["14","14 days"],["30","30 days"],["0","No end"]].forEach(([v,t])=>{ const o=document.createElement("option"); o.value=v; o.textContent=t; dur.appendChild(o); }); dur.value="7";
+  const feat = isFeatured(L);
+  const fb = btn(feat?"☆ Stop featuring":"⭐ Feature", feat?"":"ok", async()=>{
+    const days=+dur.value, patch = feat ? {promoted:false, promoted_until:null}
+      : {promoted:true, promoted_until: days ? new Date(Date.now()+days*864e5).toISOString() : null};
+    const {error}=await sb.from("listings").update(patch).eq("id",item.id); if (error) throw error;
+    L.promoted=patch.promoted; L.promotedUntil=patch.promoted_until?Date.parse(patch.promoted_until):null; renderAll();
+  });
+  if (feat){ const sp=document.createElement("span"); sp.className="muted"; sp.textContent = L.promotedUntil ? "until "+fmtDate(L.promotedUntil) : "no end"; a.append(fb, sp); } else a.append(fb, dur);
+  // 🏷️ discount %
+  const dp=document.createElement("input"); dp.type="number"; dp.min=1; dp.max=90; dp.placeholder="% off"; dp.style.width="72px"; if (L.discount) dp.value=L.discount;
+  a.append(dp, btn(L.discount?"Update discount":"🏷️ Set discount","",async()=>{
+    const v = dp.value===""?null:Math.round(+dp.value);
+    if (v!==null && (v<1||v>90)) throw new Error("Discount must be 1–90%");
+    const {error}=await sb.from("listings").update({discount_pct:v}).eq("id",item.id); if (error) throw error;
+    L.discount=v; renderAll();
+  }));
+  if (L.discount) a.append(btn("No discount","",async()=>{ const {error}=await sb.from("listings").update({discount_pct:null}).eq("id",item.id); if(error) throw error; L.discount=null; renderAll(); }));
+  // 📦 stock
+  const qty=document.createElement("input"); qty.type="number"; qty.min=0; qty.placeholder="qty"; qty.style.width="64px"; if (L.stock!==null && L.stock!==undefined) qty.value=L.stock;
+  const setStock = async n=>{
+    const patch = {stock:n}; if (n===0){ patch.status="sold"; patch.sold_at=new Date().toISOString(); }
+    const {error}=await sb.from("listings").update(patch).eq("id",item.id); if (error) throw error;
+    L.stock=n; if (n===0){ L.status="sold"; L.soldAt=Date.now(); } renderAll();
+  };
+  if (L.stock!==null && L.stock!==undefined && L.stock>0) a.append(btn("−1 sold one","",()=>setStock(L.stock-1)));
+  a.append(qty, btn("📦 Set stock","",()=>{ if (qty.value===""){ return setStockNull(); } const n=parseInt(qty.value,10); if(isNaN(n)||n<0) throw new Error("Enter 0 or more"); return setStock(n); }));
+  async function setStockNull(){ const {error}=await sb.from("listings").update({stock:null}).eq("id",item.id); if (error) throw error; L.stock=null; renderAll(); }
+  return a;
+}
+function renderAll(){
+  const groups = {pending:[], live:[], sold:[]};
+  items.forEach(x=>{
+    if (x.L.status==="pending" || (x.L.status==="live" && !x.L.reviewed)) groups.pending.push(x);
+    if (x.L.status==="live" || x.L.status==="sold") groups[x.L.status].push(x);
+  });
+  groups.live = sortListings(groups.live);
+  groups.pending.sort((a,b)=>(a.L.status==="pending"?0:1)-(b.L.status==="pending"?0:1) || (a.L.at||0)-(b.L.at||0));
+  revSel = new Set([...revSel].filter(id=>groups.pending.some(x=>x.id===id)));
+  revUi(groups.pending);
+  featList = groups.live.filter(x=>isFeatured(x.L)); featSel = new Set([...featSel].filter(id=>featList.some(x=>x.id===id))); featUi();
+  for (const [k,list] of Object.entries(groups)){
+    const box=$("#"+k+"List"); box.innerHTML="";
+    $("#n"+k[0].toUpperCase()+k.slice(1)).textContent = list.length?(k==="pending"?String(list.length):`(${list.length})`):"";
+    if (!list.length){ box.innerHTML=`<div class="empty">${k==="pending"?"All new listings checked 🎉":"Nothing here."}</div>`; continue; }
+    list.forEach(item=>{
+      const {card, body, meta} = buildCard(item, item.L.status==="pending"?"pending":"admin");
+      if (k==="pending" && item.L.status==="live"){ const nb=document.createElement("div"); nb.className="ribbon pend"; nb.style.background="#1f8a4c"; nb.textContent="NEW · LIVE"; card.prepend(nb); }
+      if (k==="pending" && revSelecting){ const lb=document.createElement("label"); lb.className="revpick"; const cb=document.createElement("input"); cb.type="checkbox"; cb.checked=revSel.has(item.id);
+        cb.onchange=()=>{ cb.checked?revSel.add(item.id):revSel.delete(item.id); card.classList.toggle("picked",cb.checked); revUi(); }; lb.append(cb, document.createTextNode(" Select")); card.classList.toggle("picked",cb.checked); card.prepend(lb); }
+      if (k==="live" && featSelecting && isFeatured(item.L)){ const lb=document.createElement("label"); lb.className="revpick"; const cb=document.createElement("input"); cb.type="checkbox"; cb.checked=featSel.has(item.id);
+        cb.onchange=()=>{ cb.checked?featSel.add(item.id):featSel.delete(item.id); card.classList.toggle("picked",cb.checked); featUi(); }; lb.append(cb, document.createTextNode(" Select")); card.classList.toggle("picked",cb.checked); card.style.position="relative"; card.prepend(lb); }
+      if (item.L.note){ const n=document.createElement("div"); n.className="hint"; n.style.color="#b7791f"; n.textContent="📝 "+item.L.note; body.appendChild(n); }
+      body.appendChild(adminTools(item)); if (item.L.status==="live"){ body.appendChild(offerTools(item)); body.appendChild(slotTools(item)); } body.appendChild(meta); box.appendChild(card);
+    });
+  }
+}
+
+
+/* ---------- featured: select and stop featuring in bulk ---------- */
+let featSel=new Set(), featSelecting=false, featList=[];
+function featUi(){
+  const n=featList.length; $("#featBar").hidden=!n && !featSelecting; $("#featN").textContent=n;
+  $("#featSel").textContent = featSelecting ? "✕ Stop selecting" : "☑ Select featured";
+  $("#featSelAll").hidden=!featSelecting; $("#featStop").hidden=!featSelecting;
+  $("#featStop").disabled=!featSel.size; $("#featStop").textContent=`☆ Stop featuring selected (${featSel.size})`;
+}
+$("#featSel").onclick=()=>{ featSelecting=!featSelecting; if(!featSelecting) featSel.clear(); renderAll(); };
+$("#featSelAll").onclick=()=>{ const all=featSel.size===featList.length; featSel=new Set(all?[]:featList.map(x=>x.id)); renderAll(); };
+$("#featStop").onclick=async()=>{
+  const ids=[...featSel]; if (!ids.length) return; $("#featStop").disabled=true;
+  try{
+    for (let i=0;i<ids.length;i+=100){ const {error}=await sb.from("listings").update({promoted:false, promoted_until:null}).in("id",ids.slice(i,i+100)); if (error) throw error; }
+    items.forEach(x=>{ if (featSel.has(x.id)){ x.L.promoted=false; x.L.promotedUntil=null; } });
+    showMsg(`Stopped featuring ${ids.length} listing${ids.length===1?"":"s"}.`,"ok",$("#featMsg"));
+    featSel.clear(); featSelecting=false;
+  }catch(e){ showMsg(niceError(e),"err",$("#featMsg")); }
+  finally{ renderAll(); }
+};
+
+/* ---------- review: count, select, approve in bulk ---------- */
+let revSel=new Set(), revSelecting=false, revList=[];
+function revUi(list){
+  if (list) revList=list;
+  const n=revList.length, np=revList.filter(x=>x.L.status==="pending").length;
+  $("#revBar").hidden=!n; $("#revN").textContent=n;
+  $("#revTxt").textContent = np===n ? (n===1?"listing waiting for review":"listings waiting for review") : `waiting for review · ${np} hidden until approved, ${n-np} already live`;
+  $("#revSel").textContent = revSelecting ? "✕ Stop selecting" : "☑ Select";
+  $("#revSelAll").hidden=!revSelecting; $("#revApproveSel").hidden=!revSelecting;
+  $("#revApproveSel").disabled=!revSel.size; $("#revApproveSel").textContent=`✓ Approve selected (${revSel.size})`;
+  $("#revApproveAll").textContent=`✓ Approve all (${n})`;
+  const t=document.querySelector('[data-tab="pending"]'); if (t) t.classList.toggle("hasnew", n>0);
+  document.title = (n?`(${n}) `:"") + document.title.replace(/^\(\d+\) /,"");
+}
+async function revApprove(list){
+  if (!list.length) return;
+  const pend=list.filter(x=>x.L.status==="pending").map(x=>x.id), live=list.filter(x=>x.L.status==="live").map(x=>x.id);
+  ["#revApproveSel","#revApproveAll"].forEach(b=>$(b).disabled=true);
+  try{
+    for (let i=0;i<pend.length;i+=100){ const {error}=await sb.from("listings").update({status:"live", note:null, reviewed:true}).in("id",pend.slice(i,i+100)); if (error) throw error; }
+    for (let i=0;i<live.length;i+=100){ const {error}=await sb.from("listings").update({reviewed:true}).in("id",live.slice(i,i+100)); if (error) throw error; }
+    list.forEach(x=>{ if (x.L.status==="pending"){ x.L.status="live"; x.L.note=null; x.L.soldAt=null; } x.L.reviewed=true; });
+    revSel.clear(); revSelecting=false;
+    showMsg(`Approved ${list.length} listing${list.length===1?"":"s"}.`,"ok",$("#revMsg"));
+  }catch(e){ showMsg(niceError(e),"err",$("#revMsg")); }
+  finally{ $("#revApproveAll").disabled=false; renderAll(); }
+}
+$("#revSel").onclick=()=>{ revSelecting=!revSelecting; if(!revSelecting) revSel.clear(); renderAll(); };
+$("#revSelAll").onclick=()=>{ const all=revSel.size===revList.length; revSel=new Set(all?[]:revList.map(x=>x.id)); renderAll(); };
+$("#revApproveSel").onclick=()=>revApprove(revList.filter(x=>revSel.has(x.id)));
+{ let armed=null; $("#revApproveAll").onclick=()=>{
+  if (!revList.length) return;
+  if (!armed){ const b=$("#revApproveAll"); b.textContent=`Tap again: approve all ${revList.length}`; armed=setTimeout(()=>{ armed=null; revUi(); },4000); return; }
+  clearTimeout(armed); armed=null; revApprove(revList.slice()); }; }
+
+/* ---------- ratings: approve, mark fake, delete ---------- */
+let RT_LIST=[];
+async function ratingsCount(){
+  if (!can("ratings")) return;
+  const {count,error}=await sb.from("ratings").select("id",{count:"exact",head:true}).eq("status","pending");
+  const el=$("#nRatings"); if (!el) return; el.textContent = !error && count ? String(count) : "";
+  const tb=document.querySelector('[data-tab="ratings"]'); if (tb) tb.classList.toggle("hasnew", !error && count>0);
+}
+async function loadRatings(){
+  const box=$("#rtList"); if (!box || !can("ratings")) return;
+  const st=$("#rtShow").value;
+  const {data,error}=await sb.from("ratings").select("*").eq("status",st).order("created_at",{ascending:st==="pending"}).limit(300);
+  if (error){ box.innerHTML=""; showMsg(/ratings/.test(error.message||"")&&/exist|schema/i.test(error.message||"")?"Run update23 in Supabase to turn ratings on.":niceError(error),"err",$("#rtMsg")); return; }
+  RT_LIST=data||[];
+  const lids=[...new Set(RT_LIST.map(r=>r.listing_id).filter(Boolean))], pids=[...new Set(RT_LIST.map(r=>r.provider_id).filter(Boolean))];
+  const [ls,ps]=await Promise.all([lids.length?sb.from("listings").select("id,type,f").in("id",lids):{data:[]}, pids.length?sb.from("providers").select("id,name,kind").in("id",pids):{data:[]}]);
+  const LT={}, PN={}; (ls.data||[]).forEach(r=>LT[r.id]=titleOf(rowToItem({...r,status:"live"}).L)); (ps.data||[]).forEach(r=>PN[r.id]=r.name);
+  // how each seller / business stands now (approved only)
+  const sellers=[...new Set(RT_LIST.map(r=>r.seller_phone).filter(Boolean))];
+  const AGG={};
+  if (sellers.length || pids.length){
+    const q=await sb.from("ratings").select("seller_phone,provider_id,stars").eq("status","approved").or([sellers.length?`seller_phone.in.(${sellers.join(",")})`:null, pids.length?`provider_id.in.(${pids.join(",")})`:null].filter(Boolean).join(","));
+    (q.data||[]).forEach(r=>{ const k=r.seller_phone||r.provider_id; (AGG[k]=AGG[k]||{s:0,n:0}); AGG[k].s+=r.stars; AGG[k].n++; });
+  }
+  $("#rtApproveAll").hidden = st!=="pending" || RT_LIST.length<2; $("#rtApproveAll").textContent=`✓ Approve all shown (${RT_LIST.length})`;
+  box.innerHTML = RT_LIST.length ? "" : `<div class="muted" style="font-size:14px;padding:6px 2px">${st==="pending"?"No ratings waiting. 🎉":"Nothing here."}</div>`;
+  RT_LIST.forEach(r=>{
+    const c=document.createElement("div"); c.className="card rt-row"; c.style.marginBottom="10px";
+    const who = r.target==="seller" ? `Seller of: ${LT[r.listing_id]||"(listing removed)"}` : `Business: ${PN[r.provider_id]||"(removed)"}`;
+    const k=r.seller_phone||r.provider_id, ag=AGG[k];
+    c.innerHTML=`<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline">
+        <b class="stars" style="color:#c99a2e;font-size:20px;letter-spacing:1px">${starText(r.stars)}</b>
+        <small class="muted">${esc(new Date(r.created_at).toLocaleString("en-GB",{day:"numeric",month:"short",hour:"numeric",minute:"2-digit"}))}</small></div>
+      <div style="margin:4px 0" dir="auto">${r.comment?esc(r.comment):'<span class="muted">No written review</span>'}</div>
+      <div class="hint" style="white-space:pre-line">${esc(who)}${r.seller_phone?"\nSeller's number: "+esc(r.seller_phone):""}
+From: ${esc(r.rater_name)} · ${esc(r.rater_phone)}${ag?`\nNow: ${(ag.s/ag.n).toFixed(1)} ★ from ${ag.n} approved`:"\nNo approved ratings yet"}${r.reviewed_by?"\nReviewed by "+esc(r.reviewed_by):""}</div>`;
+    const tools=document.createElement("div"); tools.className="admin";
+    const wa=document.createElement("a"); wa.className="btn ghost small"; wa.target="_blank"; wa.rel="noopener"; wa.textContent="✉️ Check with them";
+    wa.href="https://wa.me/"+waNum(r.rater_phone)+"?text="+encodeURIComponent(`Hello ${r.rater_name}, this is High End Communities. Thank you for rating ${r.target==="seller"?"the seller of "+(LT[r.listing_id]||"a listing"):(PN[r.provider_id]||"a business")} ${r.stars}★. Can you confirm you dealt with them?`);
+    tools.appendChild(wa);
+    const set=v=>async()=>{ const {error}=await sb.from("ratings").update({status:v}).eq("id",r.id); if (error) throw error; await loadRatings(); ratingsCount(); };
+    if (r.status!=="approved") tools.appendChild(btn("✓ Approve","ok",set("approved")));
+    if (r.status!=="rejected") tools.appendChild(btn("✕ Fake — don't count","bad",set("rejected")));
+    if (r.status!=="pending") tools.appendChild(btn("↺ Back to waiting","",set("pending")));
+    if (can("money")) tools.appendChild(btn("🗑 Delete","bad",async()=>{ const {error}=await sb.from("ratings").delete().eq("id",r.id); if (error) throw error; await loadRatings(); ratingsCount(); },"Tap again: delete for good"));
+    c.appendChild(tools); box.appendChild(c);
+  });
+}
+$("#rtShow").onchange=loadRatings;
+{ let armed=null; $("#rtApproveAll").onclick=async()=>{
+  const b=$("#rtApproveAll"), ids=RT_LIST.map(r=>r.id); if (!ids.length) return;
+  if (!armed){ b.textContent=`Tap again: approve ${ids.length}`; armed=setTimeout(()=>{ armed=null; b.textContent=`✓ Approve all shown (${ids.length})`; },4000); return; }
+  clearTimeout(armed); armed=null; b.disabled=true;
+  try{ for (let i=0;i<ids.length;i+=100){ const {error}=await sb.from("ratings").update({status:"approved"}).in("id",ids.slice(i,i+100)); if (error) throw error; }
+    showMsg(`Approved ${ids.length} ratings.`,"ok",$("#rtMsg")); }
+  catch(e){ showMsg(niceError(e),"err",$("#rtMsg")); }
+  finally{ b.disabled=false; loadRatings(); ratingsCount(); } }; }
+/* ---------- add / edit ---------- */
+$("#dumpBtn").onclick = ()=>{
+  const t=$("#dumpIn").value.trim(); if(!t){ $("#dumpHint").textContent="Paste the message first."; return; }
+  const r=applyDump(t); $("#dumpHint").textContent=(r.kept?`Filled ${r.n} fields into ${LABELS[r.type]} (the category you chose).`:`Filled ${r.n} fields as ${LABELS[r.type]}. Wrong category? Tap the right one — the details stay.`)+" Add the photos, check, and publish.";
+};
+function setForm(tp, f){
+  const mb=document.querySelector(`#mains button[data-m="${GROUP[tp]}"]`); if (mb) mb.click();
+  if (SUBTYPES[GROUP[tp]]){ const b=document.querySelector(`#types button[data-t="${tp}"]`); if (b) b.click(); }
+  for (const k of ["engine","price","mileage"]){ const u=$("#u_"+k); if (u && f[k+"_unit"]) u.value=f[k+"_unit"]; }
+  for (const s of SCHEMAS[tp]){
+    const el=$("#f_"+s.k); let v=f[s.k]; if (!el || v==null) continue;
+    if (s.type==="checks"){ const vs=String(v).split(/,\s*/); el.querySelectorAll("input").forEach(c=>c.checked=vs.includes(c.value)); continue; }
+    if (s.type==="price") v = fmt(v);
+    el.value = v; if (s.k==="category") el.dispatchEvent(new Event("change"));
+  }
+}
+async function startEdit(item){
+  tab("add");
+  editing = item;
+  setForm(item.L.type, {...item.L.f, stock: (item.L.stock??item.L.f.stock)});
+  const ps = await loadPhotos(item);
+  photos = ps.map(u=>({url:u, bytes:Math.round(u.length*3/4), w:0, h:0, orig:Math.round(u.length*3/4)}));
+  renderThumbs(); $("#terms").checked = true; if ($("#showPhone")) $("#showPhone").checked = !!item.L.f.show_phone;
+  $("#editBanner").hidden=false; $("#editBanner").textContent = `Editing: ${titleOf(item.L)} (${item.L.status}). Saving keeps its status.`;
+  $("#submitBtn").textContent = "Save changes";
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function endEdit(){ editing=null; $("#editBanner").hidden=true; $("#submitBtn").textContent="Publish now"; photos=[]; renderThumbs(); renderFields(true); $("#terms").checked=true; if ($("#showPhone")) $("#showPhone").checked=false; }
+$("#resetBtn").onclick = ()=>{ endEdit(); showMsg(""); $("#done").classList.remove("show"); };
+$("#form").addEventListener("submit", async e=>{
+  e.preventDefault();
+  $("#done").classList.remove("show");
+  const f = collect();
+  if (!f){ showMsg("Please fix the highlighted fields.","err"); return; }
+  if (editing && editing.L.f && editing.L.f._lang) f._lang = editing.L.f._lang;   // keep the seller's language for messages
+  $("#submitBtn").disabled=true; showMsg("Saving…","info");
+  try{
+    const pics=photos.slice(0, maxPhotos()).map(p=>p.url); f._np=pics.length;
+    if (pics.length && !/^https?:/.test(pics[0]) && photos[0] && photos[0].file) pics[0] = await watermarkUrl(pics[0]);
+    const payload = {type, f, phone:f.phone, thumb: await makeThumb(pics[0]), photos:pics, reviewed:true, stock: f.stock?Number(f.stock):null};
+    let id;
+    if (editing){
+      id = editing.id;
+      const {error} = await sb.from("listings").update(payload).eq("id",id); if (error) throw error;
+    } else {
+      id = uuid();
+      const {error} = await sb.from("listings").insert({...payload, id, terms:true, status:"live"}); if (error) throw error;
+    }
+    const L = {type, f, photos:pics, thumb:payload.thumb, at:Date.now(), status: editing?editing.L.status:"live"};
+    showMsg("");
+    const d=$("#done"); d.innerHTML="";
+    const p=document.createElement("p"); p.textContent = editing?"✅ Saved.":"✅ Published — it's live.";
+    const sh=document.createElement("a"); sh.className="btn wa"; sh.target="_blank"; sh.rel="noopener"; sh.textContent="Share to WhatsApp group"; sh.href=waHref(shareText(L,id));
+    const r=document.createElement("div"); r.className="dlrow";
+    r.append(btn("🖼️ Flyer image","btn ghost small",()=>exportImage(L,id)), btn("📄 Flyer PDF","btn ghost small",()=>exportPdf(L,id)));
+    d.append(p, sh, r); d.classList.add("show");
+    endEdit(); $("#dumpIn").value="";
+    loadAll();
+  }catch(err){ showMsg(niceError(err),"err"); }
+  finally{ $("#submitBtn").disabled=false; }
+});
+
+/* ---------- sponsors ---------- */
+const DAY_N=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+(function initSponsorForm(){
+  $("#spDays").innerHTML = DAY_N.map((d,i)=>`<label><input type="checkbox" value="${i}" checked> ${d}</label>`).join("");
+  const hh=h=> h===0?"12 am":h<12?h+" am":h===12?"12 pm":h===24?"12 am (midnight)":(h-12)+" pm";
+  for (let h=0;h<=23;h++) $("#spH1").insertAdjacentHTML("beforeend",`<option value="${h}">${hh(h)}</option>`);
+  for (let h=1;h<=24;h++) $("#spH2").insertAdjacentHTML("beforeend",`<option value="${h}">${hh(h)}</option>`);
+  $("#spMarkets").innerHTML = MARKETS.map(m=>`<label><input type="checkbox" value="${m.id}"> ${m.name}</label>`).join("");
+  $("#spGroups").innerHTML = GROUP_ORDER.map(g=>`<label><input type="checkbox" value="${g}"> ${GROUP_NAMES[g]}</label>`).join("");
+  for (let w=1;w<=10;w++) $("#spWeight").insertAdjacentHTML("beforeend",`<option value="${w}">${w}${w===1?" (normal)":""}</option>`);
+  document.querySelectorAll("[data-preset]").forEach(b=>b.onclick=()=>{ const [a,z]=b.dataset.preset.split(",").map(Number); $("#spH1").value=a; $("#spH2").value=z; });
+  spReset();
+})();
+function spReset(){
+  spEditing=null; spImage=null; $("#spTitle").textContent="Add a sponsor";
+  ["spName","spLink","spTag","spTo"].forEach(k=>$("#"+k).value="");
+  $("#spFrom").value = new Date().toISOString().slice(0,10);
+  $("#spH1").value=0; $("#spH2").value=24; $("#spWeight").value=1; $("#spActive").checked=true;
+  document.querySelectorAll("#spDays input,#spSlots input").forEach(c=>c.checked=true);
+  document.querySelectorAll("#spMarkets input,#spGroups input").forEach(c=>c.checked=false);
+  $("#spImgPrev").style.display="none"; showMsg("","info",$("#spMsg"));
+}
+$("#spReset").onclick = spReset;
+$("#spImgBtn").onclick = ()=>$("#spImgIn").click();
+$("#spImgIn").onchange = async e=>{
+  const file=e.target.files[0]; e.target.value=""; if(!file) return;
+  const img=await loadImage(file); const max=320, r=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));
+  const c=document.createElement("canvas"); c.width=Math.round(img.naturalWidth*r); c.height=Math.round(img.naturalHeight*r);
+  const ctx=c.getContext("2d"); ctx.fillStyle="#fff"; ctx.fillRect(0,0,c.width,c.height); ctx.drawImage(img,0,0,c.width,c.height);
+  spImage=c.toDataURL("image/jpeg",0.8); $("#spImgPrev").src=spImage; $("#spImgPrev").style.display="block";
+};
+async function loadSponsorsAdmin(){
+  const {data,error} = await sb.from("sponsors").select("*").order("created_at",{ascending:false});
+  if (error){ showMsg(niceError(error),"err",$("#spMsg")); return; }
+  sponsorsAll = data||[]; renderSponsors();
+}
+function spSchedule(s){
+  const hh=h=> h===0||h===24?"12am":h<12?h+"am":h===12?"12pm":(h-12)+"pm";
+  const days = (s.days||[]).length===7?"Every day":(s.days||[]).map(d=>DAY_N[d]).join(", ");
+  const hours = (s.hour_from===0&&s.hour_to===24)?"all day":`${hh(s.hour_from)}–${hh(s.hour_to)}`;
+  return `${s.starts_on}${s.ends_on?" → "+s.ends_on:" → no end"} · ${days} · ${hours} · weight ${s.weight} · ${(s.slots||[]).join(", ")}`;
+}
+function renderSponsors(){
+  const box=$("#spList"); box.innerHTML="";
+  if (!sponsorsAll.length){ box.innerHTML='<div class="empty">No sponsors yet — MASAR shows by default.</div>'; return; }
+  const today=new Date(new Date().toLocaleString("en-US",{timeZone:"Africa/Cairo"})).toISOString().slice(0,10);
+  // one block per country, and inside it one block per category — ads listed one under the other
+  const mk = s=>(s.markets||[]).length ? s.markets : ["*"], gr = s=>(s.groups||[]).length ? s.groups : ["*"];
+  const mOrder = ["*", ...MARKETS.map(m=>m.id)], gOrder = ["*", ...GROUP_ORDER];
+  const head=(txt,cls)=>{ const h=document.createElement("div"); h.className=cls; h.textContent=txt; box.appendChild(h); };
+  mOrder.forEach(m=>{
+    const inM = sponsorsAll.filter(s=>mk(s).includes(m)); if (!inM.length) return;
+    head(m==="*" ? "All countries" : marketName(m), "sp-h1");
+    gOrder.forEach(g=>{
+      const inG = inM.filter(s=>gr(s).includes(g)); if (!inG.length) return;
+      head(g==="*" ? "All categories" : GROUP_NAMES[g], "sp-h2");
+      inG.forEach(s=>spRow(s, today));
+    });
+  });
+}
+function spRow(s, today){
+  const box=$("#spList");
+  {
+    const inDates = s.starts_on<=today && (!s.ends_on || s.ends_on>=today);
+    const on = s.active && inDates && sponsorOnNow(s);
+    const row=document.createElement("div"); row.className="sp-row";
+    const im=document.createElement("img"); im.src=s.image; im.alt="";
+    const x=document.createElement("div"); x.className="x";
+    const b=document.createElement("b"); b.textContent=s.name+" ";
+    const pill=document.createElement("span"); pill.className="pill"+(on?"":" off"); pill.textContent = !s.active?"Paused": !inDates?(s.starts_on>today?"Scheduled":"Ended"): on?"Showing now":"Off-hours";
+    b.appendChild(pill);
+    const sp=document.createElement("span"); sp.textContent=spSchedule(s);
+    x.append(b,sp);
+    const tools=document.createElement("div"); tools.className="admin"; tools.style.border="0"; tools.style.margin="0"; tools.style.padding="0";
+    tools.append(
+      btn("✎","",()=>spLoad(s)),
+      btn(s.active?"⏸":"▶","",async()=>{ const {error}=await sb.from("sponsors").update({active:!s.active}).eq("id",s.id); if(error) throw error; await loadSponsorsAdmin(); }),
+      btn("🗑","bad",async()=>{ const {error}=await sb.from("sponsors").delete().eq("id",s.id); if(error) throw error; await loadSponsorsAdmin(); },"Delete?"));
+    row.append(im,x,tools); box.appendChild(row);
+  }
+}
+function spLoad(s){
+  spEditing=s; spImage=s.image; $("#spTitle").textContent="Edit sponsor";
+  $("#spName").value=s.name; $("#spLink").value=s.link||""; $("#spTag").value=s.tagline||"";
+  $("#spFrom").value=s.starts_on; $("#spTo").value=s.ends_on||"";
+  $("#spH1").value=s.hour_from; $("#spH2").value=s.hour_to; $("#spWeight").value=s.weight; $("#spActive").checked=s.active;
+  document.querySelectorAll("#spDays input").forEach(c=>c.checked=(s.days||[]).includes(+c.value));
+  document.querySelectorAll("#spSlots input").forEach(c=>c.checked=(s.slots||[]).includes(c.value));
+  document.querySelectorAll("#spMarkets input").forEach(c=>c.checked=(s.markets||[]).includes(c.value));
+  document.querySelectorAll("#spGroups input").forEach(c=>c.checked=(s.groups||[]).includes(c.value));
+  $("#spImgPrev").src=s.image; $("#spImgPrev").style.display="block";
+  $("#spName").scrollIntoView({behavior:"smooth",block:"center"});
+}
+$("#spSave").onclick = async ()=>{
+  const name=$("#spName").value.trim(), link=$("#spLink").value.trim();
+  if (!name){ showMsg("Enter the sponsor's name.","err",$("#spMsg")); return; }
+  if (!spImage){ showMsg("Choose a logo or banner image.","err",$("#spMsg")); return; }
+  if (link && !/^https:\/\//.test(link)){ showMsg("The link must start with https://","err",$("#spMsg")); return; }
+  const days=[...document.querySelectorAll("#spDays input:checked")].map(c=>+c.value);
+  const slots=[...document.querySelectorAll("#spSlots input:checked")].map(c=>c.value);
+  if (!days.length||!slots.length){ showMsg("Pick at least one day and one place to show it.","err",$("#spMsg")); return; }
+  const rec={name, link:link||null, tagline:$("#spTag").value.trim()||null, image:spImage, starts_on:$("#spFrom").value||new Date().toISOString().slice(0,10),
+    ends_on:$("#spTo").value||null, days, hour_from:+$("#spH1").value, hour_to:+$("#spH2").value, weight:+$("#spWeight").value, slots, active:$("#spActive").checked,
+    markets:[...document.querySelectorAll("#spMarkets input:checked")].map(c=>c.value),
+    groups:[...document.querySelectorAll("#spGroups input:checked")].map(c=>c.value)};
+  if (rec.hour_from===rec.hour_to){ showMsg("Start and end hour can't be the same.","err",$("#spMsg")); return; }
+  $("#spSave").disabled=true;
+  try{
+    const q = spEditing ? sb.from("sponsors").update(rec).eq("id",spEditing.id) : sb.from("sponsors").insert(rec);
+    const {error}=await q; if (error) throw error;
+    showMsg("Saved.","ok",$("#spMsg")); spReset(); await loadSponsorsAdmin(); loadSponsors();
+  }catch(e){ showMsg(niceError(e),"err",$("#spMsg")); }
+  finally{ $("#spSave").disabled=false; }
+};
+
+/* ---------- discount codes ---------- */
+let codesAll = [];
+async function loadCodes(){
+  const {data,error} = await sb.from("discount_codes").select("code,listing_id,buyer_phone,pct,created_at,redeemed_at").order("created_at",{ascending:false}).limit(300);
+  if (error){ showMsg(niceError(error),"err",$("#codeMsg")); return; }
+  codesAll = data||[];
+  const waiting = codesAll.filter(c=>!c.redeemed_at).length;
+  $("#nCodes").textContent = waiting?`(${waiting})`:"";
+  const tb=$("#codeList"); tb.innerHTML="<tr><th>Code</th><th>Item</th><th>Buyer</th><th>When</th><th></th></tr>";
+  if (!codesAll.length){ tb.insertAdjacentHTML("beforeend","<tr><td colspan='5' class='muted'>No codes yet. Set a discount on a live listing to start.</td></tr>"); }
+  codesAll.forEach(c=>{
+    const it = items.find(x=>x.id===c.listing_id);
+    const tr=document.createElement("tr");
+    const td=(t)=>{ const d=document.createElement("td"); d.textContent=t; tr.appendChild(d); return d; };
+    td(c.code); td((it?titleOf(it.L):"(removed)")+` · ${c.pct}%`); td(c.buyer_phone);
+    td(new Date(c.created_at).toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}));
+    const last=document.createElement("td");
+    if (c.redeemed_at){ last.textContent="✓ used"; last.className="muted"; }
+    else last.appendChild(btn("Confirm","ok",()=>redeem(c.code)));
+    tr.appendChild(last); tb.appendChild(tr);
+  });
+}
+async function redeem(code){
+  const {data,error} = await sb.rpc("redeem_discount",{p_code:code});
+  if (error) throw error;
+  if (data && data.ok){
+    showMsg(`✓ ${code} confirmed.`+(data.stock!==null && data.stock!==undefined ? ` Stock left: ${data.stock}${data.stock===0?" — marked as sold.":""}` : ""),"ok",$("#codeMsg"));
+    await loadAll(); await loadCodes();
+  } else {
+    const m={not_found:"No such code.", already_used:"This code was already used.", not_admin:"Log in as admin."}[(data||{}).error] || "Couldn't confirm.";
+    showMsg(code+": "+m,"err",$("#codeMsg"));
+  }
+}
+$("#codeGo").onclick = async ()=>{ const c=$("#codeIn").value.trim().toUpperCase(); if(!c) return; try{ await redeem(c); $("#codeIn").value=""; }catch(e){ showMsg(niceError(e),"err",$("#codeMsg")); } };
+$("#repSave").onclick = async ()=>{
+  const v=$("#repWa").value.replace(/[\s-]/g,"").replace(/^\+?20/,"0");
+  if (v && !/^01[0125]\d{8}$/.test(v)){ showMsg("Enter an Egyptian mobile number.","err",$("#repMsg")); return; }
+  const {error}=await sb.from("settings").update({report_wa:v||null}).eq("id",1);
+  showMsg(error?niceError(error):"Saved.", error?"err":"ok", $("#repMsg")); updReport();
+};
+function reportText(days){
+  const since = Date.now() - days*864e5;
+  const list = codesAll.filter(c=>Date.parse(c.created_at)>=since);
+  const used = list.filter(c=>c.redeemed_at);
+  const per = {};
+  list.forEach(c=>{ const it=items.find(x=>x.id===c.listing_id); const k=it?titleOf(it.L):"(removed)"; per[k]=per[k]||{n:0,u:0}; per[k].n++; if(c.redeemed_at) per[k].u++; });
+  let t = `📊 *${MARKET_NAME} — discount report*\n${days===1?"Last 24 hours":"Last "+days+" days"}\n\nCodes given: ${list.length}\nCodes used: ${used.length}\n`;
+  Object.entries(per).forEach(([k,v])=>{ t+=`\n• ${k}: ${v.n} given, ${v.u} used`; });
+  const stockItems = items.filter(x=>x.L.status==="live" && x.L.stock!==null && x.L.stock!==undefined && x.L.discount);
+  if (stockItems.length){ t+="\n\n📦 Stock now:"; stockItems.forEach(x=>{ t+=`\n• ${titleOf(x.L)}: ${x.L.stock}`; }); }
+  return t;
+}
+function updReport(){
+  const n=$("#repWa").value.replace(/\D/g,"");
+  $("#repSend").href = (n? "https://wa.me/2"+n.replace(/^2/,"") : "https://wa.me/") + "?text="+encodeURIComponent(reportText(1));
+  $("#repSend7").href = (n? "https://wa.me/2"+n.replace(/^2/,"") : "https://wa.me/") + "?text="+encodeURIComponent(reportText(7));
+}
+$("#repSend").addEventListener("pointerdown", updReport); $("#repSend7").addEventListener("pointerdown", updReport); $("#repSend").addEventListener("focus", updReport);
+
+/* ---------- stats ---------- */
+async function loadDbUsage(){
+  const {data,error}=await sb.rpc("db_usage");
+  if (error||!data){ $("#dbTxt").textContent="Run update7.sql in Supabase to see this."; return; }
+  const pct=Math.min(100,Math.round(data.data_mb/data.budget_mb*100));
+  $("#dbBar").style.width=pct+"%"; $("#dbBar").style.background = pct>85?"#c0392b":pct>65?"#b7791f":"#1f8a4c";
+  const room = data.avg_kb>0 ? Math.max(0,Math.floor((data.budget_mb-data.data_mb)*1024/data.avg_kb)) : null;
+  $("#dbTxt").textContent=`${data.listings} listings use ${data.data_mb} MB of ${data.budget_mb} MB (${pct}%). Whole database: ${data.db_mb} MB of 500 MB.`+(room!==null?` Room for about ${room.toLocaleString()} more listings.`:"");
+  $("#dbBudget").value=data.budget_mb;
+}
+$("#dbBudgetSave").onclick=async()=>{ const n=parseInt($("#dbBudget").value,10); if(!(n>=50&&n<=450)) return toast("Enter 50–450 MB");
+  const {error}=await sb.from("settings").update({max_data_mb:n}).eq("id",1); if(error) return toast(niceError(error)); toast("Saved"); loadDbUsage(); };
+async function loadPhotoUsage(){
+  const {data,error}=await sb.rpc("photo_storage");
+  if (error||!data){ $("#phTxt").textContent="Run update10.sql in Supabase to turn on photo storage."; return; }
+  const pct=Math.min(100,Math.round(data.mb/1024*100));
+  $("#phBar").style.width=pct+"%"; $("#phBar").style.background = pct>85?"#c0392b":pct>65?"#b7791f":"#1f8a4c";
+  $("#phTxt").textContent=`${data.files} photo files use ${data.mb} MB of the free 1 GB (${pct}%).`
+    + (data.inline ? ` ${data.inline} older listing${data.inline===1?" still keeps its":"s still keep their"} photos inside the database.` : " All listings use photo storage.");
+  $("#phMove").hidden = !data.inline; $("#phClean").hidden = !(data.orphans||[]).length;
+  $("#phClean").textContent = `Delete photos of removed listings (${(data.orphans||[]).length})`;
+  $("#phClean").onclick = async ()=>{
+    $("#phClean").disabled=true;
+    const {error}=await sb.storage.from(PHOTO_BUCKET).remove(data.orphans);
+    $("#phClean").disabled=false; showMsg(error?niceError(error):"Done.", error?"err":"ok", $("#phMsg")); loadPhotoUsage();
+  };
+}
+// one listing at a time: upload its photos as files, then save the links in the listing
+$("#phMove").onclick = async ()=>{
+  const b=$("#phMove"); b.disabled=true; let done=0, failed=0;
+  try{
+    const {data:list,error} = await sb.from("listings").select("id,thumb").order("created_at",{ascending:false}).limit(5000);
+    if (error) throw error;
+    for (const r of list){
+      const {data:row} = await sb.from("listings").select("id,thumb,photos").eq("id",r.id).maybeSingle();
+      if (!row) continue;
+      const pics = Array.isArray(row.photos)?row.photos:[];
+      if (!pics.some(p=>/^data:/.test(p)) && !/^data:/.test(row.thumb||"")) continue;
+      try{
+        const ids = row.id, out=[];
+        for (let i=0;i<pics.length;i++) out.push(/^data:/.test(pics[i]) ? await storePhoto(`${ids}/${i}.jpg`, pics[i]) : pics[i]);
+        const t = /^data:/.test(row.thumb||"") ? await storePhoto(`${ids}/t.jpg`, row.thumb) : row.thumb;
+        const {error:e2} = await sb.from("listings").update({photos:out, thumb:t}).eq("id",ids);
+        if (e2) throw e2; done++;
+      }catch(e){ failed++; console.warn(e); }
+      showMsg(`Moving photos… ${done} done${failed?`, ${failed} failed`:""}`,"info",$("#phMsg"));
+    }
+    showMsg(`Finished: ${done} listing${done===1?"":"s"} moved${failed?`, ${failed} failed (try again)`:""}.`, failed?"err":"ok", $("#phMsg"));
+  }catch(e){ showMsg(niceError(e),"err",$("#phMsg")); }
+  finally{ b.disabled=false; loadPhotoUsage(); loadDbUsage(); }
+};
+async function loadStats(){
+  loadDbUsage(); loadPhotoUsage();
+  const since = new Date(Date.now()-30*864e5).toISOString().slice(0,10);
+  const {data,error} = await sb.from("site_stats").select("day,page,views").gte("day",since).order("day");
+  if (error){ showMsg(niceError(error),"err",$("#listMsg")); return; }
+  const rows=data||[], byDay={}, byPage={};
+  const today=new Date(new Date().toLocaleString("en-US",{timeZone:"Africa/Cairo"})).toISOString().slice(0,10);
+  const d7=new Date(Date.parse(today)-6*864e5).toISOString().slice(0,10);
+  let t=0,w=0,m=0;
+  rows.forEach(r=>{ byDay[r.day]=(byDay[r.day]||0)+r.views; byPage[r.page]=byPage[r.page]||{t:0,w:0,m:0};
+    m+=r.views; byPage[r.page].m+=r.views; if(r.day>=d7){ w+=r.views; byPage[r.page].w+=r.views; } if(r.day===today){ t+=r.views; byPage[r.page].t+=r.views; } });
+  $("#stToday").textContent=fmt(t); $("#st7").textContent=fmt(w); $("#st30").textContent=fmt(m);
+  const days=[]; for(let i=29;i>=0;i--) days.push(new Date(Date.parse(today)-i*864e5).toISOString().slice(0,10));
+  const mx=Math.max(1,...days.map(d=>byDay[d]||0));
+  $("#stBars").innerHTML = days.map(d=>`<div style="height:${Math.round((byDay[d]||0)/mx*100)}%" data-t="${d.slice(5)}: ${byDay[d]||0}"></div>`).join("");
+  const names={catalogue:"Catalogue",post:"Post a listing",admin:"Admin"};
+  $("#stPages").innerHTML = "<tr><th>Page</th><th class='n'>Today</th><th class='n'>7 days</th><th class='n'>30 days</th></tr>" +
+    Object.keys(names).map(p=>{ const v=byPage[p]||{t:0,w:0,m:0}; return `<tr><td>${names[p]}</td><td class="n">${fmt(v.t)}</td><td class="n">${fmt(v.w)}</td><td class="n">${fmt(v.m)}</td></tr>`; }).join("");
+  drawTopViews();
+}
+// Most viewed, for one category or one kind of listing (e.g. only motorcycles, only car parts)
+function drawTopViews(){
+  const sel=$("#stTopCat"); if (!sel) return;
+  if (!sel.options.length){
+    const add=(parent,v,l)=>{ const o=document.createElement("option"); o.value=v; o.textContent=l; parent.appendChild(o); };
+    add(sel,"all","All listings");
+    GROUP_ORDER.forEach(g=>{
+      const types=Object.keys(GROUP).filter(t=>GROUP[t]===g);
+      if (types.length<2){ add(sel,"g:"+g,(GROUP_NAMES[g]||g)); return; }
+      const og=document.createElement("optgroup"); og.label=GROUP_NAMES[g]||g;
+      add(og,"g:"+g,"All in "+(GROUP_NAMES[g]||g));
+      (SUBTYPES[g]||types.map(t=>[t])).forEach(([t])=>add(og,"t:"+t,SECTION_NAMES[t]||t));
+      sel.appendChild(og);
+    });
+    sel.onchange=drawTopViews; $("#stTopN").onchange=drawTopViews;
+  }
+  const v=sel.value, n=+$("#stTopN").value||10;
+  const pick = x => v==="all" || (v.startsWith("g:") ? GROUP[x.L.type]===v.slice(2) : x.L.type===v.slice(2));
+  const top = items.filter(x=>x.L.status!=="pending" && pick(x)).sort((a,b)=>(b.L.views||0)-(a.L.views||0)).slice(0,n);
+  const tb=$("#stTop"); tb.innerHTML="<tr><th>#</th><th>Listing</th><th>Section</th><th>Status</th><th class='n'>Views</th></tr>";
+  top.forEach((x,i)=>{ const tr=document.createElement("tr");
+    const r=document.createElement("td"); r.className="muted"; r.textContent=i+1;
+    const a=document.createElement("td"); const ln=document.createElement("a"); ln.href=itemHref(x.id); ln.target="_blank"; ln.rel="noopener"; ln.className="tvlink";
+    if (x.L.thumb && /^(data:image\/|https:\/\/)/.test(x.L.thumb)){ const im=document.createElement("img"); im.src=x.L.thumb; im.alt=""; im.loading="lazy"; ln.appendChild(im); }
+    const t=document.createElement("span"); t.textContent=titleOf(x.L); ln.appendChild(t); a.appendChild(ln);
+    const c=document.createElement("td"); c.className="muted"; c.textContent=SECTION_NAMES[x.L.type]||x.L.type;
+    const s=document.createElement("td"); s.textContent=x.L.status;
+    const w=document.createElement("td"); w.className="n"; w.textContent=fmt(x.L.views||0);
+    tr.append(r,a,c,s,w); tb.appendChild(tr); });
+  if (!top.length) tb.insertAdjacentHTML("beforeend","<tr><td colspan='5' class='muted'>No views yet in this section.</td></tr>");
+}
+
+/* forgotten password: Supabase e-mails a link back to this page, then a new password is chosen here */
+$("#forgotBtn").onclick = async ()=>{
+  const email=$("#email").value.trim();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ showMsg("Type your admin e-mail first, then press Forgot password.","err",$("#loginMsg")); return; }
+  const {error}=await sb.auth.resetPasswordForEmail(email, {redirectTo: location.origin + location.pathname});
+  showMsg(error ? niceError(error) : "If this e-mail is an admin, a reset link is on its way. Open it on this device.", error?"err":"ok", $("#loginMsg"));
+};
+function askNewPassword(){
+  $("#loginView").hidden=false; $("#adminView").hidden=true; $("#newPassBox").hidden=false;
+  showMsg("Choose your new password.","info",$("#loginMsg"));
+}
+$("#newPassBtn").onclick = async ()=>{
+  const pw=$("#newPass").value;
+  if (pw.length<8){ showMsg("At least 8 characters.","err",$("#loginMsg")); return; }
+  const {error}=await sb.auth.updateUser({password:pw});
+  if (error){ showMsg(niceError(error),"err",$("#loginMsg")); return; }
+  $("#newPassBox").hidden=true; $("#newPass").value=""; showMsg("Password saved.","ok",$("#loginMsg")); enter();
+};
+const RECOVERY = /type=recovery/.test(location.hash);
+if (sb){ if (!RECOVERY) enter(); else askNewPassword();
+  sb.auth.onAuthStateChange((ev)=>{ if (ev==="PASSWORD_RECOVERY") askNewPassword(); if (ev==="SIGNED_OUT"){ $("#loginView").hidden=false; $("#adminView").hidden=true; } }); }
+else showMsg("Add your Supabase details to config.js first.","err",$("#loginMsg"));
